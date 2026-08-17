@@ -63,9 +63,9 @@ export const NOME_ARQUIVO: Record<TipoDocumento, string> = {
 
 export const EMPRESA = {
   razaoSocial: 'Juliano Lopes Transportes',
-  cnpj: '00.000.000/0001-00',
+  cnpj: '58.450.843/0001-70',
   endereco: 'Belo Horizonte — MG',
-  telefone: '(31) 0000-0000',
+  telefone: '(31) 97339-0837',
   email: 'contato@julianoltransportes.com.br',
   site: 'julianoltransportes.com.br',
 };

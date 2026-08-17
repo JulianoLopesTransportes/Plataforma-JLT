@@ -1,29 +1,19 @@
 /**
- * ============================================================================
- *  ATENÇÃO — ISTO É UM MOCK DE AUTENTICAÇÃO. NÃO É SEGURANÇA REAL.
- * ============================================================================
+ * AUTENTICAÇÃO — Supabase Auth.
  *
- *  Nesta fase do projeto NÃO existe:
- *    - senha (qualquer valor é aceito, inclusive vazio)
- *    - hash, salt ou verificação de credencial
- *    - JWT, cookie de sessão assinado ou validação no servidor
+ * Substitui o mock da Fase A. Agora existe de verdade:
+ *   - senha com hash, gerida pelo Supabase (nunca trafega pelo nosso código)
+ *   - sessão em cookie assinado, não em sessionStorage editável
+ *   - validação no servidor via middleware.ts, antes de renderizar
+ *   - RLS no Postgres aplicando a mesma matriz de lib/permissoes.ts
  *
- *  A "sessão" é um objeto em sessionStorage que o próprio navegador pode
- *  editar. Qualquer pessoa com o DevTools aberto vira admin em dois cliques.
- *  Isso é intencional e serve a um único propósito: permitir trocar de
- *  perfil rapidamente para conferir como cada nível enxerga a plataforma.
- *
- *  A guarda de rota também é client-side, pelo mesmo motivo — ela impede
- *  navegação acidental, não acesso mal-intencionado.
- *
- *  QUANDO O SUPABASE ENTRAR (Fase B), substituir por:
- *    - Supabase Auth (e-mail/senha ou SSO) para emitir a sessão
- *    - middleware.ts validando a sessão no servidor, antes de renderizar
- *    - Row Level Security no Postgres espelhando MATRIZ_PERMISSOES
- *  A matriz em permissoes.ts continua valendo: ela vira a fonte das policies.
- * ============================================================================
+ * CADASTRO É POR LISTA DE CONVIDADOS. Um gatilho no banco rejeita a criação
+ * de usuário cujo e-mail não esteja em `niveis_pre_atribuidos`. Na prática:
+ * a tela de cadastro é pública, mas só entra quem o admin autorizou antes.
+ * Ver a migration 09 e supabase/README.md.
  */
 
+import { supabase } from './supabase/cliente';
 import type { Nivel } from './permissoes';
 
 export type Usuario = {
@@ -34,80 +24,108 @@ export type Usuario = {
   cargo: string;
 };
 
-const CHAVE_SESSAO = 'jlt.sessao';
+export type ResultadoAuth = {
+  ok: boolean;
+  erro?: string;
+};
+
+/** Traduz os erros do Supabase para algo que a equipe entenda. */
+function traduzirErro(mensagem: string): string {
+  const m = mensagem.toLowerCase();
+
+  if (m.includes('invalid login credentials')) {
+    return 'E-mail ou senha incorretos.';
+  }
+  if (m.includes('email not confirmed')) {
+    return 'Confirme seu e-mail antes de entrar — verifique sua caixa de entrada.';
+  }
+  if (m.includes('acesso autorizado')) {
+    // Vem da exceção do gatilho criar_perfil_do_usuario.
+    return 'Este e-mail não tem acesso autorizado à plataforma. Fale com o administrador.';
+  }
+  if (m.includes('user already registered')) {
+    return 'Este e-mail já tem cadastro. Use "Entrar" em vez de "Criar acesso".';
+  }
+  if (m.includes('password should be at least')) {
+    return 'A senha precisa ter pelo menos 6 caracteres.';
+  }
+  if (m.includes('rate limit') || m.includes('too many')) {
+    return 'Muitas tentativas seguidas. Aguarde um minuto e tente de novo.';
+  }
+  return mensagem;
+}
+
+/** Entra com e-mail e senha. */
+export async function entrar(email: string, senha: string): Promise<ResultadoAuth> {
+  const { error } = await supabase().auth.signInWithPassword({
+    email: email.trim().toLowerCase(),
+    password: senha,
+  });
+
+  return error ? { ok: false, erro: traduzirErro(error.message) } : { ok: true };
+}
 
 /**
- * Usuários de teste — um por nível, para conferir cada visão.
- * Login aceita qualquer senha (ver aviso no topo do arquivo).
+ * Cria o acesso de quem já foi autorizado pelo admin.
+ * Falha se o e-mail não estiver na lista — a mensagem vem do banco.
  */
-export const USUARIOS_TESTE: Usuario[] = [
-  {
-    id: 'u1',
-    nome: 'Juliano Lopes',
-    email: 'admin@julianoltransportes.com.br',
-    nivel: 'admin',
-    cargo: 'Diretor',
-  },
-  {
-    id: 'u2',
-    nome: 'Renata Prado',
-    email: 'financeiro@julianoltransportes.com.br',
-    nivel: 'financeiro',
-    cargo: 'Analista financeira',
-  },
-  {
-    id: 'u3',
-    nome: 'Marcos Vieira',
-    email: 'operacional@julianoltransportes.com.br',
-    nivel: 'operacional',
-    cargo: 'Coordenador de operações',
-  },
-  {
-    id: 'u4',
-    nome: 'Aline Duarte',
-    email: 'comercial@julianoltransportes.com.br',
-    nivel: 'comercial',
-    cargo: 'Consultora comercial',
-  },
-];
+export async function criarAcesso(email: string, senha: string): Promise<ResultadoAuth> {
+  const { error } = await supabase().auth.signUp({
+    email: email.trim().toLowerCase(),
+    password: senha,
+  });
 
-/** Abre sessão para o usuário informado. Nenhuma credencial é verificada. */
-export function entrar(usuario: Usuario): void {
-  if (typeof window === 'undefined') return;
-  sessionStorage.setItem(CHAVE_SESSAO, JSON.stringify(usuario));
+  return error ? { ok: false, erro: traduzirErro(error.message) } : { ok: true };
+}
+
+/** Envia e-mail de redefinição de senha. */
+export async function recuperarSenha(email: string): Promise<ResultadoAuth> {
+  const { error } = await supabase().auth.resetPasswordForEmail(email.trim().toLowerCase(), {
+    redirectTo: `${window.location.origin}/definir-senha`,
+  });
+
+  return error ? { ok: false, erro: traduzirErro(error.message) } : { ok: true };
+}
+
+/** Define uma nova senha para a sessão de recuperação em curso. */
+export async function definirSenha(novaSenha: string): Promise<ResultadoAuth> {
+  const { error } = await supabase().auth.updateUser({ password: novaSenha });
+  return error ? { ok: false, erro: traduzirErro(error.message) } : { ok: true };
 }
 
 /** Encerra a sessão. */
-export function sair(): void {
-  if (typeof window === 'undefined') return;
-  sessionStorage.removeItem(CHAVE_SESSAO);
+export async function sair(): Promise<void> {
+  await supabase().auth.signOut();
 }
 
 /**
- * Lê a sessão ativa. Retorna null no servidor (sessionStorage não existe lá)
- * e null se o conteúdo estiver corrompido ou apontar para um usuário que
- * não existe mais.
+ * Lê o perfil do usuário da sessão ativa.
+ * Retorna null sem sessão, ou quando o perfil foi desativado pelo admin.
  */
-export function sessaoAtual(): Usuario | null {
-  if (typeof window === 'undefined') return null;
+export async function perfilAtual(): Promise<Usuario | null> {
+  const cliente = supabase();
 
-  const bruto = sessionStorage.getItem(CHAVE_SESSAO);
-  if (!bruto) return null;
+  const {
+    data: { user },
+  } = await cliente.auth.getUser();
 
-  try {
-    const usuario = JSON.parse(bruto) as Usuario;
-    // Confere contra a lista conhecida: impede um nível inventado à mão
-    // de passar despercebido e quebrar a matriz mais adiante.
-    return USUARIOS_TESTE.some((u) => u.id === usuario.id) ? usuario : null;
-  } catch {
-    return null;
-  }
-}
+  if (!user) return null;
 
-/** Busca um usuário de teste pelo e-mail (usado pela tela de login). */
-export function usuarioPorEmail(email: string): Usuario | undefined {
-  const alvo = email.trim().toLowerCase();
-  return USUARIOS_TESTE.find((u) => u.email.toLowerCase() === alvo);
+  const { data } = await cliente
+    .from('perfis')
+    .select('id, nome, email, cargo, nivel, ativo')
+    .eq('id', user.id)
+    .single();
+
+  if (!data || !data.ativo) return null;
+
+  return {
+    id: data.id,
+    nome: data.nome,
+    email: data.email,
+    nivel: data.nivel as Nivel,
+    cargo: data.cargo,
+  };
 }
 
 /** Iniciais do nome, para o avatar do header. */

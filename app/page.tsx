@@ -1,48 +1,108 @@
 'use client';
 
 /**
- * TELA DE LOGIN — autenticação simulada.
+ * ENTRADA DA PLATAFORMA — autenticação real (Supabase Auth).
  *
- * Ver o aviso completo no topo de lib/auth.ts: não há senha, hash nem token.
- * Os quatro perfis de teste ficam expostos de propósito, para permitir
- * alternar de nível e conferir como cada um enxerga a plataforma.
+ * Três modos na mesma tela: entrar, criar acesso e recuperar senha.
+ *
+ * "Criar acesso" existe porque o cadastro é uma LISTA DE CONVIDADOS: o
+ * banco rejeita e-mail que o administrador não tenha autorizado antes.
+ * Quem foi autorizado define a própria senha aqui, e ela nunca passa por
+ * nenhum outro lugar.
  */
 
-import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState, Suspense } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Image from 'next/image';
-import { USUARIOS_TESTE, usuarioPorEmail, entrar, sessaoAtual } from '@/lib/auth';
-import { ROTULO_NIVEL } from '@/lib/permissoes';
+import { entrar, criarAcesso, recuperarSenha } from '@/lib/auth';
+import { supabaseConfigurado } from '@/lib/supabase/cliente';
 import estilos from './login.module.css';
 
-export default function PaginaLogin() {
+type Modo = 'entrar' | 'criar' | 'recuperar';
+
+const TITULO: Record<Modo, string> = {
+  entrar: 'Entrar',
+  criar: 'Criar acesso',
+  recuperar: 'Recuperar senha',
+};
+
+const SUBTITULO: Record<Modo, string> = {
+  entrar: 'Informe seu e-mail corporativo para acessar.',
+  criar: 'Defina sua senha. Seu e-mail precisa ter sido autorizado pelo administrador.',
+  recuperar: 'Enviaremos um link para você definir uma nova senha.',
+};
+
+export default function PaginaEntrada() {
+  return (
+    <Suspense fallback={null}>
+      <Formulario />
+    </Suspense>
+  );
+}
+
+function Formulario() {
   const router = useRouter();
+  const parametros = useSearchParams();
+
+  const [modo, setModo] = useState<Modo>('entrar');
   const [email, setEmail] = useState('');
   const [senha, setSenha] = useState('');
   const [erro, setErro] = useState('');
+  const [aviso, setAviso] = useState('');
+  const [enviando, setEnviando] = useState(false);
 
-  // Quem já tem sessão não precisa passar por aqui de novo.
-  useEffect(() => {
-    if (sessaoAtual()) router.replace('/dashboard');
-  }, [router]);
+  // Sem as variáveis de ambiente não há como autenticar. Melhor dizer isso
+  // com todas as letras do que deixar o formulário falhar sem explicação.
+  const configurado = supabaseConfigurado();
 
-  function selecionarPerfil(emailPerfil: string) {
-    setEmail(emailPerfil);
+  function trocarModo(novo: Modo) {
+    setModo(novo);
     setErro('');
+    setAviso('');
+    setSenha('');
   }
 
-  function aoEnviar(evento: React.FormEvent) {
+  async function aoEnviar(evento: React.FormEvent) {
     evento.preventDefault();
+    setErro('');
+    setAviso('');
+    setEnviando(true);
 
-    const usuario = usuarioPorEmail(email);
-    if (!usuario) {
-      setErro('E-mail não encontrado. Use um dos perfis de teste listados abaixo.');
-      return;
+    try {
+      if (modo === 'entrar') {
+        const r = await entrar(email, senha);
+        if (!r.ok) {
+          setErro(r.erro!);
+          return;
+        }
+        // O middleware assume daqui: refresh recarrega já autenticado.
+        router.replace(parametros.get('destino') ?? '/dashboard');
+        router.refresh();
+        return;
+      }
+
+      if (modo === 'criar') {
+        const r = await criarAcesso(email, senha);
+        if (!r.ok) {
+          setErro(r.erro!);
+          return;
+        }
+        setAviso(
+          'Acesso criado. Se a confirmação por e-mail estiver ativa, confirme pelo link enviado; caso contrário, já pode entrar.',
+        );
+        setModo('entrar');
+        return;
+      }
+
+      const r = await recuperarSenha(email);
+      if (!r.ok) {
+        setErro(r.erro!);
+        return;
+      }
+      setAviso('Se este e-mail tiver acesso, o link de redefinição chegará em instantes.');
+    } finally {
+      setEnviando(false);
     }
-
-    // A senha não é verificada — ver aviso em lib/auth.ts.
-    entrar(usuario);
-    router.replace('/dashboard');
   }
 
   return (
@@ -75,10 +135,21 @@ export default function PaginaLogin() {
 
       <section className={estilos.painelForm}>
         <form className={estilos.form} onSubmit={aoEnviar}>
-          <h2 className={estilos.titulo}>Entrar</h2>
-          <p className={estilos.subtitulo}>Informe seu e-mail corporativo para acessar.</p>
+          <h2 className={estilos.titulo}>{TITULO[modo]}</h2>
+          <p className={estilos.subtitulo}>{SUBTITULO[modo]}</p>
+
+          {!configurado && (
+            <div className={estilos.erro}>
+              <strong>Configuração pendente.</strong> As variáveis do Supabase não estão definidas
+              neste ambiente, então o acesso não funciona. Defina{' '}
+              <code>NEXT_PUBLIC_SUPABASE_URL</code> e{' '}
+              <code>NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY</code> nas variáveis de ambiente do
+              projeto.
+            </div>
+          )}
 
           {erro && <div className={estilos.erro}>{erro}</div>}
+          {aviso && <div className={estilos.sucesso}>{aviso}</div>}
 
           <div className={`field ${estilos.campo}`}>
             <label htmlFor="email">E-mail</label>
@@ -93,43 +164,59 @@ export default function PaginaLogin() {
             />
           </div>
 
-          <div className={`field ${estilos.campo}`}>
-            <label htmlFor="senha">Senha</label>
-            <input
-              id="senha"
-              type="password"
-              value={senha}
-              onChange={(e) => setSenha(e.target.value)}
-              placeholder="Qualquer valor nesta fase"
-              autoComplete="current-password"
-            />
-          </div>
+          {modo !== 'recuperar' && (
+            <div className={`field ${estilos.campo}`}>
+              <label htmlFor="senha">Senha</label>
+              <input
+                id="senha"
+                type="password"
+                value={senha}
+                onChange={(e) => setSenha(e.target.value)}
+                autoComplete={modo === 'criar' ? 'new-password' : 'current-password'}
+                minLength={6}
+                required
+              />
+              {modo === 'criar' && (
+                <p className="field-hint">Mínimo de 6 caracteres.</p>
+              )}
+            </div>
+          )}
 
-          <button type="submit" className={`btn btn-primary ${estilos.botaoEntrar}`}>
-            Entrar na plataforma
+          <button
+            type="submit"
+            className={`btn btn-primary ${estilos.botaoEntrar}`}
+            disabled={enviando || !configurado}
+          >
+            {enviando
+              ? 'Aguarde…'
+              : modo === 'entrar'
+                ? 'Entrar na plataforma'
+                : modo === 'criar'
+                  ? 'Criar meu acesso'
+                  : 'Enviar link'}
           </button>
 
-          <div className={estilos.perfis}>
-            <div className={estilos.perfisTitulo}>Perfis de teste — um por nível</div>
-            <div className={estilos.listaPerfis}>
-              {USUARIOS_TESTE.map((u) => (
-                <button
-                  key={u.id}
-                  type="button"
-                  className={`${estilos.perfil} ${email === u.email ? estilos.perfilSelecionado : ''}`}
-                  onClick={() => selecionarPerfil(u.email)}
-                >
-                  <span className={estilos.perfilNivel}>{ROTULO_NIVEL[u.nivel]}</span>
-                  <span className={estilos.perfilNome}>{u.nome}</span>
-                </button>
-              ))}
-            </div>
+          <div className={estilos.alternar}>
+            {modo !== 'entrar' && (
+              <button type="button" onClick={() => trocarModo('entrar')}>
+                Já tenho acesso — entrar
+              </button>
+            )}
+            {modo !== 'criar' && (
+              <button type="button" onClick={() => trocarModo('criar')}>
+                Primeiro acesso — definir senha
+              </button>
+            )}
+            {modo !== 'recuperar' && (
+              <button type="button" onClick={() => trocarModo('recuperar')}>
+                Esqueci minha senha
+              </button>
+            )}
           </div>
 
-          <p className={estilos.avisoMock}>
-            <strong>Autenticação simulada.</strong> Esta fase não tem senha, hash nem token — a
-            sessão fica no navegador e qualquer senha é aceita. Serve para conferir a visão de cada
-            nível. Autenticação real entra junto com o banco de dados.
+          <p className={estilos.avisoAcesso}>
+            O acesso é concedido pelo administrador. Se o seu e-mail ainda não foi autorizado, o
+            cadastro será recusado — fale com a administração.
           </p>
         </form>
       </section>

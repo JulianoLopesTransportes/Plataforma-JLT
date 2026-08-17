@@ -39,6 +39,7 @@ import {
   type TomBadge,
 } from '@/components/ui';
 import type { Orcamento } from '@/lib/tipos';
+import PainelPrecificacao from '@/components/modulos/PainelPrecificacao';
 import estilos from './orcamentos.module.css';
 
 const TOM_STATUS: Record<Orcamento['status'], TomBadge> = {
@@ -433,58 +434,9 @@ export default function PaginaOrcamentos() {
             </div>
           )}
 
-          {/* ---------- Parâmetros de precificação ---------- */}
-          {editarParametros && parametros && (
-            <div className="card" style={{ marginTop: 20 }}>
-              <h2 className="card-title">Parâmetros de precificação</h2>
-              <p className="field-hint" style={{ marginBottom: 16 }}>
-                Dado interno — visível apenas para Administrador e Financeiro. A edição destes
-                valores grava no banco e entra junto com a persistência.
-              </p>
+          {/* Painel editável — só quem tem editar_parametros_precificacao. */}
+          {editarParametros && <PainelPrecificacao />}
 
-              <div className={estilos.gradeParametros}>
-                <div>
-                  <h3 className={estilos.subtituloBloco}>Faixas de volume</h3>
-                  <table>
-                    <thead>
-                      <tr>
-                        <th>Até (m³)</th>
-                        <th style={{ textAlign: 'right' }}>Preço base</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {parametros.faixasVolume.map((f) => (
-                        <tr key={f.id}>
-                          <td>{f.ate >= 999 ? 'acima da última faixa' : f.ate}</td>
-                          <td className="numerico">{formatarBRL(f.valorBase)}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-
-                <div>
-                  <h3 className={estilos.subtituloBloco}>Outros parâmetros</h3>
-                  <table>
-                    <tbody>
-                      <tr>
-                        <td>Custo por km</td>
-                        <td className="numerico">{formatarBRL(parametros.custoPorKm)}</td>
-                      </tr>
-                      <tr>
-                        <td>Margem mínima</td>
-                        <td className="numerico">{parametros.margemMinima}%</td>
-                      </tr>
-                      <tr>
-                        <td>Margem máxima</td>
-                        <td className="numerico">{parametros.margemMaxima}%</td>
-                      </tr>
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-            </div>
-          )}
         </>
       )}
 

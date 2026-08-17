@@ -1,44 +1,46 @@
 'use client';
 
 /**
- * PROVEDOR DE SESSÃO + GUARDA DE ROTA
+ * PROVEDOR DE SESSÃO + GUARDA DE MÓDULO
  *
- * Mantém a sessão mock (ver aviso em lib/auth.ts) disponível para toda a
- * árvore e aplica a guarda de acesso: se o nível da sessão não pode ver o
- * módulo da URL atual, redireciona para o dashboard com um aviso.
+ * A guarda de AUTENTICAÇÃO agora vive em middleware.ts, no servidor: quem
+ * não tem sessão nem chega a renderizar isto aqui.
  *
- * A guarda é client-side porque a sessão vive em sessionStorage. Isso impede
- * navegação indevida, não acesso mal-intencionado — na Fase B ela é
- * substituída por middleware.ts validando a sessão do Supabase no servidor.
+ * O que sobra para este componente é a guarda de MÓDULO — redirecionar
+ * quem abriu uma URL fora do seu nível. Continua sendo conveniência de
+ * navegação: a garantia real está no RLS do Postgres, que nega o dado
+ * mesmo se alguém contornar a interface.
  */
 
 import { createContext, useContext, useEffect, useState, useCallback } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
-import { sessaoAtual, sair as encerrarSessao, type Usuario } from '@/lib/auth';
+import { perfilAtual, sair as encerrarSessao, type Usuario } from '@/lib/auth';
+import { supabase } from '@/lib/supabase/cliente';
 import { moduloDaRota, podeVer } from '@/lib/permissoes';
 
 type ContextoSessao = {
   usuario: Usuario | null;
-  /** true enquanto lemos o sessionStorage — evita piscar a tela errada. */
   carregando: boolean;
   sair: () => void;
+  /** Recarrega o perfil — usado depois que o admin altera o próprio nível. */
+  recarregar: () => Promise<void>;
 };
 
 const Contexto = createContext<ContextoSessao>({
   usuario: null,
   carregando: true,
   sair: () => {},
+  recarregar: async () => {},
 });
 
-/** Hook de acesso à sessão. Use em qualquer componente cliente. */
 export function useSessao(): ContextoSessao {
   return useContext(Contexto);
 }
 
 /**
- * Hook de conveniência para telas que só renderizam com sessão válida.
- * Dentro de (plataforma) o layout já garante isso, então o non-null aqui
- * é seguro e evita `usuario?.nivel` espalhado por todo módulo.
+ * Hook para telas que só renderizam com sessão. O layout da plataforma já
+ * garante isso, então o non-null aqui é seguro e evita `usuario?.nivel`
+ * espalhado por todo módulo.
  */
 export function useUsuario(): Usuario {
   const { usuario } = useSessao();
@@ -54,24 +56,47 @@ export function SessaoProvider({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
 
-  // Lê a sessão uma vez, já no cliente.
-  useEffect(() => {
-    setUsuario(sessaoAtual());
-    setCarregando(false);
+  const recarregar = useCallback(async () => {
+    setUsuario(await perfilAtual());
   }, []);
 
-  // Guarda de rota: roda a cada navegação, depois que a sessão foi lida.
+  // Carrega o perfil e acompanha mudanças de sessão (login, logout, refresh
+  // de token em outra aba).
   useEffect(() => {
-    if (carregando) return;
+    let ativo = true;
 
-    if (!usuario) {
-      router.replace('/');
-      return;
-    }
+    perfilAtual().then((perfil) => {
+      if (!ativo) return;
+      setUsuario(perfil);
+      setCarregando(false);
+    });
+
+    const {
+      data: { subscription },
+    } = supabase().auth.onAuthStateChange((evento) => {
+      if (!ativo) return;
+
+      if (evento === 'SIGNED_OUT') {
+        setUsuario(null);
+        return;
+      }
+      if (evento === 'SIGNED_IN' || evento === 'TOKEN_REFRESHED') {
+        perfilAtual().then((perfil) => ativo && setUsuario(perfil));
+      }
+    });
+
+    return () => {
+      ativo = false;
+      subscription.unsubscribe();
+    };
+  }, []);
+
+  // Guarda de módulo.
+  useEffect(() => {
+    if (carregando || !usuario) return;
 
     const modulo = moduloDaRota(pathname);
     if (modulo && !podeVer(usuario.nivel, modulo)) {
-      // O aviso é lido e exibido pelo dashboard, depois limpo.
       sessionStorage.setItem(
         'jlt.aviso',
         `Seu nível de acesso (${usuario.nivel}) não permite abrir o módulo solicitado.`,
@@ -80,11 +105,16 @@ export function SessaoProvider({ children }: { children: React.ReactNode }) {
     }
   }, [carregando, usuario, pathname, router]);
 
-  const sair = useCallback(() => {
-    encerrarSessao();
+  const sair = useCallback(async () => {
+    await encerrarSessao();
     setUsuario(null);
     router.replace('/');
+    router.refresh();
   }, [router]);
 
-  return <Contexto.Provider value={{ usuario, carregando, sair }}>{children}</Contexto.Provider>;
+  return (
+    <Contexto.Provider value={{ usuario, carregando, sair, recarregar }}>
+      {children}
+    </Contexto.Provider>
+  );
 }

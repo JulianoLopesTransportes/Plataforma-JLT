@@ -10,7 +10,7 @@ documentos e financeiro.
 
 ## Como rodar
 
-Requer Node.js 18.18 ou superior.
+Requer Node.js 20 ou superior.
 
 ```bash
 npm install
@@ -142,7 +142,7 @@ Os arquivos originais estão preservados em `referencia/`. Nada foi descartado.
 | Módulo | Origem | O que foi preservado |
 |---|---|---|
 | Clientes | `01-cadastro-clientes_5.html` | Máscaras CPF/CNPJ/telefone, classificação de porte por volume (6 faixas), funil de status, histórico |
-| Documentos | `02-documentos_10.html` | Os 6 geradores, o texto das cláusulas contratuais, o catálogo de 153 itens em 6 ambientes |
+| Documentos | `02-documentos_10.html` | Os 6 geradores com o texto jurídico integral — 13 cláusulas no contrato de mudança, 13 + Anexo I no guarda-móveis — e o catálogo de 153 itens em 6 ambientes |
 | Agenda | `03-agenda_8.html` | Calendário mensal, 6 tipos de compromisso, vínculos com cliente/veículo/rota |
 | Frota | `04-veiculos-motoristas_3.html` | Cadastro duplo em abas, vínculo motorista↔veículo, alerta de vencimento de CNH |
 | Gastos e Ganhos | `05-gastos-ganhos_5.html` | Lançamentos com categoria livre, vínculos, gráficos de composição |
@@ -219,7 +219,7 @@ A Fase B troca os mocks pelo Supabase. A ordem sugerida:
 
 ## Stack
 
-- **Next.js 15** (App Router) + **React 19** + **TypeScript**
+- **Next.js 16** (App Router) + **React 19** + **TypeScript**
 - **CSS Modules** sobre design tokens — escolhido em vez de Tailwind para que o
   guia visual da empresa entrasse intacto e a regra "nenhuma cor fora de
   tokens.css" fosse verificável

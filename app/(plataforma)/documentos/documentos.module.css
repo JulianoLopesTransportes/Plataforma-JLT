@@ -179,84 +179,110 @@
   border-radius: var(--radius-md);
   box-shadow: var(--shadow-card);
   padding: var(--space-5);
-  font-size: 13.5px;
+  font-size: 13px;
   line-height: 1.65;
   color: var(--color-text);
 }
 
+/* --- Cabeçalho --- */
 .cabecalhoDocumento {
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
   gap: var(--space-3);
-  padding-bottom: var(--space-2);
-  border-bottom: 2px solid var(--color-primary);
-  margin-bottom: var(--space-4);
-  font-size: 12px;
+  font-size: 11.5px;
 }
 
-.cabecalhoDocumento strong {
-  display: block;
-  font-family: var(--font-display);
-  font-size: 17px;
-  letter-spacing: 0.03em;
-  text-transform: uppercase;
-  color: var(--color-primary);
+.marcaDocumento {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
 }
 
-.cabecalhoDocumento span {
+.logoDocumento {
+  width: 160px;
+  height: auto;
   display: block;
+}
+
+.marcaDocumento small {
   color: var(--color-gray-600);
+  font-size: 11px;
 }
 
 .contatoCabecalho {
   text-align: right;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  color: var(--color-gray-600);
+  padding-top: 4px;
+}
+
+.reguaDocumento {
+  border: none;
+  border-top: 2px solid var(--color-primary);
+  margin: var(--space-2) 0 var(--space-3);
+}
+
+.caixaTitulo {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  margin-bottom: var(--space-4);
+  flex-wrap: wrap;
 }
 
 .tituloDocumento {
   font-family: var(--font-display);
-  font-size: 22px;
+  font-size: 24px;
   text-transform: uppercase;
   letter-spacing: 0.04em;
-  text-align: center;
-  margin-bottom: var(--space-4);
+  margin: 0;
 }
 
-.secao {
-  margin-bottom: var(--space-3);
+.selo {
+  background: var(--color-gold);
+  color: var(--color-black);
+  border-radius: 20px;
+  padding: 4px 14px;
+  font-size: 11.5px;
+  font-weight: 700;
+  white-space: nowrap;
 }
 
+/* --- Corpo --- */
 .secaoTitulo {
   font-family: var(--font-display);
   font-size: 14px;
   text-transform: uppercase;
   letter-spacing: 0.04em;
   color: var(--color-primary);
-  margin-bottom: var(--space-1);
+  margin: var(--space-3) 0 var(--space-1);
   padding-bottom: 3px;
   border-bottom: 1px solid var(--color-border);
 }
 
-.secao p {
-  margin: 0 0 6px;
+.paragrafo {
+  margin: 0 0 7px;
   text-align: justify;
 }
 
-.listaServicos {
-  list-style: none;
-  margin: 0;
-  padding: 0;
+.lista {
+  margin: 0 0 var(--space-2);
+  padding-left: var(--space-4);
 }
 
-.listaServicos li {
-  padding: 2px 0;
+.lista li {
+  padding: 1px 0;
 }
 
-.valorDestaque {
-  font-family: var(--font-display);
-  font-size: 19px;
-  letter-spacing: 0.02em;
-  color: var(--color-primary);
+.nota {
+  font-size: 11px;
+  color: var(--color-gray-600);
+  text-align: center;
+  margin: 0 0 var(--space-2);
 }
 
 .aviso {
@@ -264,13 +290,19 @@
   font-style: italic;
 }
 
+.quebraPagina {
+  height: var(--space-4);
+}
+
+/* --- Inventário no documento --- */
 .blocoAmbiente {
   margin-bottom: var(--space-2);
+  break-inside: avoid;
 }
 
 .nomeAmbiente {
   font-family: var(--font-body);
-  font-size: 13px;
+  font-size: 12.5px;
   font-weight: 700;
   text-transform: none;
   letter-spacing: 0;
@@ -288,7 +320,12 @@
 .tabelaDocumento td {
   padding: 3px 6px;
   border-bottom: 1px dotted var(--color-border);
-  font-size: 12.5px;
+  font-size: 12px;
+  background: transparent;
+}
+
+.tabelaDocumento tr:hover td {
+  background: transparent;
 }
 
 .quantidadeCelula {
@@ -299,54 +336,38 @@
 }
 
 .totalInventario {
-  margin-top: var(--space-2);
+  margin: var(--space-2) 0;
   padding-top: var(--space-1);
   border-top: 2px solid var(--color-primary);
 }
 
-.campoRessalva {
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-sm);
-  min-height: 70px;
-  padding: var(--space-2);
-  margin-top: var(--space-2);
-  color: var(--color-gray-600);
-  font-size: 12px;
-}
-
 /* --- Assinaturas --- */
 .assinaturas {
-  margin-top: var(--space-5);
-}
-
-.localData {
-  margin-bottom: var(--space-5);
-}
-
-.linhasAssinatura {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: var(--space-5);
   text-align: center;
+  margin-top: var(--space-6);
+  break-inside: avoid;
 }
 
-.linha {
+.linhaAssinatura {
   border-top: 1px solid var(--color-text);
   margin-bottom: 5px;
 }
 
-.linhasAssinatura span {
+.assinaturas span {
   display: block;
-  font-size: 13px;
-  font-weight: 600;
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
 }
 
-.linhasAssinatura small {
+.assinaturas small {
   display: block;
-  font-size: 10.5px;
+  font-size: 11px;
   color: var(--color-gray-600);
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
 }
 
 .rodapeDocumento {
@@ -354,7 +375,7 @@
   padding-top: var(--space-2);
   border-top: 1px solid var(--color-border);
   text-align: center;
-  font-size: 11px;
+  font-size: 10.5px;
   color: var(--color-gray-600);
 }
 
@@ -382,13 +403,21 @@
     box-shadow: none;
     border-radius: 0;
     padding: 0;
+    font-size: 11pt;
   }
 
-  .secao {
+  .secaoTitulo,
+  .paragrafo {
     break-inside: avoid;
   }
 
-  .assinaturas {
-    break-inside: avoid;
+  .secaoTitulo {
+    break-after: avoid;
+  }
+
+  /* O Anexo I do guarda-móveis começa em página nova. */
+  .quebraPagina {
+    break-before: page;
+    height: 0;
   }
 }

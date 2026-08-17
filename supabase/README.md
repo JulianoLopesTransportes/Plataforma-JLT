@@ -14,6 +14,8 @@ O schema está **aplicado no projeto remoto**. As migrations abaixo já rodaram:
 | 20260817200409 | `04_views_e_funcoes_de_recorte` | `orcamentos_visao`, `calcular_preco()` e `relatorio_operacoes()` |
 | 20260817200435 | `05_seed_parametros_precificacao` | Faixas de volume, adicionais e parâmetros — **valores placeholder** |
 | 20260817200510 | `06_revoga_execucao_anonima` | Tira as funções de permissão do alcance do papel `anon` |
+| 07 | `07_provisionamento_de_perfis` | Gatilho em `auth.users` que cria o perfil ao aceitar o convite, e a tabela `niveis_pre_atribuidos` |
+| 08 | `08_remove_funcao_orfa` | Remove função criada sem gatilho na 07 |
 
 ## Baixar os arquivos de migration para cá
 
@@ -60,9 +62,22 @@ coluna foram resolvidos assim:
 precisam ler dado que o usuário não alcança diretamente, e cada uma checa a
 permissão internamente antes de devolver qualquer coisa.
 
+## Como convidar um usuário
+
+1. Acrescente o e-mail em `niveis_pre_atribuidos` com o nível desejado — **antes** do convite
+2. No painel do Supabase: **Authentication → Users → Invite user**
+3. A pessoa define a própria senha pelo link do e-mail
+4. Ao aceitar, o gatilho cria a linha em `perfis` já com o nível certo
+
+Sem correspondência em `niveis_pre_atribuidos`, o usuário nasce como
+`comercial` — o menor escopo. Errar para menos é seguro; errar para mais
+entrega a plataforma a quem não devia.
+
+`admin@julianoltransportes.com.br` já está pré-atribuído como `admin`.
+
 ## O que ainda falta
 
-1. Criar os usuários reais no Supabase Auth e a linha correspondente em `perfis`
+1. Enviar o convite do primeiro admin pelo painel do Supabase
 2. Trocar `lib/auth.ts` (mock) por Supabase Auth + `middleware.ts` no servidor
 3. Trocar `lerMock()` por consultas reais em `lib/api/index.ts`
 4. Implementar a escrita nos módulos (hoje as telas só alteram estado local)

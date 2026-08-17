@@ -91,9 +91,17 @@ export function SessaoProvider({ children }: { children: React.ReactNode }) {
     };
   }, []);
 
-  // Guarda de módulo.
+  // Guarda de sessão e de módulo.
   useEffect(() => {
-    if (carregando || !usuario) return;
+    if (carregando) return;
+
+    // Normalmente o middleware já barrou antes de chegar aqui. Este ramo
+    // cobre o caso em que ele está inerte por falta de configuração do
+    // Supabase — sem isto, a tela ficaria presa em "Carregando…".
+    if (!usuario) {
+      router.replace('/');
+      return;
+    }
 
     const modulo = moduloDaRota(pathname);
     if (modulo && !podeVer(usuario.nivel, modulo)) {

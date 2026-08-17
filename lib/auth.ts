@@ -13,7 +13,7 @@
  * Ver a migration 09 e supabase/README.md.
  */
 
-import { supabase } from './supabase/cliente';
+import { supabase, supabaseConfigurado } from './supabase/cliente';
 import type { Nivel } from './permissoes';
 
 export type Usuario = {
@@ -103,29 +103,39 @@ export async function sair(): Promise<void> {
  * Retorna null sem sessão, ou quando o perfil foi desativado pelo admin.
  */
 export async function perfilAtual(): Promise<Usuario | null> {
-  const cliente = supabase();
+  // Ambiente sem Supabase configurado: sem sessão, e sem estourar. Quem
+  // chama trata isso como "não autenticado" e manda para a tela de entrada,
+  // que por sua vez explica o que falta configurar.
+  if (!supabaseConfigurado()) return null;
 
-  const {
-    data: { user },
-  } = await cliente.auth.getUser();
+  try {
+    const cliente = supabase();
 
-  if (!user) return null;
+    const {
+      data: { user },
+    } = await cliente.auth.getUser();
 
-  const { data } = await cliente
-    .from('perfis')
-    .select('id, nome, email, cargo, nivel, ativo')
-    .eq('id', user.id)
-    .single();
+    if (!user) return null;
 
-  if (!data || !data.ativo) return null;
+    const { data } = await cliente
+      .from('perfis')
+      .select('id, nome, email, cargo, nivel, ativo')
+      .eq('id', user.id)
+      .single();
 
-  return {
-    id: data.id,
-    nome: data.nome,
-    email: data.email,
-    nivel: data.nivel as Nivel,
-    cargo: data.cargo,
-  };
+    if (!data || !data.ativo) return null;
+
+    return {
+      id: data.id,
+      nome: data.nome,
+      email: data.email,
+      nivel: data.nivel as Nivel,
+      cargo: data.cargo,
+    };
+  } catch {
+    // Rede fora, projeto pausado, chave inválida: tratamos como sem sessão.
+    return null;
+  }
 }
 
 /** Iniciais do nome, para o avatar do header. */

@@ -1,0 +1,357 @@
+/* ==========================================================================
+   Kanban
+   ========================================================================== */
+.kanban {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: var(--space-2);
+  align-items: start;
+}
+
+.colunaKanban {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: var(--space-2);
+  min-width: 0;
+}
+
+.cabecalhoColuna {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  font-family: var(--font-display);
+  font-size: 13.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: var(--space-1) var(--space-1) var(--space-2);
+  border-bottom: 2px solid var(--color-primary);
+  margin-bottom: var(--space-2);
+}
+
+.contadorColuna {
+  background: var(--color-bg);
+  border-radius: 20px;
+  padding: 1px 9px;
+  font-family: var(--font-body);
+  font-size: 12px;
+  color: var(--color-gray-600);
+}
+
+.cartoes {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.colunaVazia {
+  color: var(--color-gray-600);
+  font-size: 13px;
+  text-align: center;
+  padding: var(--space-3) 0;
+  margin: 0;
+}
+
+.cartao {
+  width: 100%;
+  text-align: left;
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: var(--space-2);
+  cursor: pointer;
+  font-family: var(--font-body);
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.cartao:hover {
+  border-color: var(--color-primary);
+  box-shadow: var(--shadow-card);
+}
+
+.cartaoTitulo {
+  font-size: 14px;
+  line-height: 1.3;
+}
+
+.cartaoMeta {
+  display: flex;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--color-gray-600);
+  flex-wrap: wrap;
+}
+
+/* --- Barra de ocupação --- */
+.barraOcupacao {
+  position: relative;
+  background: var(--color-border);
+  border-radius: 20px;
+  height: 18px;
+  overflow: hidden;
+  margin-top: 2px;
+}
+
+.preenchimento {
+  height: 100%;
+  background: var(--color-success);
+  transition: width var(--transition-base);
+}
+
+.preenchimentoAlerta {
+  background: var(--color-warning);
+}
+
+.preenchimentoEstourado {
+  background: var(--color-danger);
+}
+
+.rotuloOcupacao {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10.5px;
+  font-weight: 600;
+  color: var(--color-text);
+}
+
+.semVeiculo {
+  font-size: 12px;
+  color: var(--color-warning);
+  font-weight: 600;
+}
+
+.marcaAlerta {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--color-danger);
+}
+
+/* ==========================================================================
+   Detalhe
+   ========================================================================== */
+.resumoRota {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+  gap: var(--space-3);
+  margin: 0 0 var(--space-4);
+}
+
+.resumoRota dt {
+  font-size: 11.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--color-gray-600);
+  font-weight: 600;
+  margin-bottom: 3px;
+}
+
+.resumoRota dd {
+  margin: 0;
+  font-size: 14.5px;
+}
+
+.subtitulo {
+  font-family: var(--font-display);
+  font-size: 15px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin: var(--space-4) 0 var(--space-2);
+  padding-top: var(--space-2);
+  border-top: 1px solid var(--color-border);
+}
+
+.textoEstourado {
+  color: var(--color-danger);
+  font-weight: 600;
+}
+
+.textoAlerta {
+  color: var(--color-warning);
+  font-weight: 600;
+}
+
+.textoNormal {
+  color: var(--color-success);
+}
+
+/* --- Alertas --- */
+.listaAlertas {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.alerta {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-2);
+  padding: var(--space-2);
+  border-radius: var(--radius-sm);
+  font-size: 13.5px;
+  border-left: 3px solid;
+}
+
+.alerta svg {
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+.alerta_danger {
+  background: var(--color-danger-bg);
+  color: var(--color-danger);
+  border-left-color: var(--color-danger);
+}
+
+.alerta_warning {
+  background: var(--color-warning-bg);
+  color: var(--color-warning);
+  border-left-color: var(--color-warning);
+}
+
+.alerta_info {
+  background: var(--color-info-bg);
+  color: var(--color-info);
+  border-left-color: var(--color-info);
+}
+
+/* --- Linha do tempo --- */
+.timeline {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  position: relative;
+}
+
+.timeline::before {
+  content: '';
+  position: absolute;
+  left: 6px;
+  top: 10px;
+  bottom: 10px;
+  width: 2px;
+  background: var(--color-border);
+}
+
+.parada {
+  display: flex;
+  gap: var(--space-3);
+  padding-bottom: var(--space-3);
+  position: relative;
+}
+
+.parada:last-child {
+  padding-bottom: 0;
+}
+
+.marcador {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  border: 3px solid var(--color-surface);
+  flex-shrink: 0;
+  margin-top: 4px;
+  z-index: 1;
+}
+
+.marcador_coleta { background: var(--color-info); }
+.marcador_entrega { background: var(--color-success); }
+.marcador_mista { background: var(--color-gold); }
+
+.corpoParada {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+  flex: 1;
+  padding-bottom: var(--space-2);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.parada:last-child .corpoParada {
+  border-bottom: none;
+}
+
+.cabecalhoParada {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+}
+
+.cabecalhoParada strong {
+  font-size: 15px;
+}
+
+.movimento {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  flex-wrap: wrap;
+  font-size: 13px;
+  margin-top: 2px;
+}
+
+.rotuloEmbarque,
+.rotuloDesembarque {
+  font-size: 10.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-weight: 700;
+  padding: 2px 7px;
+  border-radius: 20px;
+}
+
+.rotuloEmbarque {
+  background: var(--color-info-bg);
+  color: var(--color-info);
+}
+
+.rotuloDesembarque {
+  background: var(--color-success-bg);
+  color: var(--color-success);
+}
+
+.carga {
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  padding: 2px 8px;
+  font-size: 12.5px;
+}
+
+.ocupacaoParada {
+  font-size: 12.5px;
+  color: var(--color-gray-600);
+  margin-top: 3px;
+}
+
+.tabelaEnvolucro {
+  overflow-x: auto;
+  border-radius: var(--radius-md);
+}
+
+@media (max-width: 1200px) {
+  .kanban {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 640px) {
+  .kanban {
+    grid-template-columns: 1fr;
+  }
+}

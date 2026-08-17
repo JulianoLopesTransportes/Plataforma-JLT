@@ -1,0 +1,394 @@
+.grade {
+  display: grid;
+  grid-template-columns: 380px 1fr;
+  gap: var(--space-3);
+  align-items: start;
+}
+
+.painel {
+  position: sticky;
+  top: calc(var(--header-height) + var(--space-3));
+  max-height: calc(100vh - var(--header-height) - var(--space-5));
+  overflow-y: auto;
+}
+
+/* --- Seletor de tipo --- */
+.tiposDocumento {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-1);
+  margin-bottom: var(--space-2);
+}
+
+.tipoBotao {
+  background: var(--color-bg);
+  border: 1.5px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  padding: 9px 10px;
+  cursor: pointer;
+  font-family: var(--font-body);
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--color-text);
+  text-align: center;
+  transition: border-color var(--transition-fast), background var(--transition-fast);
+}
+
+.tipoBotao:hover {
+  border-color: var(--color-primary);
+}
+
+.tipoAtivo {
+  background: var(--color-primary);
+  border-color: var(--color-primary);
+  color: var(--color-white);
+}
+
+.subtitulo {
+  font-family: var(--font-display);
+  font-size: 13.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--color-gray-600);
+  margin: var(--space-4) 0 var(--space-2);
+  padding-top: var(--space-2);
+  border-top: 1px solid var(--color-border);
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.contador {
+  background: var(--color-primary);
+  color: var(--color-white);
+  border-radius: 20px;
+  padding: 1px 9px;
+  font-family: var(--font-body);
+  font-size: 11.5px;
+}
+
+.linhaServico {
+  padding: 4px 0;
+  cursor: pointer;
+}
+
+/* --- Inventário --- */
+.abasAmbiente {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-bottom: var(--space-2);
+}
+
+.abaAmbiente {
+  background: transparent;
+  border: 1px solid var(--color-border);
+  border-radius: 20px;
+  padding: 4px 11px;
+  cursor: pointer;
+  font-family: var(--font-body);
+  font-size: 11.5px;
+  color: var(--color-gray-600);
+}
+
+.abaAmbiente:hover {
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+}
+
+.abaAmbienteAtiva {
+  background: var(--color-primary);
+  border-color: var(--color-primary);
+  color: var(--color-white);
+}
+
+.listaItens {
+  max-height: 320px;
+  overflow-y: auto;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+}
+
+.linhaItem {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  padding: 5px var(--space-2);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.linhaItem:last-child {
+  border-bottom: none;
+}
+
+.nomeItem {
+  font-size: 13px;
+  min-width: 0;
+}
+
+.controleQuantidade {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.controleQuantidade button {
+  width: 24px;
+  height: 24px;
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  font-size: 15px;
+  line-height: 1;
+  color: var(--color-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.controleQuantidade button:hover:not(:disabled) {
+  border-color: var(--color-primary);
+}
+
+.controleQuantidade button:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.controleQuantidade span {
+  min-width: 20px;
+  text-align: center;
+  font-size: 13px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ==========================================================================
+   A FOLHA — o documento em si
+   ========================================================================== */
+.previa {
+  min-width: 0;
+}
+
+.folha {
+  background: var(--color-white);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-card);
+  padding: var(--space-5);
+  font-size: 13.5px;
+  line-height: 1.65;
+  color: var(--color-text);
+}
+
+.cabecalhoDocumento {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: var(--space-3);
+  padding-bottom: var(--space-2);
+  border-bottom: 2px solid var(--color-primary);
+  margin-bottom: var(--space-4);
+  font-size: 12px;
+}
+
+.cabecalhoDocumento strong {
+  display: block;
+  font-family: var(--font-display);
+  font-size: 17px;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: var(--color-primary);
+}
+
+.cabecalhoDocumento span {
+  display: block;
+  color: var(--color-gray-600);
+}
+
+.contatoCabecalho {
+  text-align: right;
+}
+
+.tituloDocumento {
+  font-family: var(--font-display);
+  font-size: 22px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  text-align: center;
+  margin-bottom: var(--space-4);
+}
+
+.secao {
+  margin-bottom: var(--space-3);
+}
+
+.secaoTitulo {
+  font-family: var(--font-display);
+  font-size: 14px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--color-primary);
+  margin-bottom: var(--space-1);
+  padding-bottom: 3px;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.secao p {
+  margin: 0 0 6px;
+  text-align: justify;
+}
+
+.listaServicos {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.listaServicos li {
+  padding: 2px 0;
+}
+
+.valorDestaque {
+  font-family: var(--font-display);
+  font-size: 19px;
+  letter-spacing: 0.02em;
+  color: var(--color-primary);
+}
+
+.aviso {
+  color: var(--color-gray-600);
+  font-style: italic;
+}
+
+.blocoAmbiente {
+  margin-bottom: var(--space-2);
+}
+
+.nomeAmbiente {
+  font-family: var(--font-body);
+  font-size: 13px;
+  font-weight: 700;
+  text-transform: none;
+  letter-spacing: 0;
+  margin-bottom: 3px;
+}
+
+.tabelaDocumento {
+  width: 100%;
+  border-collapse: collapse;
+  box-shadow: none;
+  border-radius: 0;
+  background: transparent;
+}
+
+.tabelaDocumento td {
+  padding: 3px 6px;
+  border-bottom: 1px dotted var(--color-border);
+  font-size: 12.5px;
+}
+
+.quantidadeCelula {
+  text-align: right;
+  width: 60px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.totalInventario {
+  margin-top: var(--space-2);
+  padding-top: var(--space-1);
+  border-top: 2px solid var(--color-primary);
+}
+
+.campoRessalva {
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  min-height: 70px;
+  padding: var(--space-2);
+  margin-top: var(--space-2);
+  color: var(--color-gray-600);
+  font-size: 12px;
+}
+
+/* --- Assinaturas --- */
+.assinaturas {
+  margin-top: var(--space-5);
+}
+
+.localData {
+  margin-bottom: var(--space-5);
+}
+
+.linhasAssinatura {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-5);
+  text-align: center;
+}
+
+.linha {
+  border-top: 1px solid var(--color-text);
+  margin-bottom: 5px;
+}
+
+.linhasAssinatura span {
+  display: block;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.linhasAssinatura small {
+  display: block;
+  font-size: 10.5px;
+  color: var(--color-gray-600);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.rodapeDocumento {
+  margin-top: var(--space-5);
+  padding-top: var(--space-2);
+  border-top: 1px solid var(--color-border);
+  text-align: center;
+  font-size: 11px;
+  color: var(--color-gray-600);
+}
+
+@media (max-width: 1100px) {
+  .grade {
+    grid-template-columns: 1fr;
+  }
+
+  .painel {
+    position: static;
+    max-height: none;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   Impressão: só a folha, sem sombra nem borda, ocupando a página inteira.
+   -------------------------------------------------------------------------- */
+@media print {
+  .grade {
+    display: block;
+  }
+
+  .folha {
+    border: none;
+    box-shadow: none;
+    border-radius: 0;
+    padding: 0;
+  }
+
+  .secao {
+    break-inside: avoid;
+  }
+
+  .assinaturas {
+    break-inside: avoid;
+  }
+}

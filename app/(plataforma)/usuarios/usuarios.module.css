@@ -1,0 +1,118 @@
+.avisoFase {
+  background: var(--color-warning-bg);
+  color: var(--color-warning);
+  border-left: 3px solid var(--color-warning);
+  border-radius: var(--radius-sm);
+  padding: var(--space-2) var(--space-3);
+  font-size: 13px;
+  margin-bottom: var(--space-3);
+  line-height: 1.6;
+}
+
+.avisoFase code,
+.nota code {
+  font-family: ui-monospace, 'Cascadia Mono', 'Consolas', monospace;
+  font-size: 12px;
+  background: var(--color-bg);
+  padding: 1px 5px;
+  border-radius: 3px;
+}
+
+.gradeUsuarios {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: var(--space-3);
+}
+
+.cartaoUsuario {
+  display: flex;
+  gap: var(--space-3);
+  align-items: flex-start;
+}
+
+.avatarGrande {
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  background: linear-gradient(140deg, var(--color-primary-dark), var(--color-primary));
+  color: var(--color-white);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-display);
+  font-size: 19px;
+  letter-spacing: 0.04em;
+  flex-shrink: 0;
+}
+
+.dadosUsuario {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.dadosUsuario strong {
+  font-size: 15px;
+}
+
+.email {
+  font-size: 12.5px;
+  color: var(--color-gray-600);
+  word-break: break-all;
+}
+
+.marcadores {
+  display: flex;
+  gap: var(--space-1);
+  flex-wrap: wrap;
+  margin-top: var(--space-1);
+}
+
+/* --- Matriz --- */
+.legendaAcesso {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  margin-bottom: var(--space-2);
+  font-size: 12.5px;
+  color: var(--color-gray-600);
+}
+
+.legendaAcesso span {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.pastilha {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  display: inline-block;
+  flex-shrink: 0;
+}
+
+.acessoCrud {
+  background: var(--color-success);
+}
+
+.acessoR {
+  background: var(--color-warning);
+}
+
+.acessoNone {
+  background: var(--color-border);
+}
+
+.tabelaEnvolucro {
+  overflow-x: auto;
+  border-radius: var(--radius-md);
+}
+
+.nota {
+  margin-top: var(--space-3);
+  font-size: 12.5px;
+  line-height: 1.6;
+  color: var(--color-gray-600);
+}

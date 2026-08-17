@@ -1,0 +1,615 @@
+'use client';
+
+/**
+ * CLIENTES — migrado de referencia/01-cadastro-clientes_5.html
+ *
+ * Lógica preservada: máscaras de CPF/CNPJ/telefone, classificação de porte
+ * pelo volume, funil de status Novo → Em andamento → Concluído, anexos e
+ * histórico de alterações.
+ *
+ * Nesta fase as alterações vivem só no estado desta tela — não há
+ * persistência. Quando o banco entrar, cada handler que hoje faz
+ * setClientes(...) passa a chamar api.clientes.criar/atualizar/excluir.
+ */
+
+import { useEffect, useState, useMemo } from 'react';
+import { api } from '@/lib/api';
+import { useUsuario } from '@/components/layout/SessaoProvider';
+import { podeEditar, podeFazer } from '@/lib/permissoes';
+import {
+  formatarData,
+  mascararDocumento,
+  mascararTelefone,
+  novoId,
+  hojeISO,
+} from '@/lib/utils/formato';
+import {
+  descreverVolume,
+  proximoStatus,
+  statusFinal,
+  tomDoStatus,
+} from '@/lib/negocio/clientes';
+import {
+  TituloPagina,
+  Tabela,
+  Badge,
+  Modal,
+  Abas,
+  BarraFiltros,
+  CampoFiltro,
+  AcoesFiltro,
+  GradeMetricas,
+  CardMetrica,
+  useToast,
+  type Coluna,
+} from '@/components/ui';
+import { STATUS_CLIENTE, ORIGENS_CLIENTE, type Cliente, type StatusCliente } from '@/lib/tipos';
+import estilos from './clientes.module.css';
+
+const CLIENTE_VAZIO: Omit<Cliente, 'id' | 'criadoEm' | 'anexos' | 'historico'> = {
+  tipo: 'PF',
+  nome: '',
+  documento: '',
+  telefone: '',
+  email: '',
+  status: 'Novo',
+  origem: 'WhatsApp',
+  origemDetalhe: '',
+  enderecoColeta: '',
+  enderecoEntrega: '',
+  volumeM3: null,
+  dataPrevista: '',
+  observacoes: '',
+};
+
+export default function PaginaClientes() {
+  const usuario = useUsuario();
+  const { mostrar } = useToast();
+
+  const [clientes, setClientes] = useState<Cliente[]>([]);
+  const [carregando, setCarregando] = useState(true);
+
+  const [busca, setBusca] = useState('');
+  const [filtroStatus, setFiltroStatus] = useState('');
+  const [filtroOrigem, setFiltroOrigem] = useState('');
+
+  const [detalhe, setDetalhe] = useState<Cliente | null>(null);
+  const [abaDetalhe, setAbaDetalhe] = useState('dados');
+  const [formAberto, setFormAberto] = useState(false);
+  const [formulario, setFormulario] = useState(CLIENTE_VAZIO);
+
+  const podeMexer = podeEditar(usuario.nivel, 'clientes');
+  const podeExcluir = podeFazer(usuario.nivel, 'excluir');
+
+  useEffect(() => {
+    api.clientes.listar().then((lista) => {
+      setClientes(lista);
+      setCarregando(false);
+    });
+  }, []);
+
+  /* --- Filtro em memória ------------------------------------------------ */
+  const filtrados = useMemo(() => {
+    const termo = busca.toLowerCase().trim();
+    return clientes.filter((c) => {
+      const casaTermo =
+        !termo ||
+        c.nome.toLowerCase().includes(termo) ||
+        c.documento.includes(termo) ||
+        c.email.toLowerCase().includes(termo) ||
+        c.telefone.includes(termo);
+      return (
+        casaTermo &&
+        (!filtroStatus || c.status === filtroStatus) &&
+        (!filtroOrigem || c.origem === filtroOrigem)
+      );
+    });
+  }, [clientes, busca, filtroStatus, filtroOrigem]);
+
+  /* --- Ações ------------------------------------------------------------ */
+
+  function registrarHistorico(cliente: Cliente, descricao: string): Cliente {
+    return {
+      ...cliente,
+      historico: [
+        ...cliente.historico,
+        {
+          id: novoId('hist'),
+          em: new Date().toISOString(),
+          autor: usuario.nome,
+          descricao,
+        },
+      ],
+    };
+  }
+
+  function avancarStatus(cliente: Cliente) {
+    const novo = proximoStatus(cliente.status);
+    const atualizado = registrarHistorico(
+      { ...cliente, status: novo },
+      `Status alterado de ${cliente.status} para ${novo}.`,
+    );
+
+    setClientes((lista) => lista.map((c) => (c.id === cliente.id ? atualizado : c)));
+    if (detalhe?.id === cliente.id) setDetalhe(atualizado);
+    mostrar(`${cliente.nome} agora está em "${novo}".`, 'sucesso');
+  }
+
+  function excluirCliente(cliente: Cliente) {
+    if (!confirm(`Excluir o cliente ${cliente.nome}? Esta ação não pode ser desfeita.`)) return;
+    setClientes((lista) => lista.filter((c) => c.id !== cliente.id));
+    setDetalhe(null);
+    mostrar(`${cliente.nome} foi excluído.`, 'sucesso');
+  }
+
+  function salvarNovo(evento: React.FormEvent) {
+    evento.preventDefault();
+
+    if (!formulario.nome.trim()) {
+      mostrar('Informe o nome do cliente.', 'erro');
+      return;
+    }
+
+    const cliente: Cliente = {
+      ...formulario,
+      id: novoId('cli'),
+      criadoEm: new Date().toISOString(),
+      anexos: [],
+      historico: [
+        {
+          id: novoId('hist'),
+          em: new Date().toISOString(),
+          autor: usuario.nome,
+          descricao: 'Cliente cadastrado.',
+        },
+      ],
+    };
+
+    setClientes((lista) => [cliente, ...lista]);
+    setFormAberto(false);
+    setFormulario(CLIENTE_VAZIO);
+    mostrar(`${cliente.nome} cadastrado com sucesso.`, 'sucesso');
+  }
+
+  /* --- Colunas ---------------------------------------------------------- */
+  const colunas: Coluna<Cliente>[] = [
+    {
+      chave: 'nome',
+      rotulo: 'Cliente',
+      ordenarPor: (c) => c.nome,
+      render: (c) => (
+        <div className={estilos.celulaCliente}>
+          <strong>{c.nome}</strong>
+          <span className="texto-secundario">
+            {c.tipo} · {c.documento}
+          </span>
+        </div>
+      ),
+    },
+    {
+      chave: 'contato',
+      rotulo: 'Contato',
+      render: (c) => (
+        <div className={estilos.celulaCliente}>
+          <span>{c.telefone}</span>
+          <span className="texto-secundario">{c.email || '—'}</span>
+        </div>
+      ),
+    },
+    {
+      chave: 'volumeM3',
+      rotulo: 'Volume',
+      ordenarPor: (c) => c.volumeM3 ?? 0,
+      render: (c) => descreverVolume(c.volumeM3),
+    },
+    {
+      chave: 'dataPrevista',
+      rotulo: 'Data prevista',
+      ordenarPor: (c) => c.dataPrevista || '9999',
+      render: (c) => (c.dataPrevista ? formatarData(c.dataPrevista) : 'A definir'),
+    },
+    {
+      chave: 'origem',
+      rotulo: 'Origem',
+      ordenarPor: (c) => c.origem,
+    },
+    {
+      chave: 'status',
+      rotulo: 'Status',
+      ordenarPor: (c) => c.status,
+      render: (c) => <Badge texto={c.status} tom={tomDoStatus(c.status)} />,
+    },
+  ];
+
+  /* --- Métricas --------------------------------------------------------- */
+  const porStatus = (s: StatusCliente) => clientes.filter((c) => c.status === s).length;
+
+  return (
+    <>
+      <TituloPagina
+        titulo="Clientes"
+        subtitulo="Cadastro, funil comercial e histórico de atendimento."
+        acoes={
+          <button
+            type="button"
+            className="btn btn-primary"
+            onClick={() => setFormAberto(true)}
+            disabled={!podeMexer}
+            title={podeMexer ? undefined : 'Seu nível não permite cadastrar clientes'}
+          >
+            Novo cliente
+          </button>
+        }
+      />
+
+      <GradeMetricas>
+        <CardMetrica rotulo="Total de clientes" valor={String(clientes.length)} icone="clientes" />
+        <CardMetrica rotulo="Novos" valor={String(porStatus('Novo'))} detalhe="Aguardando contato" />
+        <CardMetrica
+          rotulo="Em andamento"
+          valor={String(porStatus('Em andamento'))}
+          detalhe="Mudança contratada ou em negociação"
+        />
+        <CardMetrica
+          rotulo="Concluídos"
+          valor={String(porStatus('Concluído'))}
+          detalhe="Atendimento finalizado"
+          tom="positivo"
+        />
+      </GradeMetricas>
+
+      <BarraFiltros>
+        <CampoFiltro rotulo="Buscar">
+          <input
+            type="search"
+            value={busca}
+            onChange={(e) => setBusca(e.target.value)}
+            placeholder="Nome, documento, e-mail ou telefone"
+          />
+        </CampoFiltro>
+
+        <CampoFiltro rotulo="Status">
+          <select value={filtroStatus} onChange={(e) => setFiltroStatus(e.target.value)}>
+            <option value="">Todos</option>
+            {STATUS_CLIENTE.map((s) => (
+              <option key={s} value={s}>
+                {s}
+              </option>
+            ))}
+          </select>
+        </CampoFiltro>
+
+        <CampoFiltro rotulo="Origem">
+          <select value={filtroOrigem} onChange={(e) => setFiltroOrigem(e.target.value)}>
+            <option value="">Todas</option>
+            {ORIGENS_CLIENTE.map((o) => (
+              <option key={o} value={o}>
+                {o}
+              </option>
+            ))}
+          </select>
+        </CampoFiltro>
+
+        <AcoesFiltro>
+          <button
+            type="button"
+            className="btn btn-ghost"
+            onClick={() => {
+              setBusca('');
+              setFiltroStatus('');
+              setFiltroOrigem('');
+            }}
+          >
+            Limpar
+          </button>
+        </AcoesFiltro>
+      </BarraFiltros>
+
+      <Tabela
+        colunas={colunas}
+        registros={filtrados}
+        carregando={carregando}
+        aoClicarLinha={(c) => {
+          setDetalhe(c);
+          setAbaDetalhe('dados');
+        }}
+        mensagemVazio="Nenhum cliente corresponde aos filtros aplicados."
+        porPagina={8}
+      />
+
+      {/* ---------- Modal de detalhe ---------- */}
+      <Modal
+        titulo={detalhe?.nome ?? ''}
+        aberto={detalhe !== null}
+        aoFechar={() => setDetalhe(null)}
+        largo
+        rodape={
+          detalhe && (
+            <>
+              {podeExcluir && (
+                <button
+                  type="button"
+                  className="btn btn-danger"
+                  onClick={() => excluirCliente(detalhe)}
+                >
+                  Excluir
+                </button>
+              )}
+              {podeMexer && !statusFinal(detalhe.status) && (
+                <button
+                  type="button"
+                  className="btn btn-primary"
+                  onClick={() => avancarStatus(detalhe)}
+                >
+                  Avançar para {proximoStatus(detalhe.status)}
+                </button>
+              )}
+              <button type="button" className="btn btn-outline" onClick={() => setDetalhe(null)}>
+                Fechar
+              </button>
+            </>
+          )
+        }
+      >
+        {detalhe && (
+          <>
+            <Abas
+              abas={[
+                { chave: 'dados', rotulo: 'Dados' },
+                { chave: 'anexos', rotulo: `Anexos (${detalhe.anexos.length})` },
+                { chave: 'historico', rotulo: `Histórico (${detalhe.historico.length})` },
+              ]}
+              ativa={abaDetalhe}
+              aoTrocar={setAbaDetalhe}
+            />
+
+            {abaDetalhe === 'dados' && (
+              <dl className={estilos.listaDados}>
+                <Dado rotulo="Tipo">{detalhe.tipo === 'PF' ? 'Pessoa física' : 'Pessoa jurídica'}</Dado>
+                <Dado rotulo={detalhe.tipo === 'PF' ? 'CPF' : 'CNPJ'}>{detalhe.documento}</Dado>
+                <Dado rotulo="Telefone">{detalhe.telefone}</Dado>
+                <Dado rotulo="E-mail">{detalhe.email || '—'}</Dado>
+                <Dado rotulo="Status">
+                  <Badge texto={detalhe.status} tom={tomDoStatus(detalhe.status)} />
+                </Dado>
+                <Dado rotulo="Origem">
+                  {detalhe.origem}
+                  {detalhe.origemDetalhe ? ` — ${detalhe.origemDetalhe}` : ''}
+                </Dado>
+                <Dado rotulo="Volume estimado">{descreverVolume(detalhe.volumeM3)}</Dado>
+                <Dado rotulo="Data prevista">
+                  {detalhe.dataPrevista ? formatarData(detalhe.dataPrevista) : 'A definir'}
+                </Dado>
+                <Dado rotulo="Endereço de coleta" largo>
+                  {detalhe.enderecoColeta || '—'}
+                </Dado>
+                <Dado rotulo="Endereço de entrega" largo>
+                  {detalhe.enderecoEntrega || '—'}
+                </Dado>
+                <Dado rotulo="Observações" largo>
+                  {detalhe.observacoes || '—'}
+                </Dado>
+              </dl>
+            )}
+
+            {abaDetalhe === 'anexos' &&
+              (detalhe.anexos.length === 0 ? (
+                <div className="estado-vazio">
+                  <strong>Sem anexos</strong>
+                  Nenhum documento anexado a este cliente. O upload de arquivos entra junto com o
+                  armazenamento — hoje não há onde guardá-los.
+                </div>
+              ) : (
+                <ul className={estilos.listaAnexos}>
+                  {detalhe.anexos.map((a) => (
+                    <li key={a.id}>
+                      <strong>{a.nome}</strong>
+                      <span className="texto-secundario">{formatarData(a.enviadoEm.slice(0, 10))}</span>
+                    </li>
+                  ))}
+                </ul>
+              ))}
+
+            {abaDetalhe === 'historico' && (
+              <ol className={estilos.historico}>
+                {[...detalhe.historico].reverse().map((h) => (
+                  <li key={h.id}>
+                    <div className={estilos.historicoMarcador} />
+                    <div>
+                      <strong>{h.descricao}</strong>
+                      <span className="texto-secundario">
+                        {formatarData(h.em.slice(0, 10))} · {h.autor}
+                      </span>
+                    </div>
+                  </li>
+                ))}
+              </ol>
+            )}
+          </>
+        )}
+      </Modal>
+
+      {/* ---------- Modal de cadastro ---------- */}
+      <Modal
+        titulo="Novo cliente"
+        aberto={formAberto}
+        aoFechar={() => setFormAberto(false)}
+        largo
+        rodape={
+          <>
+            <button type="button" className="btn btn-ghost" onClick={() => setFormAberto(false)}>
+              Cancelar
+            </button>
+            <button type="submit" form="form-cliente" className="btn btn-primary">
+              Salvar cliente
+            </button>
+          </>
+        }
+      >
+        <form id="form-cliente" onSubmit={salvarNovo}>
+          <div className="form-row">
+            <div className="field">
+              <label htmlFor="tipo">Tipo de pessoa</label>
+              <select
+                id="tipo"
+                value={formulario.tipo}
+                onChange={(e) =>
+                  setFormulario({ ...formulario, tipo: e.target.value as 'PF' | 'PJ', documento: '' })
+                }
+              >
+                <option value="PF">Pessoa física</option>
+                <option value="PJ">Pessoa jurídica</option>
+              </select>
+            </div>
+
+            <div className="field">
+              <label htmlFor="nome">Nome / Razão social</label>
+              <input
+                id="nome"
+                value={formulario.nome}
+                onChange={(e) => setFormulario({ ...formulario, nome: e.target.value })}
+                required
+              />
+            </div>
+          </div>
+
+          <div className="form-row">
+            <div className="field">
+              <label htmlFor="documento">{formulario.tipo === 'PF' ? 'CPF' : 'CNPJ'}</label>
+              <input
+                id="documento"
+                value={formulario.documento}
+                onChange={(e) =>
+                  setFormulario({
+                    ...formulario,
+                    documento: mascararDocumento(e.target.value, formulario.tipo),
+                  })
+                }
+                inputMode="numeric"
+              />
+            </div>
+
+            <div className="field">
+              <label htmlFor="telefone">Telefone</label>
+              <input
+                id="telefone"
+                value={formulario.telefone}
+                onChange={(e) =>
+                  setFormulario({ ...formulario, telefone: mascararTelefone(e.target.value) })
+                }
+                inputMode="tel"
+              />
+            </div>
+          </div>
+
+          <div className="form-row">
+            <div className="field">
+              <label htmlFor="email">E-mail</label>
+              <input
+                id="email"
+                type="email"
+                value={formulario.email}
+                onChange={(e) => setFormulario({ ...formulario, email: e.target.value })}
+              />
+            </div>
+
+            <div className="field">
+              <label htmlFor="origem">Origem do contato</label>
+              <select
+                id="origem"
+                value={formulario.origem}
+                onChange={(e) =>
+                  setFormulario({ ...formulario, origem: e.target.value as Cliente['origem'] })
+                }
+              >
+                {ORIGENS_CLIENTE.map((o) => (
+                  <option key={o} value={o}>
+                    {o}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+
+          <div className="form-row">
+            <div className="field">
+              <label htmlFor="volume">Volume estimado (m³)</label>
+              <input
+                id="volume"
+                type="number"
+                min="0"
+                step="0.5"
+                value={formulario.volumeM3 ?? ''}
+                onChange={(e) =>
+                  setFormulario({
+                    ...formulario,
+                    volumeM3: e.target.value ? Number(e.target.value) : null,
+                  })
+                }
+              />
+              {formulario.volumeM3 !== null && (
+                <p className="field-hint">Porte: {descreverVolume(formulario.volumeM3)}</p>
+              )}
+            </div>
+
+            <div className="field">
+              <label htmlFor="dataPrevista">Data prevista</label>
+              <input
+                id="dataPrevista"
+                type="date"
+                min={hojeISO()}
+                value={formulario.dataPrevista}
+                onChange={(e) => setFormulario({ ...formulario, dataPrevista: e.target.value })}
+              />
+            </div>
+          </div>
+
+          <div className="field" style={{ marginBottom: 20 }}>
+            <label htmlFor="coleta">Endereço de coleta</label>
+            <input
+              id="coleta"
+              value={formulario.enderecoColeta}
+              onChange={(e) => setFormulario({ ...formulario, enderecoColeta: e.target.value })}
+            />
+          </div>
+
+          <div className="field" style={{ marginBottom: 20 }}>
+            <label htmlFor="entrega">Endereço de entrega</label>
+            <input
+              id="entrega"
+              value={formulario.enderecoEntrega}
+              onChange={(e) => setFormulario({ ...formulario, enderecoEntrega: e.target.value })}
+            />
+          </div>
+
+          <div className="field">
+            <label htmlFor="observacoes">Observações</label>
+            <textarea
+              id="observacoes"
+              value={formulario.observacoes}
+              onChange={(e) => setFormulario({ ...formulario, observacoes: e.target.value })}
+              placeholder="Andar, elevador, itens frágeis, restrições de acesso…"
+            />
+          </div>
+        </form>
+      </Modal>
+    </>
+  );
+}
+
+function Dado({
+  rotulo,
+  children,
+  largo = false,
+}: {
+  rotulo: string;
+  children: React.ReactNode;
+  largo?: boolean;
+}) {
+  return (
+    <div className={largo ? estilos.dadoLargo : undefined}>
+      <dt>{rotulo}</dt>
+      <dd>{children}</dd>
+    </div>
+  );
+}

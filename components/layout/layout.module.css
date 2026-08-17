@@ -348,3 +348,26 @@
     padding: 0 var(--space-3);
   }
 }
+
+/* --------------------------------------------------------------------------
+   Impressão — a moldura some, sobra só o conteúdo.
+   Necessário para o módulo Documentos: o que vai para o papel é o documento,
+   não a plataforma em volta dele.
+   -------------------------------------------------------------------------- */
+@media print {
+  .sidebar,
+  .header,
+  .backdrop {
+    display: none !important;
+  }
+
+  .app {
+    display: block;
+    min-height: 0;
+  }
+
+  .conteudo {
+    padding: 0;
+    max-width: none;
+  }
+}

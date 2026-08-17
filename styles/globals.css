@@ -1,0 +1,330 @@
+/* ==========================================================================
+   ESTILOS GLOBAIS — Juliano Lopes Transportes
+
+   Contém apenas: reset, tipografia base e as classes de componente do guia
+   visual que são usadas por toda a plataforma (botão, card, campo, tabela,
+   badge). Estilo específico de um módulo vive no CSS Module do módulo.
+
+   Todas as cores vêm de tokens.css. Nenhum hex aqui.
+   ========================================================================== */
+
+@import './tokens.css';
+
+/* --------------------------------------------------------------------------
+   Reset
+   -------------------------------------------------------------------------- */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  background: var(--color-bg);
+  color: var(--color-text);
+  font-family: var(--font-body);
+  font-size: 15px;
+  line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
+}
+
+h1,
+h2,
+h3,
+h4,
+.font-display {
+  font-family: var(--font-display);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  font-weight: 600;
+  margin: 0;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+button {
+  font-family: inherit;
+}
+
+/* --------------------------------------------------------------------------
+   Título de página + régua
+   -------------------------------------------------------------------------- */
+.page-title {
+  font-family: var(--font-display);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  font-size: 26px;
+  margin-bottom: var(--space-1);
+}
+
+.page-subtitle {
+  color: var(--color-gray-600);
+  font-size: 14.5px;
+  margin-bottom: var(--space-4);
+}
+
+hr.rule {
+  border: none;
+  border-top: 3px solid var(--color-primary);
+  margin: var(--space-2) 0 var(--space-4);
+  width: 60px;
+}
+
+/* --------------------------------------------------------------------------
+   Botões
+   -------------------------------------------------------------------------- */
+.btn {
+  font-family: var(--font-body);
+  font-weight: 600;
+  font-size: 14px;
+  padding: 11px 20px;
+  border-radius: var(--radius-sm);
+  border: 1.5px solid transparent;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  transition: filter var(--transition-fast), opacity var(--transition-fast);
+  white-space: nowrap;
+}
+
+.btn:hover:not(:disabled) {
+  filter: brightness(1.08);
+}
+
+/* Ação bloqueada por permissão: visivelmente inerte, mas ainda legível. */
+.btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  filter: none;
+}
+
+.btn-primary { background: var(--color-primary); color: var(--color-white); }
+.btn-gold { background: var(--color-gold); color: var(--color-black); }
+.btn-outline { background: transparent; border-color: var(--color-primary); color: var(--color-primary); }
+.btn-ghost { background: transparent; color: var(--color-gray-600); }
+.btn-danger { background: var(--color-danger); color: var(--color-white); }
+
+.btn-sm { padding: 7px 13px; font-size: 13px; }
+
+/* --------------------------------------------------------------------------
+   Card
+   -------------------------------------------------------------------------- */
+.card {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: var(--space-4);
+  box-shadow: var(--shadow-card);
+}
+
+.card + .card {
+  margin-top: var(--space-3);
+}
+
+.card-title {
+  font-family: var(--font-display);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  font-size: 17px;
+  margin-bottom: var(--space-3);
+}
+
+/* --------------------------------------------------------------------------
+   Formulário
+   -------------------------------------------------------------------------- */
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-3);
+  margin-bottom: var(--space-3);
+}
+
+.form-row-3 {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: var(--space-3);
+  margin-bottom: var(--space-3);
+}
+
+.field label {
+  display: block;
+  font-size: 13px;
+  font-weight: 600;
+  margin-bottom: 6px;
+  color: var(--color-text);
+}
+
+.field input,
+.field select,
+.field textarea {
+  width: 100%;
+  font-family: var(--font-body);
+  font-size: 14.5px;
+  padding: 11px 13px;
+  border: 1.5px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-white);
+  color: var(--color-text);
+}
+
+.field textarea {
+  min-height: 84px;
+  resize: vertical;
+}
+
+.field input:focus,
+.field select:focus,
+.field textarea:focus {
+  outline: none;
+  border-color: var(--color-primary);
+}
+
+.field input:disabled,
+.field select:disabled,
+.field textarea:disabled {
+  background: var(--color-bg);
+  color: var(--color-gray-600);
+  cursor: not-allowed;
+}
+
+.field-hint {
+  font-size: 12px;
+  color: var(--color-gray-600);
+  margin-top: 4px;
+}
+
+.field-check {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+}
+
+.field-check input {
+  width: auto;
+  accent-color: var(--color-primary);
+}
+
+/* --------------------------------------------------------------------------
+   Tabela
+   -------------------------------------------------------------------------- */
+table {
+  width: 100%;
+  border-collapse: collapse;
+  background: var(--color-surface);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  box-shadow: var(--shadow-card);
+}
+
+th {
+  text-align: left;
+  font-family: var(--font-display);
+  font-size: 12px;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  background: var(--color-primary-dark);
+  color: var(--color-white);
+  padding: 13px 16px;
+  white-space: nowrap;
+}
+
+td {
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--color-border);
+  font-size: 14.5px;
+}
+
+tr:last-child td {
+  border-bottom: none;
+}
+
+tbody tr:hover td {
+  background: var(--color-bg);
+}
+
+/* --------------------------------------------------------------------------
+   Badge de status
+   -------------------------------------------------------------------------- */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12.5px;
+  font-weight: 600;
+  padding: 5px 12px;
+  border-radius: 20px;
+  white-space: nowrap;
+}
+
+.badge-success { background: var(--color-success-bg); color: var(--color-success); }
+.badge-warning { background: var(--color-warning-bg); color: var(--color-warning); }
+.badge-danger { background: var(--color-danger-bg); color: var(--color-danger); }
+.badge-info { background: var(--color-info-bg); color: var(--color-info); }
+.badge-neutro { background: var(--color-bg); color: var(--color-gray-600); }
+
+/* --------------------------------------------------------------------------
+   Estado vazio
+   Usado quando não há dados. Nunca inventamos número: dizemos a verdade.
+   -------------------------------------------------------------------------- */
+.estado-vazio {
+  padding: var(--space-5) var(--space-3);
+  text-align: center;
+  color: var(--color-gray-600);
+  font-size: 14px;
+}
+
+.estado-vazio strong {
+  display: block;
+  font-family: var(--font-display);
+  font-size: 16px;
+  color: var(--color-text);
+  margin-bottom: var(--space-1);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+/* --------------------------------------------------------------------------
+   Utilitários mínimos
+   -------------------------------------------------------------------------- */
+.linha-acoes {
+  display: flex;
+  gap: var(--space-2);
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.entre {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+}
+
+.texto-secundario {
+  color: var(--color-gray-600);
+  font-size: 13px;
+}
+
+.numerico {
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+/* Impressão: some com a moldura, mantém só o documento. */
+@media print {
+  .sem-impressao {
+    display: none !important;
+  }
+}

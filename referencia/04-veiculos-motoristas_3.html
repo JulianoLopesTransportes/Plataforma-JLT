@@ -1,0 +1,483 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Juliano Lopes Transportes — Veículos e Motoristas</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Montserrat:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+
+/* ==========================================================================
+   1. DESIGN TOKENS — idênticos aos outros arquivos do sistema
+   ========================================================================== */
+:root{
+  --color-primary:        #820901;
+  --color-primary-dark:   #5a0601;
+  --color-primary-light:  #a30d03;
+  --color-black:          #000000;
+  --color-gold:           #b8862f;
+  --color-gold-light:     #d9b45f;
+  --color-white:          #ffffff;
+  --color-bg:             #faf8f6;
+  --color-surface:        #ffffff;
+  --color-border:         #e6dfd6;
+  --color-gray-600:       #6f665d;
+  --color-text:           #241d1a;
+  --font-display: 'Bebas Neue', sans-serif;
+  --font-body:    'Montserrat', sans-serif;
+  --space-1:6px; --space-2:12px; --space-3:20px; --space-4:28px; --space-5:40px; --space-6:56px;
+  --radius-sm:4px; --radius-md:8px; --radius-lg:14px;
+  --shadow-card: 0 2px 10px rgba(28,22,20,0.06);
+}
+* { box-sizing: border-box; }
+body{ margin:0; background: var(--color-bg); color: var(--color-text); font-family: var(--font-body); line-height:1.55; }
+h1,h2,h3,h4{ font-family: var(--font-display); text-transform: uppercase; letter-spacing: 0.03em; font-weight:600; margin:0; }
+
+/* ==========================================================================
+   2. LAYOUT BASE (sidebar + main)
+   ========================================================================== */
+.app{ display:flex; min-height:100vh; }
+.sidebar{ width:250px; flex-shrink:0; background: linear-gradient(180deg, var(--color-black) 0%, var(--color-primary-dark) 100%); color: var(--color-white); display:flex; flex-direction:column; padding: var(--space-4) 0; position: sticky; top:0; height:100vh; overflow-y:auto; }
+.sidebar-brand{ display:flex; align-items:center; padding: 0 var(--space-3) var(--space-4); border-bottom: 1px solid rgba(255,255,255,0.08); margin-bottom: var(--space-3); }
+.sidebar-brand .logo-plate{ background: var(--color-white); border-radius: var(--radius-md); padding: 8px 10px; width:100%; display:flex; align-items:center; justify-content:center; }
+.sidebar-brand .logo-plate img{ width:100%; height:auto; display:block; }
+.nav-group-label{ font-size:11px; color: rgba(255,255,255,0.45); padding: var(--space-2) var(--space-3) var(--space-1); letter-spacing:0.08em; text-transform:uppercase; }
+.nav-item{ display:flex; align-items:center; gap: var(--space-2); padding: var(--space-2) var(--space-3); color: rgba(255,255,255,0.82); text-decoration:none; font-size:14.5px; font-weight:500; border-left: 3px solid transparent; cursor:pointer; }
+.nav-item svg{ width:19px; height:19px; stroke: currentColor; flex-shrink:0; }
+.nav-item:hover{ background: rgba(255,255,255,0.06); color: var(--color-white); }
+.nav-item.active{ background: rgba(184,134,47,0.14); border-left-color: var(--color-gold); color: var(--color-gold-light); }
+.main{ flex:1; padding: var(--space-5); max-width: 1180px; }
+.page-title{ font-size:26px; margin-bottom: var(--space-1); }
+.page-subtitle{ color: var(--color-gray-600); font-size:14.5px; margin-bottom: var(--space-4); }
+hr.rule{ border:none; border-top:3px solid var(--color-primary); margin: var(--space-2) 0 var(--space-4); width:60px; }
+
+/* ==========================================================================
+   3. COMPONENTES COMPARTILHADOS
+   ========================================================================== */
+.btn{ font-family: var(--font-body); font-weight:600; font-size:14px; padding: 11px 20px; border-radius: var(--radius-sm); border:1.5px solid transparent; cursor:pointer; display:inline-flex; align-items:center; gap:8px; }
+.btn:hover{ filter:brightness(1.08); }
+.btn-primary{ background: var(--color-primary); color:var(--color-white); }
+.btn-gold{ background: var(--color-gold); color:var(--color-black); }
+.btn-outline{ background:transparent; border-color: var(--color-primary); color: var(--color-primary); }
+.btn-ghost{ background:transparent; color: var(--color-gray-600); }
+.btn-sm{ padding:7px 12px; font-size:12.5px; }
+.card{ background: var(--color-surface); border:1px solid var(--color-border); border-radius: var(--radius-lg); padding: var(--space-4); box-shadow: var(--shadow-card); }
+.field label{ display:block; font-size:13px; font-weight:600; margin-bottom:6px; }
+.field input, .field select, .field textarea{ width:100%; font-family: var(--font-body); font-size:14.5px; padding: 11px 13px; border:1.5px solid var(--color-border); border-radius: var(--radius-sm); background: var(--color-white); color: var(--color-text); }
+.field textarea{ resize:vertical; min-height:60px; }
+.field input:focus, .field select:focus, .field textarea:focus{ outline:none; border-color: var(--color-primary); }
+.form-grid{ display:grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: var(--space-3); margin-bottom: var(--space-3); }
+.form-grid.cols-3{ grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); }
+.section-label{ font-family:var(--font-display); font-size:13px; letter-spacing:0.05em; color:var(--color-primary); margin: var(--space-3) 0 var(--space-2); }
+.section-label:first-child{ margin-top:0; }
+
+.table-wrap{ overflow-x:auto; -webkit-overflow-scrolling:touch; }
+table{ width:100%; border-collapse: collapse; background: var(--color-surface); border-radius: var(--radius-md); overflow:hidden; box-shadow: var(--shadow-card); }
+th{ text-align:left; font-family:var(--font-display); font-size:12px; letter-spacing:0.05em; text-transform:uppercase; background: var(--color-primary-dark); color: var(--color-white); padding: 13px 16px; }
+td{ padding: 14px 16px; border-bottom:1px solid var(--color-border); font-size:14.5px; vertical-align:middle; }
+tr:last-child td{ border-bottom:none; }
+tr:hover td{ background: var(--color-bg); }
+.actions-cell{ display:flex; gap:6px; flex-wrap:wrap; }
+
+.empty-state{ text-align:center; padding: var(--space-5); color: var(--color-gray-600); }
+.empty-state svg{ width:40px; height:40px; stroke: var(--color-border); margin-bottom: var(--space-2); }
+
+.anexo-chip{ display:flex; align-items:center; gap:8px; padding:8px 12px; border:1px solid var(--color-border); border-radius: var(--radius-sm); margin-bottom:8px; font-size:13px; background: var(--color-bg); }
+.anexo-chip svg{ width:16px; height:16px; stroke: var(--color-primary); flex-shrink:0; }
+.anexo-chip .nome-arquivo{ flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.anexo-chip .tamanho{ font-size:11px; color:var(--color-gray-600); }
+.anexo-chip button{ background:none; border:none; color:var(--color-gray-600); cursor:pointer; font-size:14px; padding:0 4px; }
+.doc-count{ display:inline-flex; align-items:center; gap:5px; font-size:12.5px; color:var(--color-gray-600); }
+.doc-count svg{ width:14px; height:14px; stroke:currentColor; }
+
+/* ==========================================================================
+   4. ABAS VEÍCULOS / MOTORISTAS
+   ========================================================================== */
+.card-collapsible-header{ display:flex; justify-content:space-between; align-items:center; cursor:pointer; user-select:none; }
+.card-collapsible-header .chevron{ width:20px; height:20px; stroke: var(--color-primary); transition: transform .2s ease; }
+.card-collapsible-header.aberto .chevron{ transform: rotate(180deg); }
+.card-collapsible-body{ display:none; margin-top: var(--space-3); }
+.card-collapsible-body.aberto{ display:block; }
+
+.tab-toggle{ display:flex; gap:10px; margin-bottom: var(--space-4); }
+.tab-toggle button{ flex:1; padding:12px; border-radius: var(--radius-sm); border:1.5px solid var(--color-border); background:var(--color-white); font-family:var(--font-body); font-weight:600; font-size:14px; cursor:pointer; color:var(--color-gray-600); display:flex; align-items:center; justify-content:center; gap:8px; }
+.tab-toggle button svg{ width:18px; height:18px; stroke:currentColor; }
+.tab-toggle button.active{ border-color: var(--color-primary); background: var(--color-primary); color:var(--color-white); }
+
+/* ==========================================================================
+   5. MODAL — detalhes completos
+   ========================================================================== */
+.modal-overlay{ display:none; position:fixed; inset:0; background:rgba(28,22,20,0.55); align-items:center; justify-content:center; z-index:100; padding: var(--space-4); }
+.modal-overlay.show{ display:flex; }
+.modal-box{ background: var(--color-surface); border-radius: var(--radius-lg); padding: var(--space-4); width:100%; max-width:600px; max-height:85vh; overflow-y:auto; box-shadow: 0 10px 40px rgba(0,0,0,0.25); }
+
+</style>
+</head>
+<body>
+<div class="app">
+
+  <!-- ============ SIDEBAR ============ -->
+  <aside class="sidebar">
+    <div class="sidebar-brand"><div class="logo-plate"><img src="assets/logo-jlt.jpeg" alt="Juliano Lopes Transportes"></div></div>
+    <div class="nav-group-label">Operação</div>
+    <a class="nav-item"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8"><path d="M3 12l2-2 5 5L21 4l2 2" stroke-linecap="round" stroke-linejoin="round"/></svg>Dashboard</a>
+    <a class="nav-item"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8"><circle cx="12" cy="8" r="3.5"/><path d="M5 20c0-3.5 3-6 7-6s7 2.5 7 6" stroke-linecap="round"/></svg>Clientes</a>
+    <a class="nav-item"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8"><path d="M6 3h9l4 4v14H6z" stroke-linejoin="round"/><path d="M9 11h7M9 15h7" stroke-linecap="round"/></svg>Documentos</a>
+    <a class="nav-item"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8"><rect x="3.5" y="5" width="17" height="16" rx="2"/><path d="M8 3v4M16 3v4M3.5 10h17" stroke-linecap="round"/></svg>Agenda</a>
+    <a class="nav-item"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8"><path d="M4 18c3-.5 3.5-3 2-5s-.5-6 3-6 1.5 4.5 4 4.5S15 7 18 7" stroke-linecap="round"/><circle cx="4.5" cy="18.5" r="1.6"/><circle cx="18.5" cy="6.5" r="1.6"/></svg>Rotas</a>
+    <div class="nav-group-label">Frota</div>
+    <a class="nav-item active"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8"><path d="M3 16V8h11l4 4h3v4" stroke-linejoin="round"/><circle cx="7.5" cy="17" r="1.8"/><circle cx="17" cy="17" r="1.8"/></svg>Veículos</a>
+    <a class="nav-item active"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8"><circle cx="12" cy="8" r="3.5"/><path d="M4.5 20c1-3.8 4-6 7.5-6s6.5 2.2 7.5 6" stroke-linecap="round"/></svg>Motoristas</a>
+    <div class="nav-group-label">Financeiro</div>
+    <a class="nav-item"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8"><path d="M3 17l5-5 4 3 8-8" stroke-linecap="round" stroke-linejoin="round"/></svg>Gastos &amp; Ganhos</a>
+    <a class="nav-item"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8"><rect x="4" y="4" width="16" height="16" rx="2"/><path d="M8 9h8M8 13h5M8 17h3" stroke-linecap="round"/></svg>Orçamentos</a>
+  </aside>
+
+  <!-- ============ CONTEÚDO ============ -->
+  <main class="main">
+    <div class="page-title">Veículos e Motoristas</div>
+    <div class="page-subtitle">Cadastre a frota e os motoristas, com o vínculo de veículo fixo de cada um.</div>
+    <hr class="rule">
+
+    <div class="tab-toggle">
+      <button id="btnTabVeiculos" class="active" onclick="mudarAba('veiculos')">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8"><path d="M3 16V8h11l4 4h3v4" stroke-linejoin="round"/><circle cx="7.5" cy="17" r="1.8"/><circle cx="17" cy="17" r="1.8"/></svg>
+        Veículos
+      </button>
+      <button id="btnTabMotoristas" onclick="mudarAba('motoristas')">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8"><circle cx="12" cy="8" r="3.5"/><path d="M4.5 20c1-3.8 4-6 7.5-6s6.5 2.2 7.5 6" stroke-linecap="round"/></svg>
+        Motoristas
+      </button>
+    </div>
+
+    <!-- ===================== ABA VEÍCULOS ===================== -->
+    <div id="aba-veiculos">
+      <div class="card" style="margin-bottom: var(--space-5);">
+        <div class="card-collapsible-header" onclick="toggleCadastro('veiculo')">
+          <div class="section-label" style="margin:0;">Novo veículo</div>
+          <svg class="chevron" id="chevronVeiculo" viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M6 9l6 6 6-6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </div>
+        <div class="card-collapsible-body" id="corpoCadastroVeiculo">
+        <div class="form-grid cols-3">
+          <div class="field"><label>Placa</label><input id="vPlaca" placeholder="ABC-1234" style="text-transform:uppercase;" oninput="this.value=this.value.toUpperCase()"></div>
+          <div class="field"><label>Modelo</label><input id="vModelo" placeholder="Ex: Mercedes Sprinter"></div>
+          <div class="field"><label>Tipo</label>
+            <select id="vTipo"><option>Van</option><option>Caminhão 3/4</option><option>Caminhão Truck</option><option>Caminhão Toco</option><option>Outro</option></select>
+          </div>
+        </div>
+        <div class="form-grid cols-3">
+          <div class="field"><label>Ano</label><input id="vAno" type="number" placeholder="Ex: 2022"></div>
+          <div class="field"><label>Capacidade (m³)</label><input id="vCapacidade" type="number" step="0.1" placeholder="Ex: 25"></div>
+          <div class="field"><label>Observações</label><input id="vObservacoes" placeholder="opcional"></div>
+        </div>
+        <div class="section-label">Documentos anexados</div>
+        <div class="field-hint">Anexe os arquivos de licenciamento, apólice de seguro, etc. — não precisa preencher datas, o próprio documento fica salvo aqui.</div>
+        <input type="file" id="vArquivo" multiple style="display:none;" onchange="selecionarArquivos(this.files, 'veiculo')">
+        <button type="button" class="btn btn-outline btn-sm" style="margin-bottom:12px;" onclick="document.getElementById('vArquivo').click()">+ Anexar documento</button>
+        <div id="anexosPendentesVeiculo"></div>
+        <button class="btn btn-primary" onclick="salvarVeiculo()">Salvar veículo</button>
+        </div>
+      </div>
+
+      <div class="section-label" style="font-size:15px;">Veículos cadastrados</div>
+      <div class="table-wrap">
+      <table>
+        <thead><tr><th>Placa</th><th>Modelo</th><th>Tipo</th><th>Documentos</th><th>Ações</th></tr></thead>
+        <tbody id="listaVeiculos"></tbody>
+      </table>
+      </div>
+      <div id="veiculosVazio" class="empty-state">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="1.5"><path d="M3 16V8h11l4 4h3v4" stroke-linejoin="round"/><circle cx="7.5" cy="17" r="1.8"/><circle cx="17" cy="17" r="1.8"/></svg>
+        <div>Nenhum veículo cadastrado ainda nesta sessão.</div>
+      </div>
+    </div>
+
+    <!-- ===================== ABA MOTORISTAS ===================== -->
+    <div id="aba-motoristas" style="display:none;">
+      <div class="card" style="margin-bottom: var(--space-5);">
+        <div class="card-collapsible-header" onclick="toggleCadastro('motorista')">
+          <div class="section-label" style="margin:0;">Novo motorista</div>
+          <svg class="chevron" id="chevronMotorista" viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M6 9l6 6 6-6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </div>
+        <div class="card-collapsible-body" id="corpoCadastroMotorista">
+        <div class="form-grid">
+          <div class="field"><label>Nome completo</label><input id="mNome" placeholder="Ex: José Ricardo"></div>
+          <div class="field"><label>Telefone</label><input id="mTelefone" placeholder="(31) 90000-0000" oninput="this.value=maskPhone(this.value)"></div>
+        </div>
+        <div class="form-grid cols-3">
+          <div class="field"><label>Número da CNH</label><input id="mCnhNumero" placeholder="00000000000"></div>
+          <div class="field"><label>Categoria</label>
+            <select id="mCnhCategoria"><option>B</option><option>C</option><option>D</option><option>E</option><option>AB</option></select>
+          </div>
+          <div class="field"><label>Veículo fixo vinculado</label><select id="mVeiculo"><option value="">— Nenhum —</option></select></div>
+        </div>
+        <div class="field" style="margin-bottom:var(--space-3);"><label>Observações</label><input id="mObservacoes" placeholder="opcional"></div>
+        <div class="section-label">Documentos anexados</div>
+        <div class="field-hint">Anexe o arquivo da CNH e outros documentos — não precisa preencher data de validade, o próprio documento fica salvo aqui.</div>
+        <input type="file" id="mArquivo" multiple style="display:none;" onchange="selecionarArquivos(this.files, 'motorista')">
+        <button type="button" class="btn btn-outline btn-sm" style="margin-bottom:12px;" onclick="document.getElementById('mArquivo').click()">+ Anexar documento</button>
+        <div id="anexosPendentesMotorista"></div>
+        <button class="btn btn-primary" onclick="salvarMotorista()">Salvar motorista</button>
+        </div>
+      </div>
+
+      <div class="section-label" style="font-size:15px;">Motoristas cadastrados</div>
+      <div class="table-wrap">
+      <table>
+        <thead><tr><th>Nome</th><th>Telefone</th><th>CNH</th><th>Veículo fixo</th><th>Documentos</th><th>Ações</th></tr></thead>
+        <tbody id="listaMotoristas"></tbody>
+      </table>
+      </div>
+      <div id="motoristasVazio" class="empty-state">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="1.5"><circle cx="12" cy="8" r="3.5"/><path d="M4.5 20c1-3.8 4-6 7.5-6s6.5 2.2 7.5 6" stroke-linecap="round"/></svg>
+        <div>Nenhum motorista cadastrado ainda nesta sessão.</div>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<!-- ============ MODAL: DETALHES COMPLETOS ============ -->
+<div id="modalDetalhes" class="modal-overlay">
+  <div class="modal-box">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: var(--space-3);">
+      <div class="section-label" style="margin:0;" id="modalDetalhesTitulo">Dados completos</div>
+      <button class="btn btn-ghost btn-sm" onclick="fecharDetalhes()">Fechar ✕</button>
+    </div>
+    <div id="detalhesConteudo"></div>
+  </div>
+</div>
+
+<script>
+/* ==========================================================================
+   1. ESTADO — em memória apenas (não persiste ao recarregar a página).
+   Quando integrarmos ao banco de dados real, veiculos/motoristas viram
+   consultas de API em vez de arrays locais.
+   ========================================================================== */
+let veiculos = [];
+let motoristas = [];
+let contadorVeiculo = 1;
+let contadorMotorista = 1;
+let anexosPendentesVeiculo = [];
+let anexosPendentesMotorista = [];
+
+/* ==========================================================================
+   ANEXOS — os arquivos ficam salvos como URL local (válida durante a sessão
+   do navegador). Quando integrarmos ao banco de dados/armazenamento real,
+   isso vira upload de verdade e o resto do fluxo não muda.
+   ========================================================================== */
+function selecionarArquivos(fileList, alvo){
+  const destino = alvo === 'veiculo' ? anexosPendentesVeiculo : anexosPendentesMotorista;
+  Array.from(fileList).forEach(file => {
+    destino.push({ nome: file.name, url: URL.createObjectURL(file), tamanho: (file.size/1024).toFixed(0)+' KB' });
+  });
+  renderAnexosPendentes(alvo);
+}
+function removerAnexoPendente(alvo, index){
+  const destino = alvo === 'veiculo' ? anexosPendentesVeiculo : anexosPendentesMotorista;
+  destino.splice(index, 1);
+  renderAnexosPendentes(alvo);
+}
+function iconeAnexo(){
+  return `<svg viewBox="0 0 24 24" fill="none" stroke-width="1.8"><path d="M6 3h9l4 4v14H6z" stroke-linejoin="round"/><path d="M9 11h7M9 15h7" stroke-linecap="round"/></svg>`;
+}
+function renderAnexosPendentes(alvo){
+  const destino = alvo === 'veiculo' ? anexosPendentesVeiculo : anexosPendentesMotorista;
+  const container = document.getElementById(alvo === 'veiculo' ? 'anexosPendentesVeiculo' : 'anexosPendentesMotorista');
+  container.innerHTML = destino.map((doc, i) => `
+    <div class="anexo-chip">
+      ${iconeAnexo()}
+      <span class="nome-arquivo">${doc.nome}</span>
+      <span class="tamanho">${doc.tamanho}</span>
+      <button onclick="removerAnexoPendente('${alvo}', ${i})" title="Remover">✕</button>
+    </div>
+  `).join('');
+}
+function listaDocumentosHtml(documentos){
+  if(!documentos || documentos.length === 0) return '<p style="font-size:13px;color:var(--color-gray-600);">Nenhum documento anexado.</p>';
+  return documentos.map(doc => `
+    <div class="anexo-chip">
+      ${iconeAnexo()}
+      <span class="nome-arquivo">${doc.nome}</span>
+      <span class="tamanho">${doc.tamanho}</span>
+      <a href="${doc.url}" target="_blank" style="font-size:12.5px;color:var(--color-primary);font-weight:600;text-decoration:none;">Abrir</a>
+    </div>
+  `).join('');
+}
+
+function maskPhone(v){
+  v = v.replace(/\D/g,'').slice(0,11);
+  if(v.length > 10) v = v.replace(/(\d{2})(\d{5})(\d{4})/,'($1) $2-$3');
+  else if(v.length > 6) v = v.replace(/(\d{2})(\d{4})(\d{0,4})/,'($1) $2-$3');
+  else if(v.length > 2) v = v.replace(/(\d{2})(\d{0,5})/,'($1) $2');
+  else if(v.length > 0) v = v.replace(/(\d*)/,'($1');
+  return v;
+}
+function dataFormatada(v){ return v ? new Date(v+'T00:00:00').toLocaleDateString('pt-BR') : '-'; }
+
+/* ==========================================================================
+   2. ALTERNÂNCIA ENTRE ABAS
+   ========================================================================== */
+function mudarAba(aba){
+  document.getElementById('aba-veiculos').style.display   = aba === 'veiculos'   ? 'block' : 'none';
+  document.getElementById('aba-motoristas').style.display = aba === 'motoristas' ? 'block' : 'none';
+  document.getElementById('btnTabVeiculos').classList.toggle('active', aba === 'veiculos');
+  document.getElementById('btnTabMotoristas').classList.toggle('active', aba === 'motoristas');
+}
+
+function toggleCadastro(tipo){
+  const corpoId = tipo === 'veiculo' ? 'corpoCadastroVeiculo' : 'corpoCadastroMotorista';
+  const corpo = document.getElementById(corpoId);
+  const aberto = corpo.classList.toggle('aberto');
+  corpo.previousElementSibling.classList.toggle('aberto', aberto);
+}
+
+/* ==========================================================================
+   3. VEÍCULOS
+   ========================================================================== */
+function salvarVeiculo(){
+  const placa = document.getElementById('vPlaca').value;
+  if(!placa.trim()){ alert('Preencha a placa antes de salvar.'); return; }
+
+  veiculos.push({
+    id: contadorVeiculo++,
+    placa, modelo: document.getElementById('vModelo').value, tipo: document.getElementById('vTipo').value,
+    ano: document.getElementById('vAno').value, capacidade: document.getElementById('vCapacidade').value,
+    observacoes: document.getElementById('vObservacoes').value,
+    documentos: [...anexosPendentesVeiculo]
+  });
+  ['vPlaca','vModelo','vAno','vCapacidade','vObservacoes'].forEach(id => document.getElementById(id).value = '');
+  anexosPendentesVeiculo = [];
+  renderAnexosPendentes('veiculo');
+  renderVeiculos();
+  popularSelectVeiculos();
+}
+function excluirVeiculo(id){
+  if(!confirm('Excluir este veículo?')) return;
+  veiculos = veiculos.filter(v => v.id !== id);
+  renderVeiculos();
+  popularSelectVeiculos();
+}
+function verDetalhesVeiculo(id){
+  const v = veiculos.find(v => v.id === id);
+  const linha = (l, val) => `<div style="margin-bottom:10px;"><div style="font-size:12px;color:var(--color-gray-600);">${l}</div><div style="font-size:14.5px;font-weight:600;">${val || '-'}</div></div>`;
+  document.getElementById('modalDetalhesTitulo').textContent = 'Dados completos do veículo';
+  document.getElementById('detalhesConteudo').innerHTML = `
+    <div class="form-grid">${linha('Placa', v.placa)}${linha('Modelo', v.modelo)}</div>
+    <div class="form-grid">${linha('Tipo', v.tipo)}${linha('Ano', v.ano)}</div>
+    <div class="form-grid">${linha('Capacidade', v.capacidade ? v.capacidade+' m³' : '-')}${linha('Observações', v.observacoes)}</div>
+    <div class="section-label" style="font-size:13px;">Documentos anexados</div>
+    ${listaDocumentosHtml(v.documentos)}
+  `;
+  document.getElementById('modalDetalhes').classList.add('show');
+}
+
+function renderVeiculos(){
+  const tbody = document.getElementById('listaVeiculos');
+  const vazio = document.getElementById('veiculosVazio');
+  tbody.innerHTML = '';
+  if(veiculos.length === 0){ vazio.style.display = 'block'; document.querySelectorAll('table')[0].style.display = 'none'; return; }
+  vazio.style.display = 'none';
+  document.querySelectorAll('table')[0].style.display = 'table';
+
+  veiculos.forEach(v => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td><b>${v.placa}</b></td>
+      <td>${v.modelo || '-'}</td>
+      <td>${v.tipo}</td>
+      <td><span class="doc-count">${iconeAnexo()} ${v.documentos.length}</span></td>
+      <td class="actions-cell">
+        <button class="btn btn-outline btn-sm" onclick="verDetalhesVeiculo(${v.id})">Ver detalhes</button>
+        <button class="btn btn-ghost btn-sm" onclick="excluirVeiculo(${v.id})">Excluir</button>
+      </td>`;
+    tbody.appendChild(tr);
+  });
+}
+
+/* ==========================================================================
+   4. MOTORISTAS
+   ========================================================================== */
+function popularSelectVeiculos(){
+  const sel = document.getElementById('mVeiculo');
+  const valorAtual = sel.value;
+  sel.innerHTML = '<option value="">— Nenhum —</option>';
+  veiculos.forEach(v => sel.appendChild(new Option(`${v.placa} — ${v.modelo || v.tipo}`, v.id)));
+  sel.value = valorAtual;
+}
+
+function salvarMotorista(){
+  const nome = document.getElementById('mNome').value;
+  if(!nome.trim()){ alert('Preencha o nome antes de salvar.'); return; }
+
+  motoristas.push({
+    id: contadorMotorista++,
+    nome, telefone: document.getElementById('mTelefone').value,
+    cnhNumero: document.getElementById('mCnhNumero').value, cnhCategoria: document.getElementById('mCnhCategoria').value,
+    veiculoId: document.getElementById('mVeiculo').value || null,
+    observacoes: document.getElementById('mObservacoes').value,
+    documentos: [...anexosPendentesMotorista]
+  });
+  ['mNome','mTelefone','mCnhNumero','mObservacoes'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('mVeiculo').value = '';
+  anexosPendentesMotorista = [];
+  renderAnexosPendentes('motorista');
+  renderMotoristas();
+}
+function excluirMotorista(id){
+  if(!confirm('Excluir este motorista?')) return;
+  motoristas = motoristas.filter(m => m.id !== id);
+  renderMotoristas();
+}
+function nomeVeiculoPorId(id){ const v = veiculos.find(v => v.id == id); return v ? `${v.placa} — ${v.modelo || v.tipo}` : 'Nenhum'; }
+
+function verDetalhesMotorista(id){
+  const m = motoristas.find(m => m.id === id);
+  const linha = (l, val) => `<div style="margin-bottom:10px;"><div style="font-size:12px;color:var(--color-gray-600);">${l}</div><div style="font-size:14.5px;font-weight:600;">${val || '-'}</div></div>`;
+  document.getElementById('modalDetalhesTitulo').textContent = 'Dados completos do motorista';
+  document.getElementById('detalhesConteudo').innerHTML = `
+    <div class="form-grid">${linha('Nome', m.nome)}${linha('Telefone', m.telefone)}</div>
+    <div class="form-grid">${linha('CNH', m.cnhNumero)}${linha('Categoria', m.cnhCategoria)}</div>
+    ${linha('Veículo fixo', nomeVeiculoPorId(m.veiculoId))}
+    ${linha('Observações', m.observacoes)}
+    <div class="section-label" style="font-size:13px;">Documentos anexados</div>
+    ${listaDocumentosHtml(m.documentos)}
+  `;
+  document.getElementById('modalDetalhes').classList.add('show');
+}
+
+function renderMotoristas(){
+  const tbody = document.getElementById('listaMotoristas');
+  const vazio = document.getElementById('motoristasVazio');
+  tbody.innerHTML = '';
+  if(motoristas.length === 0){ vazio.style.display = 'block'; document.querySelectorAll('table')[1].style.display = 'none'; return; }
+  vazio.style.display = 'none';
+  document.querySelectorAll('table')[1].style.display = 'table';
+
+  motoristas.forEach(m => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td><b>${m.nome}</b></td>
+      <td>${m.telefone || '-'}</td>
+      <td>${m.cnhNumero || '-'} (${m.cnhCategoria})</td>
+      <td>${nomeVeiculoPorId(m.veiculoId)}</td>
+      <td><span class="doc-count">${iconeAnexo()} ${m.documentos.length}</span></td>
+      <td class="actions-cell">
+        <button class="btn btn-outline btn-sm" onclick="verDetalhesMotorista(${m.id})">Ver detalhes</button>
+        <button class="btn btn-ghost btn-sm" onclick="excluirMotorista(${m.id})">Excluir</button>
+      </td>`;
+    tbody.appendChild(tr);
+  });
+}
+
+function fecharDetalhes(){ document.getElementById('modalDetalhes').classList.remove('show'); }
+
+/* ==========================================================================
+   5. INICIALIZAÇÃO
+   ========================================================================== */
+renderVeiculos();
+renderMotoristas();
+</script>
+</body>
+</html>

@@ -1,0 +1,95 @@
+/* ==========================================================================
+   DESIGN TOKENS — Juliano Lopes Transportes
+   FONTE ÚNICA DE VERDADE VISUAL. Mude tudo por aqui.
+
+   Regra do projeto: nenhuma cor, fonte, espaçamento ou raio hardcoded fora
+   deste arquivo. Se você está prestes a escrever "#" seguido de um hex em
+   qualquer outro arquivo, pare e crie um token aqui.
+
+   Origem: referencia/00-guia-visual_1.html (guia de identidade oficial,
+   alinhado à logo da empresa).
+   ========================================================================== */
+
+:root {
+  /* --- Cores de marca (identidade oficial, extraída da logo) --- */
+  --color-primary: #820901;        /* vermelho institucional */
+  --color-primary-dark: #5a0601;   /* vermelho escuro — hover, sidebar, cabeçalho de tabela */
+  --color-primary-light: #a30d03;  /* vermelho vivo — destaque, alertas */
+  --color-black: #000000;          /* preto institucional */
+  --color-gold: #b8862f;           /* dourado — cor terciária: selos, item ativo, destaques */
+  --color-gold-light: #d9b45f;     /* dourado claro — hover em elementos dourados */
+  --color-white: #ffffff;
+
+  /* --- Neutros / fundo --- */
+  --color-bg: #faf8f6;             /* fundo geral das telas */
+  --color-surface: #ffffff;        /* cards, tabelas, formulários */
+  --color-border: #e6dfd6;
+  --color-gray-600: #6f665d;       /* texto secundário */
+  --color-text: #241d1a;           /* texto principal */
+
+  /* --- Estados / status --- */
+  --color-success: #2f6b3a;
+  --color-success-bg: #e7f2e8;
+  --color-warning: #a3760f;
+  --color-warning-bg: #f7edd9;
+  --color-danger: #a3241c;
+  --color-danger-bg: #f7e3e1;
+  --color-info: #2f5a80;
+  --color-info-bg: #e4edf4;
+
+  /* --- Tipografia --- */
+  /* Bebas Neue = títulos, igual "JULIANO LOPES" na logo */
+  /* Montserrat = texto corrido, igual "TRANSPORTES" na logo */
+  --font-display: var(--fonte-display, 'Bebas Neue'), 'Arial Narrow', sans-serif;
+  --font-body: var(--fonte-body, 'Montserrat'), 'Segoe UI', system-ui, sans-serif;
+
+  /* --- Espaçamento (densidade "confortável") --- */
+  --space-1: 6px;
+  --space-2: 12px;
+  --space-3: 20px;
+  --space-4: 28px;
+  --space-5: 40px;
+  --space-6: 56px;
+
+  /* --- Raio e sombra --- */
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 14px;
+  --shadow-card: 0 2px 10px rgba(28, 22, 20, 0.06);
+  --shadow-modal: 0 18px 50px rgba(28, 22, 20, 0.22);
+
+  /* --- Cores derivadas para uso sobre fundo escuro (sidebar) --- */
+  --color-on-dark: rgba(255, 255, 255, 0.82);
+  --color-on-dark-muted: rgba(255, 255, 255, 0.45);
+  --color-on-dark-hover: rgba(255, 255, 255, 0.06);
+  --color-on-dark-border: rgba(255, 255, 255, 0.08);
+  --color-active-bg: rgba(184, 134, 47, 0.14);
+
+  /* --- Estrutura do layout --- */
+  --sidebar-width: 250px;
+  --sidebar-width-collapsed: 68px;
+  --header-height: 62px;
+  --content-max-width: 1180px;
+
+  /* --- Camadas --- */
+  --z-sidebar: 40;
+  --z-header: 30;
+  --z-backdrop: 50;
+  --z-modal: 60;
+  --z-toast: 70;
+
+  /* --- Transições --- */
+  --transition-fast: 0.15s ease;
+  --transition-base: 0.25s ease;
+
+  /* --- Paleta de séries para gráficos (Chart.js) --- */
+  /* Ordem pensada para manter contraste entre séries vizinhas. */
+  --chart-1: #820901;
+  --chart-2: #b8862f;
+  --chart-3: #2f5a80;
+  --chart-4: #2f6b3a;
+  --chart-5: #a30d03;
+  --chart-6: #a3760f;
+  --chart-7: #6f665d;
+  --chart-8: #d9b45f;
+}

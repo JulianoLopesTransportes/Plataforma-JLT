@@ -1,0 +1,846 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Juliano Lopes Transportes — Documentos</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Montserrat:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+
+/* ==========================================================================
+   1. DESIGN TOKENS — idênticos aos outros arquivos do sistema
+   ========================================================================== */
+:root{
+  --color-primary:        #820901;
+  --color-primary-dark:   #5a0601;
+  --color-primary-light:  #a30d03;
+  --color-black:          #000000;
+  --color-gold:           #b8862f;
+  --color-gold-light:     #d9b45f;
+  --color-white:          #ffffff;
+  --color-bg:             #faf8f6;
+  --color-surface:        #ffffff;
+  --color-border:         #e6dfd6;
+  --color-gray-600:       #6f665d;
+  --color-text:           #241d1a;
+  --font-display: 'Bebas Neue', sans-serif;
+  --font-body:    'Montserrat', sans-serif;
+  --space-1:6px; --space-2:12px; --space-3:20px; --space-4:28px; --space-5:40px; --space-6:56px;
+  --radius-sm:4px; --radius-md:8px; --radius-lg:14px;
+  --shadow-card: 0 2px 10px rgba(28,22,20,0.06);
+}
+* { box-sizing: border-box; }
+body{ margin:0; background: var(--color-bg); color: var(--color-text); font-family: var(--font-body); line-height:1.55; }
+h1,h2,h3,h4{ font-family: var(--font-display); text-transform: uppercase; letter-spacing: 0.03em; font-weight:600; margin:0; }
+
+/* ==========================================================================
+   2. LAYOUT BASE (sidebar + main) — oculto na impressão, ver bloco 8
+   ========================================================================== */
+.app{ display:flex; min-height:100vh; }
+.sidebar{ width:250px; flex-shrink:0; background: linear-gradient(180deg, var(--color-black) 0%, var(--color-primary-dark) 100%); color: var(--color-white); display:flex; flex-direction:column; padding: var(--space-4) 0; position: sticky; top:0; height:100vh; overflow-y:auto; }
+.sidebar-brand{ display:flex; align-items:center; padding: 0 var(--space-3) var(--space-4); border-bottom: 1px solid rgba(255,255,255,0.08); margin-bottom: var(--space-3); }
+.sidebar-brand .logo-plate{ background: var(--color-white); border-radius: var(--radius-md); padding: 8px 10px; width:100%; display:flex; align-items:center; justify-content:center; }
+.sidebar-brand .logo-plate img{ width:100%; height:auto; display:block; }
+.nav-group-label{ font-size:11px; color: rgba(255,255,255,0.45); padding: var(--space-2) var(--space-3) var(--space-1); letter-spacing:0.08em; text-transform:uppercase; }
+.nav-item{ display:flex; align-items:center; gap: var(--space-2); padding: var(--space-2) var(--space-3); color: rgba(255,255,255,0.82); text-decoration:none; font-size:14.5px; font-weight:500; border-left: 3px solid transparent; cursor:pointer; }
+.nav-item svg{ width:19px; height:19px; stroke: currentColor; flex-shrink:0; }
+.nav-item:hover{ background: rgba(255,255,255,0.06); color: var(--color-white); }
+.nav-item.active{ background: rgba(184,134,47,0.14); border-left-color: var(--color-gold); color: var(--color-gold-light); }
+.main{ flex:1; padding: var(--space-5); max-width: 1180px; }
+.page-title{ font-size:26px; margin-bottom: var(--space-1); }
+.page-subtitle{ color: var(--color-gray-600); font-size:14.5px; margin-bottom: var(--space-4); }
+hr.rule{ border:none; border-top:3px solid var(--color-primary); margin: var(--space-2) 0 var(--space-4); width:60px; }
+
+/* ==========================================================================
+   3. COMPONENTES COMPARTILHADOS
+   ========================================================================== */
+.btn{ font-family: var(--font-body); font-weight:600; font-size:14px; padding: 11px 20px; border-radius: var(--radius-sm); border:1.5px solid transparent; cursor:pointer; display:inline-flex; align-items:center; gap:8px; }
+.btn:hover{ filter:brightness(1.08); }
+.btn-primary{ background: var(--color-primary); color:var(--color-white); }
+.btn-gold{ background: var(--color-gold); color:var(--color-black); }
+.btn-outline{ background:transparent; border-color: var(--color-primary); color: var(--color-primary); }
+.btn-ghost{ background:transparent; color: var(--color-gray-600); }
+.btn-sm{ padding:7px 12px; font-size:12.5px; }
+.card{ background: var(--color-surface); border:1px solid var(--color-border); border-radius: var(--radius-lg); padding: var(--space-4); box-shadow: var(--shadow-card); }
+.field label{ display:block; font-size:13px; font-weight:600; margin-bottom:6px; }
+.field input, .field select, .field textarea{ width:100%; font-family: var(--font-body); font-size:14.5px; padding: 11px 13px; border:1.5px solid var(--color-border); border-radius: var(--radius-sm); background: var(--color-white); color: var(--color-text); }
+.field textarea{ resize:vertical; min-height:70px; }
+.field input:focus, .field select:focus, .field textarea:focus{ outline:none; border-color: var(--color-primary); }
+.form-grid{ display:grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: var(--space-3); margin-bottom: var(--space-3); }
+.form-grid.cols-3{ grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); }
+.section-label{ font-family:var(--font-display); font-size:13px; letter-spacing:0.05em; color:var(--color-primary); margin: var(--space-3) 0 var(--space-2); }
+.section-label:first-child{ margin-top:0; }
+.checkbox-row{ display:flex; align-items:center; gap:8px; padding:6px 0; font-size:14px; }
+.checkbox-row input{ width:auto; }
+.field-hint{ font-size:12px; color:var(--color-gray-600); }
+
+/* ==========================================================================
+   4. ABAS DE TIPO DE DOCUMENTO
+   ========================================================================== */
+.doc-tabs{ display:flex; gap:8px; flex-wrap:wrap; margin-bottom: var(--space-4); }
+.doc-tab{ padding:11px 18px; border-radius: var(--radius-sm); border:1.5px solid var(--color-border); background:var(--color-white); font-family:var(--font-body); font-weight:600; font-size:13.5px; cursor:pointer; color:var(--color-gray-600); }
+.doc-tab.active{ border-color: var(--color-primary); background: var(--color-primary); color:var(--color-white); }
+
+/* ==========================================================================
+   5. CATÁLOGO DE ITENS (inventário / anexo da guarda de móveis)
+   ========================================================================== */
+.catalogo-toolbar{ display:flex; gap:10px; margin-bottom: var(--space-3); align-items:center; }
+.catalogo-toolbar input{ flex:1; }
+table.catalogo{ width:100%; border-collapse:collapse; font-size:13px; }
+table.catalogo thead th{ text-align:left; font-size:11px; text-transform:uppercase; letter-spacing:.04em; color:var(--color-gray-600); padding:6px 8px; border-bottom:1.5px solid var(--color-border); position:sticky; top:0; background:var(--color-white); }
+table.catalogo td{ padding:5px 8px; border-bottom:1px solid var(--color-border); }
+table.catalogo tr.cat-row td{ background:var(--color-bg); font-family:var(--font-display); font-size:12px; letter-spacing:.05em; color:var(--color-primary); padding-top:10px; }
+table.catalogo td input, table.catalogo td select{ padding:6px 8px; font-size:12.5px; }
+.catalogo-scroll{ max-height:480px; overflow-y:auto; border:1px solid var(--color-border); border-radius: var(--radius-md); padding: 0 var(--space-2); }
+.catalogo-footer{ display:grid; grid-template-columns: 1fr 1fr 1fr; gap: var(--space-3); margin-top: var(--space-3); }
+
+/* ==========================================================================
+   6. PRÉVIA / LETTERHEAD — o que vira o documento impresso (ver bloco 8)
+   ========================================================================== */
+.preview-wrap{ display:none; margin-top: var(--space-4); }
+.preview-wrap.show{ display:block; }
+#docPreview{ background:#ffffff; color:#241d1a; font-family:'Montserrat',sans-serif; font-size:12.5px; padding:40px 44px; max-width:800px; margin:0 auto; border:1px solid var(--color-border); box-shadow: var(--shadow-card); }
+#docPreview .ph-header{ display:flex; justify-content:space-between; align-items:flex-start; padding-bottom:14px; }
+#docPreview .ph-brand{ display:flex; flex-direction:column; gap:5px; }
+#docPreview .ph-brand img{ height:50px; width:auto; display:block; }
+#docPreview .ph-brand small{ display:block; font-family:'Montserrat',sans-serif; font-size:11px; color:#6f665d; font-weight:400; }
+#docPreview .ph-contact{ text-align:right; font-size:11px; color:#6f665d; }
+#docPreview .ph-rule{ border:none; border-top:3px solid #820901; margin:0 0 20px; }
+#docPreview .ph-titlebox{ display:flex; justify-content:space-between; align-items:center; background:#f5efe9; border-radius:8px; padding:16px 20px; margin-bottom:20px; }
+#docPreview .ph-titlebox h1{ font-family:'Bebas Neue',sans-serif; font-size:18px; color:#8a8378; letter-spacing:.03em; text-transform:uppercase; margin:0; }
+#docPreview .ph-badge{ font-size:11px; font-weight:700; color:#820901; text-transform:uppercase; }
+#docPreview h2.ph-section{ font-family:'Bebas Neue',sans-serif; font-size:12.5px; color:#820901; text-transform:uppercase; letter-spacing:.05em; border-bottom:2px solid #820901; padding-bottom:4px; margin:18px 0 8px; }
+#docPreview h3.ph-clausula{ font-family:'Montserrat',sans-serif; font-weight:700; font-size:12.5px; margin:14px 0 4px; }
+#docPreview p{ margin:0 0 9px; line-height:1.55; text-align:justify; }
+#docPreview ul{ margin:0 0 9px; padding-left:18px; }
+#docPreview li{ margin-bottom:3px; }
+#docPreview table.ph-table{ width:100%; border-collapse:collapse; margin-bottom:10px; font-size:11.5px; }
+#docPreview table.ph-table th{ text-align:left; font-size:10px; text-transform:uppercase; color:#6f665d; border-bottom:1.5px solid #820901; padding:5px 6px; }
+#docPreview table.ph-table td{ padding:5px 6px; border-bottom:1px solid #e6dfd6; }
+#docPreview .ph-legenda{ font-size:10px; color:#6f665d; margin-bottom:10px; }
+#docPreview .ph-signline{ margin-top:40px; display:flex; justify-content:space-between; gap:30px; }
+#docPreview .ph-signline div{ flex:1; text-align:center; border-top:1px solid #241d1a; padding-top:6px; font-size:11px; }
+#docPreview .ph-footer{ margin-top:26px; padding-top:8px; border-top:1px solid #e6dfd6; text-align:center; font-size:10px; color:#6f665d; }
+#docPreview .ph-pagebreak{ page-break-before: always; }
+
+</style>
+</head>
+<body>
+<div class="app">
+
+  <!-- ============ SIDEBAR (some na impressão) ============ -->
+  <aside class="sidebar no-print">
+    <div class="sidebar-brand"><div class="logo-plate"><img src="assets/logo-jlt.jpeg" alt="Juliano Lopes Transportes"></div></div>
+    <div class="nav-group-label">Operação</div>
+    <a class="nav-item"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8"><path d="M3 12l2-2 5 5L21 4l2 2" stroke-linecap="round" stroke-linejoin="round"/></svg>Dashboard</a>
+    <a class="nav-item"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8"><circle cx="12" cy="8" r="3.5"/><path d="M5 20c0-3.5 3-6 7-6s7 2.5 7 6" stroke-linecap="round"/></svg>Clientes</a>
+    <a class="nav-item active"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8"><path d="M6 3h9l4 4v14H6z" stroke-linejoin="round"/><path d="M9 11h7M9 15h7" stroke-linecap="round"/></svg>Documentos</a>
+    <a class="nav-item"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8"><rect x="3.5" y="5" width="17" height="16" rx="2"/><path d="M8 3v4M16 3v4M3.5 10h17" stroke-linecap="round"/></svg>Agenda</a>
+    <a class="nav-item"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8"><path d="M4 18c3-.5 3.5-3 2-5s-.5-6 3-6 1.5 4.5 4 4.5S15 7 18 7" stroke-linecap="round"/><circle cx="4.5" cy="18.5" r="1.6"/><circle cx="18.5" cy="6.5" r="1.6"/></svg>Rotas</a>
+    <div class="nav-group-label">Frota</div>
+    <a class="nav-item"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8"><path d="M3 16V8h11l4 4h3v4" stroke-linejoin="round"/><circle cx="7.5" cy="17" r="1.8"/><circle cx="17" cy="17" r="1.8"/></svg>Veículos</a>
+    <a class="nav-item"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8"><circle cx="12" cy="8" r="3.5"/><path d="M4.5 20c1-3.8 4-6 7.5-6s6.5 2.2 7.5 6" stroke-linecap="round"/></svg>Motoristas</a>
+    <div class="nav-group-label">Financeiro</div>
+    <a class="nav-item"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8"><path d="M3 17l5-5 4 3 8-8" stroke-linecap="round" stroke-linejoin="round"/></svg>Gastos &amp; Ganhos</a>
+    <a class="nav-item"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8"><rect x="4" y="4" width="16" height="16" rx="2"/><path d="M8 9h8M8 13h5M8 17h3" stroke-linecap="round"/></svg>Orçamentos</a>
+  </aside>
+
+  <!-- ============ CONTEÚDO ============ -->
+  <main class="main">
+    <div class="no-print">
+      <div class="page-title">Documentos</div>
+      <div class="page-subtitle">Selecione o tipo de documento, escolha o cliente e gere o PDF já com os dados preenchidos.</div>
+      <hr class="rule">
+
+      <!-- ===================== ABAS DE TIPO ===================== -->
+      <div class="doc-tabs">
+        <button class="doc-tab active" data-tipo="orcamento" onclick="selecionarTipo('orcamento')">Orçamento</button>
+        <button class="doc-tab" data-tipo="contrato" onclick="selecionarTipo('contrato')">Contrato de Prestação</button>
+        <button class="doc-tab" data-tipo="inventario" onclick="selecionarTipo('inventario')">Inventário</button>
+        <button class="doc-tab" data-tipo="guarda" onclick="selecionarTipo('guarda')">Guarda de Móveis</button>
+        <button class="doc-tab" data-tipo="imagem" onclick="selecionarTipo('imagem')">Uso de Imagem</button>
+        <button class="doc-tab" data-tipo="comprovante" onclick="selecionarTipo('comprovante')">Comprovante de Entrega</button>
+      </div>
+
+      <div class="card">
+
+        <!-- ===================== DADOS DO CLIENTE (comum) ===================== -->
+        <div class="section-label">Cliente</div>
+        <div class="form-grid">
+          <div class="field">
+            <label>Selecionar cliente cadastrado</label>
+            <select id="selectCliente" onchange="preencherCliente()"><option value="">— Preenchimento manual —</option></select>
+          </div>
+          <div class="field"><label>Tipo</label>
+            <select id="docTipoPessoa" onchange="atualizarMascaraDocumento()"><option value="PF">Pessoa Física</option><option value="PJ">Pessoa Jurídica</option></select>
+          </div>
+        </div>
+        <div class="form-grid">
+          <div class="field"><label>Nome / Razão social</label><input id="docNome" placeholder="Nome do cliente"></div>
+          <div class="field"><label>CPF / CNPJ</label><input id="docDocumento" placeholder="000.000.000-00" oninput="this.value=aplicarMascaraDocumento(this.value)"></div>
+        </div>
+        <div class="form-grid">
+          <div class="field"><label>Telefone</label><input id="docTelefone" placeholder="(31) 90000-0000" oninput="this.value=maskPhone(this.value)"></div>
+          <div class="field"><label>E-mail</label><input id="docEmail" placeholder="cliente@email.com"></div>
+        </div>
+        <div class="form-grid">
+          <div class="field"><label>Endereço de coleta / origem / residência</label><input id="docEnderecoColeta" placeholder="Rua, número, bairro, cidade"></div>
+          <div class="field"><label>Endereço de entrega / destino</label><input id="docEnderecoEntrega" placeholder="Rua, número, bairro, cidade"></div>
+        </div>
+        <div class="field-hint" style="margin-bottom:var(--space-3);">Lista de clientes de exemplo — quando o módulo de Clientes for integrado ao banco de dados, essa lista vem de lá automaticamente.</div>
+        <div class="field-hint" id="hintPreenchimentoAnterior" style="display:none; margin-bottom:var(--space-3); color:var(--color-primary); font-weight:600;">Preenchimento anterior deste cliente para este tipo de documento foi carregado — revise e ajuste se necessário.</div>
+
+        <!-- ===================== ORÇAMENTO ===================== -->
+        <div id="secao-orcamento">
+          <div class="section-label">Dados do orçamento</div>
+          <div class="form-grid cols-3">
+            <div class="field"><label>Data prevista para coleta</label><input id="orcData" type="date"></div>
+            <div class="field"><label>Validade do orçamento (dias)</label><input id="orcValidade" type="number" value="15"></div>
+            <div class="field"><label>Valor total do serviço (R$)</label><input id="orcValor" type="number" step="0.01" placeholder="Deixe em branco se ainda não fechado"></div>
+          </div>
+          <div class="section-label" style="font-size:12px;">Serviços inclusos</div>
+          <div class="checkbox-row"><input type="checkbox" id="srv1" checked><label for="srv1">Logística terrestre completa</label></div>
+          <div class="checkbox-row"><input type="checkbox" id="srv2" checked><label for="srv2">Embalagem e proteção dos bens transportados</label></div>
+          <div class="checkbox-row"><input type="checkbox" id="srv3" checked><label for="srv3">Cobertura de seguro para a carga</label></div>
+          <div class="checkbox-row"><input type="checkbox" id="srv4" checked><label for="srv4">Mão de obra de carregamento e descarregamento</label></div>
+          <div class="checkbox-row"><input type="checkbox" id="srv5" checked><label for="srv5">Condução por motorista credenciado e responsável</label></div>
+          <div class="field" style="margin-top:10px;"><label>Outros serviços (opcional, um por linha)</label><textarea id="orcOutrosServicos"></textarea></div>
+        </div>
+
+        <!-- ===================== CONTRATO DE PRESTAÇÃO ===================== -->
+        <div id="secao-contrato" style="display:none;">
+          <div class="section-label">Dados do contrato</div>
+          <div class="form-grid">
+            <div class="field"><label>Data do contrato</label><input id="ctrData" type="date"></div>
+            <div class="field"><label>Data prevista de execução</label><input id="ctrDataExecucao" type="date"></div>
+          </div>
+          <div class="form-grid">
+            <div class="field"><label>Valor total do contrato (R$)</label><input id="ctrValor" type="number" step="0.01" placeholder="Deixe em branco se ainda não fechado"></div>
+            <div class="field"><label>Seguro de carga</label>
+              <select id="ctrSeguro"><option value="sim">Incluso</option><option value="nao">Não incluso</option></select>
+            </div>
+          </div>
+          <div class="field"><label>Cláusulas adicionais (opcional, uma por linha — entram no final do contrato)</label><textarea id="ctrClausulas"></textarea></div>
+          <div class="field-hint">As demais cláusulas (obrigações, multas, rescisão, foro etc.) seguem automaticamente o modelo padrão da empresa.</div>
+        </div>
+
+        <!-- ===================== CATÁLOGO DE ITENS (inventário / anexo da guarda) ===================== -->
+        <div id="secao-catalogo" style="display:none;">
+          <div class="section-label">Itens (mesma lista usada na plataforma Muda Muda)</div>
+          <div class="field-hint" id="hintInventarioLink" style="display:none; margin-bottom:var(--space-2);">No futuro, este inventário será preenchido pelo próprio cliente através de um link enviado a ele, com upload direto na plataforma — você poderá conferir e editar manualmente aqui se necessário.</div>
+          <div class="catalogo-toolbar">
+            <input id="filtroCatalogo" placeholder="Buscar item..." oninput="filtrarCatalogo()">
+            <button class="btn btn-ghost btn-sm" onclick="limparCatalogo()">Limpar quantidades</button>
+          </div>
+          <div class="catalogo-scroll">
+            <table class="catalogo">
+              <thead><tr><th style="width:60%">Item</th><th style="width:18%">Qtd.</th><th style="width:22%">Valor (R$)</th></tr></thead>
+              <tbody id="corpoCatalogo"></tbody>
+            </table>
+          </div>
+          <div class="catalogo-footer">
+            <div class="field"><label>Data do inventário</label><input id="catData" type="date"></div>
+            <div class="field"><label>Metragem calculada (m³)</label><input id="catMetragem" type="number" step="0.1" placeholder="Ex: 18"></div>
+            <div class="field"><label>Valor total declarado (R$)</label><input id="catValorTotal" placeholder="calculado automaticamente" readonly style="background:var(--color-bg);"></div>
+          </div>
+          <div class="field" style="margin-top:10px;"><label>Observação geral</label><textarea id="catObservacao"></textarea></div>
+        </div>
+
+        <!-- ===================== GUARDA DE MÓVEIS (campos específicos) ===================== -->
+        <div id="secao-guarda" style="display:none;">
+          <div class="section-label">Dados da guarda</div>
+          <div class="form-grid">
+            <div class="field"><label>Endereço do depósito</label><input id="guaEndereco" value="Rua José Carcheno (ao lado do nº 146), Bairro Jaqueline, Belo Horizonte – MG"></div>
+            <div class="field"><label>Data de início da guarda</label><input id="guaData" type="date"></div>
+          </div>
+          <div class="form-grid cols-3">
+            <div class="field"><label>Valor mensal (R$)</label><input id="guaValor" type="number" step="0.01" placeholder="Deixe em branco se ainda não fechado"></div>
+            <div class="field"><label>Vencimento mensal (dia)</label><input id="guaVencimentoDia" type="number" min="1" max="31" placeholder="Ex: 10"></div>
+            <div class="field"><label>Prazo inicial (meses, opcional)</label><input id="guaPrazo" type="number" placeholder="Deixe em branco = indeterminado"></div>
+          </div>
+          <div class="field"><label>Seguro dos bens</label>
+            <select id="guaSeguro"><option value="sim">Incluso</option><option value="nao">Não incluso</option></select>
+          </div>
+          <div class="field-hint">O inventário dos bens guardados (Anexo I) usa a mesma lista de itens preenchida na aba "Itens" acima.</div>
+        </div>
+
+        <!-- ===================== USO DE IMAGEM ===================== -->
+        <div id="secao-imagem" style="display:none;">
+          <div class="section-label">Abrangência da autorização</div>
+          <div class="checkbox-row"><input type="checkbox" id="imgPessoal" checked><label for="imgPessoal">Imagem pessoal do cliente</label></div>
+          <div class="checkbox-row"><input type="checkbox" id="imgItens" checked><label for="imgItens">Imagem dos itens/bens transportados</label></div>
+          <div class="section-label" style="font-size:12px;">Finalidade</div>
+          <div class="checkbox-row"><input type="checkbox" id="imgRedes" checked><label for="imgRedes">Divulgação em redes sociais</label></div>
+          <div class="checkbox-row"><input type="checkbox" id="imgPortfolio" checked><label for="imgPortfolio">Portfólio / site da empresa</label></div>
+          <div class="checkbox-row"><input type="checkbox" id="imgImpresso"><label for="imgImpresso">Materiais publicitários impressos</label></div>
+          <div class="field" style="margin-top:10px;"><label>Prazo da autorização</label><textarea id="imgPrazo">Por tempo indeterminado, podendo ser revogada a qualquer momento mediante solicitação por escrito.</textarea></div>
+        </div>
+
+        <!-- ===================== COMPROVANTE DE ENTREGA ===================== -->
+        <div id="secao-comprovante" style="display:none;">
+          <div class="section-label">Dados da entrega</div>
+          <div class="form-grid">
+            <div class="field"><label>Data da entrega</label><input id="comData" type="date"></div>
+            <div class="field"><label>Nome de quem recebeu (se diferente do cliente)</label><input id="comRecebedor" placeholder="Deixe em branco para usar o nome do cliente"></div>
+          </div>
+          <div class="field"><label>Ressalvas / observações (opcional — avarias, itens faltantes etc.)</label><textarea id="comRessalvas" placeholder="Deixe em branco se a entrega foi conferida sem ressalvas"></textarea></div>
+          <div class="field-hint">O documento declara o recebimento e a conferência da mudança pelo cliente, com espaço para assinatura.</div>
+        </div>
+
+        <div style="margin-top: var(--space-4);">
+          <button class="btn btn-primary" onclick="gerarDocumento()">Gerar prévia do documento</button>
+        </div>
+      </div>
+
+      <div class="preview-wrap" id="previewWrap">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin: var(--space-4) 0 var(--space-2);">
+          <div class="section-label" style="margin:0;">Prévia do documento</div>
+          <button class="btn btn-gold" onclick="baixarPDF()">Baixar / Imprimir PDF</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- docPreview fica FORA do .no-print para poder ser impresso -->
+    <div id="docPreviewWrap" class="preview-wrap" style="display:none;">
+      <div id="docPreview"></div>
+    </div>
+
+  </main>
+</div>
+
+<script>
+/* ==========================================================================
+   1. CLIENTES DE EXEMPLO E MÁSCARAS
+   ========================================================================== */
+const clientesMock = [
+  { id:1, tipo:'PF', nome:'Maria da Silva', documento:'111.222.333-44', telefone:'(31) 99999-1234', email:'maria@email.com', enderecoColeta:'Rua A, 100, Centro, Belo Horizonte', enderecoEntrega:'Rua B, 200, Savassi, Belo Horizonte' },
+  { id:2, tipo:'PJ', nome:'Empresa Vetta Ltda', documento:'12.345.678/0001-90', telefone:'(31) 98888-4321', email:'contato@vetta.com', enderecoColeta:'Av. C, 300, Belo Horizonte', enderecoEntrega:'Av. D, 400, Contagem' },
+  { id:3, tipo:'PF', nome:'Carlos Andrade', documento:'222.333.444-55', telefone:'(31) 97777-5678', email:'carlos@email.com', enderecoColeta:'Rua E, 50, Belo Horizonte', enderecoEntrega:'Rua F, 60, Nova Lima' }
+];
+function popularSelectClientes(){
+  const sel = document.getElementById('selectCliente');
+  clientesMock.forEach(c => { const opt = document.createElement('option'); opt.value = c.id; opt.textContent = `${c.nome} (${c.tipo})`; sel.appendChild(opt); });
+}
+function preencherCliente(){
+  const id = document.getElementById('selectCliente').value;
+  if(!id){ carregarPreenchimento(); return; }
+  const c = clientesMock.find(c => c.id == id);
+  document.getElementById('docTipoPessoa').value = c.tipo;
+  document.getElementById('docNome').value = c.nome;
+  document.getElementById('docDocumento').value = c.documento;
+  document.getElementById('docTelefone').value = c.telefone;
+  document.getElementById('docEmail').value = c.email;
+  document.getElementById('docEnderecoColeta').value = c.enderecoColeta;
+  document.getElementById('docEnderecoEntrega').value = c.enderecoEntrega;
+  carregarPreenchimento();
+}
+
+/* ==========================================================================
+   1B. PREENCHIMENTOS ANTERIORES POR CLIENTE + TIPO DE DOCUMENTO
+   Guardado em memória (mesmo padrão do resto da plataforma). Ao migrar para
+   Supabase, isso vira uma tabela "preenchimentos_documento" (cliente_id, tipo, dados).
+   ========================================================================== */
+const preenchimentosSalvos = {};
+function chavePreenchimento(){
+  const clienteId = document.getElementById('selectCliente').value || 'manual';
+  return `${clienteId}_${tipoAtual}`;
+}
+const CAMPOS_POR_TIPO = {
+  orcamento:   { valores:['orcData','orcValidade','orcValor','orcOutrosServicos'], checks:['srv1','srv2','srv3','srv4','srv5'] },
+  contrato:    { valores:['ctrData','ctrDataExecucao','ctrValor','ctrSeguro','ctrClausulas'], checks:[] },
+  inventario:  { valores:['catData','catMetragem','catObservacao'], checks:[], catalogo:true },
+  guarda:      { valores:['guaEndereco','guaData','guaValor','guaVencimentoDia','guaPrazo','guaSeguro','catData','catMetragem','catObservacao'], checks:[], catalogo:true },
+  imagem:      { valores:['imgPrazo'], checks:['imgPessoal','imgItens','imgRedes','imgPortfolio','imgImpresso'] },
+  comprovante: { valores:['comData','comRecebedor','comRessalvas'], checks:[] }
+};
+function salvarPreenchimento(){
+  const cfg = CAMPOS_POR_TIPO[tipoAtual];
+  if(!cfg) return;
+  const dados = { valores:{}, checks:{} };
+  cfg.valores.forEach(id => { const el = document.getElementById(id); if(el) dados.valores[id] = el.value; });
+  cfg.checks.forEach(id => { const el = document.getElementById(id); if(el) dados.checks[id] = el.checked; });
+  if(cfg.catalogo){
+    dados.itens = {};
+    Object.values(catalogoItens).flat().forEach(item => {
+      const id = slug(item);
+      const qtd = document.getElementById('qtd_'+id).value;
+      const valor = document.getElementById('valor_'+id).value;
+      if(qtd || valor) dados.itens[id] = { qtd, valor };
+    });
+  }
+  preenchimentosSalvos[chavePreenchimento()] = dados;
+}
+function carregarPreenchimento(){
+  const cfg = CAMPOS_POR_TIPO[tipoAtual];
+  const hint = document.getElementById('hintPreenchimentoAnterior');
+  if(!cfg) return;
+  const dados = preenchimentosSalvos[chavePreenchimento()];
+  if(!dados){ if(hint) hint.style.display = 'none'; return; }
+  cfg.valores.forEach(id => { const el = document.getElementById(id); if(el && dados.valores[id] !== undefined) el.value = dados.valores[id]; });
+  cfg.checks.forEach(id => { const el = document.getElementById(id); if(el && dados.checks[id] !== undefined) el.checked = dados.checks[id]; });
+  if(cfg.catalogo && dados.itens){
+    Object.entries(dados.itens).forEach(([id, v]) => {
+      const qtdEl = document.getElementById('qtd_'+id), valorEl = document.getElementById('valor_'+id);
+      if(qtdEl) qtdEl.value = v.qtd;
+      if(valorEl) valorEl.value = v.valor;
+    });
+    atualizarValorTotalCatalogo();
+  }
+  if(hint) hint.style.display = 'block';
+}
+function maskPhone(v){
+  v = v.replace(/\D/g,'').slice(0,11);
+  if(v.length > 10) v = v.replace(/(\d{2})(\d{5})(\d{4})/,'($1) $2-$3');
+  else if(v.length > 6) v = v.replace(/(\d{2})(\d{4})(\d{0,4})/,'($1) $2-$3');
+  else if(v.length > 2) v = v.replace(/(\d{2})(\d{0,5})/,'($1) $2');
+  else if(v.length > 0) v = v.replace(/(\d*)/,'($1');
+  return v;
+}
+function maskCPF(v){ v=v.replace(/\D/g,'').slice(0,11); v=v.replace(/(\d{3})(\d)/,'$1.$2'); v=v.replace(/(\d{3})(\d)/,'$1.$2'); v=v.replace(/(\d{3})(\d{1,2})$/,'$1-$2'); return v; }
+function maskCNPJ(v){ v=v.replace(/\D/g,'').slice(0,14); v=v.replace(/(\d{2})(\d)/,'$1.$2'); v=v.replace(/(\d{3})(\d)/,'$1.$2'); v=v.replace(/(\d{3})(\d)/,'$1/$2'); v=v.replace(/(\d{4})(\d{1,2})$/,'$1-$2'); return v; }
+function aplicarMascaraDocumento(v){ return document.getElementById('docTipoPessoa').value === 'PF' ? maskCPF(v) : maskCNPJ(v); }
+function atualizarMascaraDocumento(){ const el = document.getElementById('docDocumento'); el.value = aplicarMascaraDocumento(el.value); }
+
+/* ==========================================================================
+   2. ALTERNÂNCIA ENTRE TIPOS DE DOCUMENTO
+   ========================================================================== */
+const tipos = ['orcamento','contrato','inventario','guarda','imagem','comprovante'];
+let tipoAtual = 'orcamento';
+function selecionarTipo(tipo){
+  tipoAtual = tipo;
+  tipos.forEach(t => document.querySelector(`.doc-tab[data-tipo="${t}"]`).classList.toggle('active', t === tipo));
+  document.getElementById('secao-orcamento').style.display   = tipo === 'orcamento'   ? 'block' : 'none';
+  document.getElementById('secao-contrato').style.display    = tipo === 'contrato'    ? 'block' : 'none';
+  document.getElementById('secao-guarda').style.display      = tipo === 'guarda'      ? 'block' : 'none';
+  document.getElementById('secao-imagem').style.display      = tipo === 'imagem'      ? 'block' : 'none';
+  document.getElementById('secao-comprovante').style.display = tipo === 'comprovante' ? 'block' : 'none';
+  document.getElementById('secao-catalogo').style.display    = (tipo === 'inventario' || tipo === 'guarda') ? 'block' : 'none';
+  document.getElementById('hintInventarioLink').style.display = tipo === 'inventario' ? 'block' : 'none';
+  document.getElementById('previewWrap').classList.remove('show');
+  document.getElementById('docPreviewWrap').style.display = 'none';
+  carregarPreenchimento();
+}
+
+/* ==========================================================================
+   3. CATÁLOGO DE ITENS — mesma lista da plataforma Muda Muda
+   ========================================================================== */
+const catalogoItens = {
+  "Sala de estar": ["Abajur","Aparador","Banco Alto","Bar","Cadeira de Balanço","Cadeira c/ Braço","Cadeira Simples","Caixa grande","Caixa pequena","Console/aparador","Estante / Rack Grande","Estante / Rack Pequeno","Mesa Centro / lateral","Mesa Telefone","Poltrona Grande","Pufe","Quadro Grande","Quadro Pequeno","Sofá 2 Lugares","Sofá 3 Lugares","Sofá 4 Lugares","Sofá chaise","Sofá em L","Sofá cama"],
+  "Sala de jantar": ["Buffet","Cadeira","Cadeira Criança","Caixa grande","Caixa pequena","Cristaleira 1 porta","Cristaleira 2 / 4 portas","Mesa para 4 cadeiras","Mesa para 6 cadeiras","Mesa para 8 ou mais cadeiras","Tampo de mármore/granito","Tampo de vidro"],
+  "Cozinha/Área de serviço": ["Air Fryer","Armário 2 portas","Armário 3 portas","Armário 4 portas","Armário 6 portas","Armário Aéreo / Parede","Armário Paneleiro","Balcão","Batedeira","Bebedouro","Botijão de Gás","Cadeira","Cafeteira","Caixa grande","Caixa pequena","Cooktop","Exaustor","Filtro de Água","Fogão 4 bocas","Fogão 6 bocas","Forno Elétrico","Freezer horizontal","Freezer vertical","Frigobar","Galão Água","Geladeira Biplex / Duplex","Geladeira Side by Side","Geladeira Simples","Máquina Lavar louça","Máquina Lavar roupa","Máquina secar roupa","Micro-Ondas","Multiprocessador","Panelas","Pia","Tábua Passar","Tanque Lavar Roupa","Varal de Chão / Pendurar"],
+  "Quarto/Dormitório": ["Baú","Beliche","Berço / cama bebê","Box p/ Colchão Casal","Box p/ Colchão Solteiro","Cabeceira de Cama","Cabideiro / Arara","Caixa grande","Caixa pequena","Cama beliche","Cama casal Box","Cama Casal King","Cama Casal Queen","Cama Solteiro","Colchão Casal Avulso","Colchão Solteiro Avulso","Cômoda","Criado Mudo","Escrivaninha","Espelho","Estante / Rack Grande","Estante / Rack Pequeno","Guarda-roupa 2 P","Guarda-roupa 3 P","Guarda-roupa 4 P","Guarda-roupa 6 P","Guarda-roupa duplex","Lustre/Luminária","Mesa Cabeceira","Penteadeira","Sapateira"],
+  "Eletrônicos": ["Aparelho de som","Ar Condicionado","Aspirador","Caixa de Som","Climatizador de Ar","Computador","DVD / Blu-ray aparelho","Home Theater","Impressora","Monitor","Soundbar","TV até 43\"","TV de 44\" a 65\"","TV acima de 65\""],
+  "Diversos": ["Adega 20 garrafas","Adega 40 garrafas","Adega 80 garrafas","Adega 200 garrafas","Aquecedor","Arca 2 portas","Arca 3 portas","Arca 4 portas","Arca Vitrine","Bicicleta","Bicicleta Ergonômica","Biombo","Botijão","Cadeira Massagem","Caixa Cabideiro","Cama Hospitalar","Carrinho de Chá","Churrasqueira","Cofre","Conjunto de Varanda","Cortinas","Escada","Esteira","Halteres e Anilhas","Lustre","Mala","Máquina de Costura","Prancha de Surf","Prateleira","Projetor","Tapete Grande","Tapete Pequeno","Ventilador","Violão"]
+};
+function slug(s){ return s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]+/g,'_'); }
+
+function popularCatalogo(){
+  const tbody = document.getElementById('corpoCatalogo');
+  Object.entries(catalogoItens).forEach(([categoria, itens]) => {
+    const trCat = document.createElement('tr');
+    trCat.className = 'cat-row';
+    trCat.innerHTML = `<td colspan="4">${categoria}</td>`;
+    tbody.appendChild(trCat);
+    itens.forEach(item => {
+      const id = slug(item);
+      const tr = document.createElement('tr');
+      tr.className = 'item-row';
+      tr.dataset.nome = item.toLowerCase();
+      tr.innerHTML = `
+        <td>${item}</td>
+        <td><input type="number" min="0" id="qtd_${id}" oninput="atualizarValorTotalCatalogo()"></td>
+        <td><input type="number" step="0.01" id="valor_${id}" placeholder="R$" oninput="atualizarValorTotalCatalogo()"></td>`;
+      tbody.appendChild(tr);
+    });
+  });
+}
+function filtrarCatalogo(){
+  const termo = document.getElementById('filtroCatalogo').value.toLowerCase();
+  document.querySelectorAll('#corpoCatalogo tr.item-row').forEach(tr => { tr.style.display = tr.dataset.nome.includes(termo) ? '' : 'none'; });
+  document.querySelectorAll('#corpoCatalogo tr.cat-row').forEach(trCat => {
+    let proximo = trCat.nextElementSibling, temVisivel = false;
+    while(proximo && !proximo.classList.contains('cat-row')){ if(proximo.style.display !== 'none') temVisivel = true; proximo = proximo.nextElementSibling; }
+    trCat.style.display = temVisivel ? '' : 'none';
+  });
+}
+function limparCatalogo(){
+  Object.values(catalogoItens).flat().forEach(item => {
+    const id = slug(item);
+    document.getElementById('qtd_'+id).value = '';
+    document.getElementById('valor_'+id).value = '';
+  });
+  atualizarValorTotalCatalogo();
+}
+function atualizarValorTotalCatalogo(){
+  let total = 0;
+  Object.values(catalogoItens).flat().forEach(item => {
+    const id = slug(item);
+    const v = parseFloat(document.getElementById('valor_'+id).value);
+    if(!isNaN(v)) total += v;
+  });
+  document.getElementById('catValorTotal').value = total > 0 ? formatBRL(total) : '';
+}
+function itensPreenchidos(){
+  const linhas = [];
+  Object.values(catalogoItens).flat().forEach(item => {
+    const id = slug(item);
+    const qtd = document.getElementById('qtd_'+id).value;
+    if(qtd && parseFloat(qtd) > 0){
+      linhas.push({ item, qtd, valor: document.getElementById('valor_'+id).value });
+    }
+  });
+  return linhas;
+}
+function renderTabelaItens(){
+  const linhas = itensPreenchidos();
+  if(linhas.length === 0) return '<p><i>Nenhum item com quantidade preenchida.</i></p>';
+  const corpo = linhas.map(l => `<tr><td>${l.item}</td><td>${l.qtd}</td><td>${l.valor ? formatBRL(l.valor) : '-'}</td></tr>`).join('');
+  return `<table class="ph-table"><thead><tr><th>Item</th><th>Qtd.</th><th>Valor (R$)</th></tr></thead><tbody>${corpo}</tbody></table>`;
+}
+
+/* ==========================================================================
+   4. FORMATAÇÃO
+   ========================================================================== */
+function formatBRL(v){ return Number(v).toLocaleString('pt-BR',{style:'currency',currency:'BRL'}); }
+function valorOuLinha(v){ return (v !== '' && v !== null && v !== undefined && !isNaN(v)) ? formatBRL(v) : '____________________'; }
+function dataFormatada(v){ return v ? new Date(v+'T00:00:00').toLocaleDateString('pt-BR') : '____/____/______'; }
+function hojeFormatada(){ return new Date().toLocaleDateString('pt-BR'); }
+
+/* ==========================================================================
+   5. LETTERHEAD (cabeçalho e rodapé compartilhados)
+   ========================================================================== */
+function renderCabecalho(titulo, badge){
+  return `
+    <div class="ph-header">
+      <div class="ph-brand"><img src="assets/logo-jlt.jpeg" alt="Juliano Lopes Transportes"><small>CNPJ: 58.450.843/0001-70</small></div>
+      <div class="ph-contact">contato@julianoltransportes.com.br<br>(31) 97339-0837 · (31) 99441-3919</div>
+    </div>
+    <hr class="ph-rule">
+    <div class="ph-titlebox"><h1>${titulo}</h1>${badge ? `<div class="ph-badge">${badge}</div>` : ''}</div>
+  `;
+}
+function renderRodape(){ return `<div class="ph-footer">JULIANO LOPES TRANSPORTES LTDA · CNPJ 58.450.843/0001-70 · Documento gerado em: ${hojeFormatada()}</div>`; }
+function dadosCliente(){
+  return {
+    nome: document.getElementById('docNome').value || '[cliente]',
+    tipoPessoa: document.getElementById('docTipoPessoa').value === 'PF' ? 'pessoa física' : 'pessoa jurídica',
+    documento: document.getElementById('docDocumento').value,
+    telefone: document.getElementById('docTelefone').value,
+    email: document.getElementById('docEmail').value,
+    enderecoColeta: document.getElementById('docEnderecoColeta').value,
+    enderecoEntrega: document.getElementById('docEnderecoEntrega').value
+  };
+}
+function blocoPartes(c){
+  return `<h2 class="ph-section">Cláusula 1 – Identificação das Partes</h2>
+    <p>De um lado, <b>JULIANO LOPES TRANSPORTES LTDA</b>, pessoa jurídica de direito privado, inscrita no CNPJ nº 58.450.843/0001-70, com sede na Rua Levino Rodrigues Martins, nº 37, Bairro Serra Verde, Belo Horizonte/MG, CEP 31.630-510, e-mail contato@julianoltransportes.com.br, doravante denominada <b>CONTRATADA</b>.</p>
+    <p>E, de outro lado, <b>${c.nome}</b>, ${c.tipoPessoa}, inscrito(a) no CPF/CNPJ nº ${c.documento || '____________________'}, residente e domiciliado(a) em ${c.enderecoColeta || '____________________'}, doravante denominado(a) <b>CONTRATANTE</b>.</p>
+    <p>As partes acima identificadas celebram o presente contrato, que será regido pelas cláusulas e condições a seguir.</p>`;
+}
+function blocoForcaMaior(numero, variante){
+  const texto = variante === 'guarda'
+    ? 'Nenhuma das partes responderá por eventos imprevisíveis ou inevitáveis que impeçam a execução do contrato.'
+    : 'Nenhuma das partes responderá por atrasos decorrentes de caso fortuito ou força maior.';
+  return `<h2 class="ph-section">Cláusula ${numero} – Caso Fortuito e Força Maior</h2><p><b>${numero}.1.</b> ${texto}</p>`;
+}
+function blocoAssinaturas(c, contratanteLabel){
+  return `<div class="ph-signline"><div>${contratanteLabel}<br>${c.nome}<br>CPF/CNPJ: ${c.documento || '____________________'}</div><div>CONTRATADA<br>JULIANO LOPES TRANSPORTES LTDA<br>CNPJ: 58.450.843/0001-70</div></div>`;
+}
+function blocoSeguro(variante, seguroIncluso){
+  const marcado = (v) => seguroIncluso === v ? '☑' : '☐';
+  if(variante === 'guarda'){
+    return `<h2 class="ph-section">Cláusula 8 – Seguro</h2>
+    <p><b>8.1.</b> O seguro dos bens: ${marcado('sim')} INCLUSO &nbsp;/&nbsp; ${marcado('nao')} NÃO INCLUSO</p>
+    <p><b>8.2.</b> Quando incluso, considera-se cobertura até o limite contratado.</p>
+    <p><b>8.3.</b> Havendo renúncia ao seguro, o CONTRATANTE declara ciência dos riscos.</p>`;
+  }
+  return `<h2 class="ph-section">Cláusula 8 – Seguro</h2>
+    <p><b>8.1.</b> O seguro de carga: ${marcado('sim')} INCLUSO &nbsp;/&nbsp; ${marcado('nao')} NÃO INCLUSO</p>
+    <p><b>8.2.</b> Caso o CONTRATANTE opte pela não contratação do seguro, deverá formalizar sua decisão antes do início do serviço.</p>
+    <p><b>8.3.</b> Nessa hipótese, assume integral responsabilidade pelos riscos não cobertos.</p>`;
+}
+
+/* ==========================================================================
+   6. RENDERIZAÇÃO POR TIPO DE DOCUMENTO
+   ========================================================================== */
+function renderOrcamento(){
+  const c = dadosCliente();
+  const validade = document.getElementById('orcValidade').value || 15;
+  const valorTotal = document.getElementById('orcValor').value;
+  const sinal = valorTotal ? Math.max(parseFloat(valorTotal)*0.10, 500) : null;
+  const saldo = valorTotal ? parseFloat(valorTotal) - sinal : null;
+  const parcela1 = saldo !== null ? saldo*0.5 : null;
+  const parcela2 = saldo !== null ? saldo - parcela1 : null;
+  const servicos = [['srv1','Logística terrestre completa'],['srv2','Embalagem e proteção dos bens transportados'],['srv3','Cobertura de seguro para a carga'],['srv4','Mão de obra de carregamento e descarregamento'],['srv5','Condução por motorista credenciado e responsável']]
+    .filter(([id]) => document.getElementById(id).checked).map(([,label]) => `<li>${label}</li>`).join('');
+  const outros = document.getElementById('orcOutrosServicos').value.split('\n').filter(l=>l.trim()).map(l=>`<li>${l}</li>`).join('');
+
+  return renderCabecalho('Orçamento', `Válido por ${validade} dias`) + `
+    <p>Prezado(a) <b>${c.nome}</b>,</p>
+    <p>Em atenção à solicitação encaminhada, a <b>Juliano Lopes Transportes</b> apresenta abaixo a proposta comercial referente ao serviço de transporte e mudança, estruturada para atender às suas necessidades com segurança, transparência e pontualidade.</p>
+    <h2 class="ph-section">Informações gerais</h2>
+    <p><b>Contato:</b> ${c.telefone || '____________________'}<br><b>Endereço de coleta:</b> ${c.enderecoColeta || '____________________'}<br><b>Endereço de entrega:</b> ${c.enderecoEntrega || '____________________'}<br><b>Data prevista para coleta:</b> ${dataFormatada(document.getElementById('orcData').value)}</p>
+    <h2 class="ph-section">Serviços inclusos</h2><ul>${servicos}${outros}</ul>
+    <h2 class="ph-section">Condições financeiras</h2>
+    <p><b>Valor total do serviço:</b> ${valorOuLinha(valorTotal)}<br><b>Sinal</b> <i>(10%, mínimo R$500,00)</i>: ${valorOuLinha(sinal)} — no ato da assinatura do contrato<br><b>1ª parcela</b> <i>(50% do saldo)</i>: ${valorOuLinha(parcela1)} — no momento do carregamento<br><b>2ª parcela</b> <i>(saldo final)</i>: ${valorOuLinha(parcela2)} — antes do início do descarregamento no destino</p>
+    <p style="font-size:11px;color:#6f665d;">Pagamentos por cartão de crédito devem ser realizados no momento da coleta, podendo ser parcelados conforme condições da operadora, com acréscimos por conta do Contratante. Valores poderão ser ajustados em caso de alterações significativas na rota, volume ou prazo.</p>
+    <h2 class="ph-section">Validade e condições gerais</h2>
+    <p>Validade do orçamento: ${validade} dias a partir da data de envio. O serviço será executado mediante contrato formal e emissão de recibos de pagamento. Qualquer modificação nos dados de origem, destino ou datas deverá ser comunicada com antecedência mínima de 48 horas.</p>
+    <p>A <b>Juliano Lopes Transportes</b> atua com foco em confiabilidade, agilidade e cuidado com cada item transportado, assegurando o cumprimento integral dos prazos e condições acordadas.</p>
+    <p>Atenciosamente,<br><b>Juliano Lopes Transportes</b></p>
+  ` + renderRodape();
+}
+
+function renderContrato(){
+  const c = dadosCliente();
+  const valor = document.getElementById('ctrValor').value;
+  const sinal = valor ? Math.max(parseFloat(valor)*0.10, 500) : null;
+  const saldo = valor ? parseFloat(valor) - sinal : null;
+  const parcela1 = saldo !== null ? saldo*0.5 : null;
+  const seguro = document.getElementById('ctrSeguro').value;
+  const clausulasExtra = document.getElementById('ctrClausulas').value.split('\n').filter(l=>l.trim()).map(l=>`<p>${l}</p>`).join('');
+  const dataContrato = dataFormatada(document.getElementById('ctrData').value) !== '____/____/______' ? dataFormatada(document.getElementById('ctrData').value) : hojeFormatada();
+
+  return renderCabecalho('Contrato de Prestação de Serviço') + `
+    ${blocoPartes(c)}
+    <h2 class="ph-section">Cláusula 2 – Objeto do Contrato</h2>
+    <p>O presente contrato tem por objeto a prestação de serviços de transporte terrestre de bens móveis pertencentes ao CONTRATANTE, incluindo, quando contratado, os serviços de embalagem, carga, transporte e descarga, do endereço de origem ao endereço de destino informados pelo CONTRATANTE.</p>
+
+    <h2 class="ph-section">Cláusula 3 – Obrigações da Contratada</h2>
+    <p><b>3.1.</b> Realizar a coleta dos bens no endereço de origem: ${c.enderecoColeta || '____________________'}, efetuando a entrega no endereço de destino: ${c.enderecoEntrega || '____________________'}, na data prevista: ${dataFormatada(document.getElementById('ctrDataExecucao').value)}.</p>
+    <p><b>3.2.</b> Utilizar veículos, equipamentos e mão de obra compatíveis com a execução do serviço contratado.</p>
+    <p><b>3.3.</b> Quando contratado, realizar a embalagem dos bens com materiais adequados.</p>
+    <p><b>3.4.</b> Zelar pela integridade dos bens durante todo o período em que estiverem sob sua responsabilidade, observadas as limitações previstas neste contrato.</p>
+    <p><b>3.5.</b> A responsabilidade da CONTRATADA inicia-se no recebimento dos bens e encerra-se com a entrega ao destinatário no endereço informado.</p>
+
+    <h2 class="ph-section">Cláusula 4 – Obrigações do Contratante</h2>
+    <p><b>4.1.</b> Informar corretamente os endereços de origem e destino, garantindo livre acesso ao veículo.</p>
+    <p><b>4.2.</b> Providenciar autorizações, reservas de vagas, liberações em condomínios, utilização de elevadores e demais exigências locais.</p>
+    <p><b>4.3.</b> Conferir todos os bens no ato da entrega, registrando imediatamente qualquer avaria ou divergência antes da assinatura do comprovante.</p>
+    <p><b>4.4.</b> Separar previamente documentos, dinheiro, joias, armas, cartões, eletrônicos portáteis e demais objetos de alto valor.</p>
+    <p><b>4.5.</b> Efetuar os pagamentos nos valores e prazos estabelecidos neste contrato.</p>
+
+    <h2 class="ph-section">Cláusula 5 – Prazos e Condições de Execução</h2>
+    <p><b>5.1.</b> As datas de coleta e entrega possuem caráter estimado, podendo sofrer alterações por motivos operacionais, climáticos, de trânsito ou força maior.</p>
+
+    <h2 class="ph-section">Cláusula 6 – Valores, Forma de Pagamento e Reajustes</h2>
+    <p><b>6.1.</b> Valor total do serviço: ${valorOuLinha(valor)}.</p>
+    <p><b>6.2.</b> O pagamento será realizado da seguinte forma:<br>a) Sinal: ${valorOuLinha(sinal)} (10%, mínimo de R$500,00) na assinatura do contrato;<br>b) Carregamento: ${valorOuLinha(parcela1)} (50% do saldo restante) no início da coleta;<br>c) Saldo final: antes do descarregamento.</p>
+    <p><b>6.3.</b> Pagamentos por cartão poderão ser parcelados conforme a operadora, sendo eventuais taxas de responsabilidade do CONTRATANTE.</p>
+
+    <h2 class="ph-section">Cláusula 7 – Responsabilidades, Limites e Exclusões</h2>
+    <p><b>7.1.</b> A indenização por eventual avaria será calculada sobre o valor individual do bem.</p>
+    <p><b>7.2.</b> A CONTRATADA não responderá por defeitos preexistentes, vícios ocultos, desgaste natural, danos decorrentes de embalagens realizadas pelo CONTRATANTE ou perda de dados.</p>
+    <p><b>7.3.</b> Recomenda-se backup prévio de equipamentos eletrônicos.</p>
+
+    ${blocoSeguro('contrato', seguro)}
+
+    <h2 class="ph-section">Cláusula 9 – Guarda, Manuseio e Acondicionamento dos Bens</h2>
+    <p><b>9.1.</b> Caso os bens permaneçam embalados após a entrega, o CONTRATANTE assume a responsabilidade por avarias constatadas posteriormente.</p>
+    <p><b>9.2.</b> A assinatura do comprovante de entrega sem ressalvas presume o recebimento em perfeito estado.</p>
+
+    ${blocoForcaMaior(10, 'contrato')}
+
+    <h2 class="ph-section">Cláusula 11 – Rescisão</h2>
+    <p><b>11.1.</b> O contrato poderá ser rescindido mediante comunicação por escrito.</p>
+    <p><b>11.2.</b> Havendo cancelamento após o início da execução, poderão ser cobrados os custos já incorridos.</p>
+
+    <h2 class="ph-section">Cláusula 12 – Penalidades</h2>
+    <p><b>12.1.</b> O descumprimento deste contrato sujeitará a parte infratora às penalidades legais, sem prejuízo de perdas e danos.</p>
+
+    <h2 class="ph-section">Cláusula 13 – Vigência</h2>
+    <p><b>13.1.</b> Este contrato entra em vigor na data de sua assinatura e permanece válido até a conclusão dos serviços e a quitação integral dos valores.</p>
+
+    ${clausulasExtra ? `<h2 class="ph-section">Cláusulas Adicionais</h2>${clausulasExtra}` : ''}
+
+    <p>E, por estarem justas e contratadas, as partes assinam o presente instrumento em duas vias de igual teor e forma.</p>
+    <p>Belo Horizonte, ${dataContrato}.</p>
+    ${blocoAssinaturas(c, 'CONTRATANTE')}
+  ` + renderRodape();
+}
+
+function renderInventario(){
+  const c = dadosCliente();
+  return renderCabecalho('Inventário dos Itens') + `
+    <p><b>Cliente:</b> ${c.nome} — <b>Data:</b> ${dataFormatada(document.getElementById('catData').value)}</p>
+    <p><b>Origem:</b> ${c.enderecoColeta || '____________________'} &nbsp;|&nbsp; <b>Destino:</b> ${c.enderecoEntrega || '____________________'}</p>
+    <h2 class="ph-section">Itens relacionados</h2>
+    ${renderTabelaItens()}
+    <p><b>Valor total declarado:</b> ${document.getElementById('catValorTotal').value || '____________________'}<br><b>Metragem calculada:</b> ${document.getElementById('catMetragem').value ? document.getElementById('catMetragem').value+' m³' : '______ m³'}</p>
+    <h2 class="ph-section">Observação</h2>
+    <p>${document.getElementById('catObservacao').value || '—'}</p>
+    <p>E, por estarem justas e contratadas, firmam o presente inventário em duas vias de igual teor.</p>
+    <p>Belo Horizonte, ${hojeFormatada()}.</p>
+    ${blocoAssinaturas(c, 'CONTRATANTE')}
+  ` + renderRodape();
+}
+
+function renderGuarda(){
+  const c = dadosCliente();
+  const valor = document.getElementById('guaValor').value;
+  const vencimento = document.getElementById('guaVencimentoDia').value || '___';
+  const metragem = document.getElementById('catMetragem').value || '______';
+  const prazo = document.getElementById('guaPrazo').value;
+  const seguro = document.getElementById('guaSeguro').value;
+  const dataInicio = dataFormatada(document.getElementById('guaData').value) !== '____/____/______' ? dataFormatada(document.getElementById('guaData').value) : hojeFormatada();
+
+  return renderCabecalho('Contrato de Guarda de Móveis') + `
+    <p style="text-align:center;font-size:11px;color:#6f665d;margin-bottom:16px;">CONTRATO DE PRESTAÇÃO DE SERVIÇOS DE GUARDA-MÓVEIS</p>
+    <h2 class="ph-section">Cláusula 1 – Identificação das Partes</h2>
+    <p>De um lado, <b>JULIANO LOPES TRANSPORTES LTDA</b>, pessoa jurídica de direito privado, inscrita no CNPJ nº 58.450.843/0001-70, com sede na Rua Levino Rodrigues Martins, nº 37, Bairro Serra Verde, Belo Horizonte/MG, CEP 31.630-510, e-mail contato@julianoltransportes.com.br, doravante denominada <b>CONTRATADA</b>.</p>
+    <p>De outro lado, <b>${c.nome}</b>, inscrito(a) no CPF/CNPJ nº ${c.documento || '____________________'}, residente em ${c.enderecoColeta || '____________________'}, doravante denominado(a) <b>CONTRATANTE</b>.</p>
+    <p>As partes celebram o presente contrato, regido pelas cláusulas abaixo.</p>
+
+    <h2 class="ph-section">Cláusula 2 – Objeto do Contrato</h2>
+    <p><b>2.1.</b> Constitui objeto deste contrato a prestação dos serviços de guarda, armazenamento, conservação, custódia e controle dos bens móveis do CONTRATANTE no depósito da CONTRATADA, situado na ${document.getElementById('guaEndereco').value}.</p>
+    <p><b>2.2.</b> Os bens armazenados serão aqueles constantes do Anexo I – Inventário, parte integrante deste contrato.</p>
+
+    <h2 class="ph-section">Cláusula 3 – Inventário, Recebimento e Entrega</h2>
+    <p><b>3.1.</b> Nenhum bem será armazenado sem o preenchimento e assinatura do inventário.</p>
+    <p><b>3.2.</b> O inventário conterá a descrição, quantidade, metragem ocupada e valor declarado dos bens.</p>
+    <p><b>3.3.</b> A retirada dos bens ocorrerá somente mediante identificação do CONTRATANTE ou representante autorizado e após a quitação integral dos débitos existentes.</p>
+
+    <h2 class="ph-section">Cláusula 4 – Obrigações da Contratada</h2>
+    <p><b>4.1.</b> Manter os bens armazenados em ambiente adequado e seguro.</p>
+    <p><b>4.2.</b> Registrar movimentações autorizadas.</p>
+    <p><b>4.3.</b> Permitir vistoria mediante agendamento prévio.</p>
+    <p><b>4.4.</b> Zelar pelos bens enquanto estiverem sob sua guarda, respeitadas as limitações deste contrato.</p>
+
+    <h2 class="ph-section">Cláusula 5 – Obrigações do Contratante</h2>
+    <p><b>5.1.</b> Entregar os bens devidamente embalados, identificados e aptos ao armazenamento.</p>
+    <p><b>5.2.</b> Declarar corretamente o conteúdo e o valor dos bens.</p>
+    <p><b>5.3.</b> Informar itens que necessitem de cuidados especiais.</p>
+    <p><b>5.4.</b> Efetuar o pagamento nas datas contratadas.</p>
+
+    <h2 class="ph-section">Cláusula 6 – Valores e Pagamento</h2>
+    <p><b>6.1.</b> Valor mensal: ${valorOuLinha(valor)}.</p>
+    <p><b>6.2.</b> Volume armazenado: ${metragem} m³.</p>
+    <p><b>6.3.</b> O vencimento ocorrerá todo dia ${vencimento} de cada mês.</p>
+    <p><b>6.4.</b> O atraso acarretará multa de 2%, juros de 1% ao mês e correção monetária.</p>
+    <p><b>6.5.</b> Os valores poderão ser reajustados anualmente mediante aviso prévio de 30 dias.</p>
+
+    <h2 class="ph-section">Cláusula 7 – Responsabilidade</h2>
+    <p><b>7.1.</b> A responsabilidade da CONTRATADA limita-se ao valor declarado no inventário, observados os limites do seguro.</p>
+    <p><b>7.2.</b> Não haverá responsabilidade por vícios próprios dos bens, deterioração natural, embalagens inadequadas realizadas pelo CONTRATANTE, caso fortuito ou força maior.</p>
+
+    ${blocoSeguro('guarda', seguro)}
+
+    <h2 class="ph-section">Cláusula 9 – Acesso e Retirada</h2>
+    <p><b>9.1.</b> A retirada parcial ou total dependerá de aviso prévio mínimo de 7 dias.</p>
+    <p><b>9.2.</b> A entrega dos bens somente ocorrerá após a quitação dos valores pendentes.</p>
+    <p><b>9.3.</b> Retiradas parciais poderão gerar recálculo do volume armazenado.</p>
+
+    <h2 class="ph-section">Cláusula 10 – Vigência</h2>
+    <p><b>10.1.</b> O presente contrato possui prazo${prazo ? ` inicial de ${prazo} meses` : ' indeterminado'}, iniciando-se na data da assinatura.</p>
+    <p><b>10.2.</b> Permanecendo os bens armazenados, considera-se renovado automaticamente.</p>
+
+    <h2 class="ph-section">Cláusula 11 – Rescisão</h2>
+    <p><b>11.1.</b> Qualquer parte poderá rescindir este contrato mediante aviso prévio de 30 dias.</p>
+    <p><b>11.2.</b> A CONTRATADA poderá exercer o direito de retenção dos bens até a quitação integral dos débitos, nos termos da legislação aplicável.</p>
+
+    ${blocoForcaMaior(12, 'guarda')}
+
+    <h2 class="ph-section">Cláusula 13 – Disposições Gerais</h2>
+    <p><b>13.1.</b> O Anexo I – Inventário integra este contrato para todos os efeitos legais.</p>
+    <p><b>13.2.</b> Alterações somente terão validade se realizadas por escrito e assinadas pelas partes.</p>
+    <p><b>13.3.</b> As partes firmam o presente instrumento em duas vias de igual teor e forma.</p>
+
+    <div class="ph-pagebreak"></div>
+    <h2 class="ph-section">Anexo I – Inventário dos Bens Armazenados</h2>
+    ${renderTabelaItens()}
+    <p><b>Valor total declarado:</b> ${document.getElementById('catValorTotal').value || '____________________'}<br><b>Metragem calculada:</b> ${metragem} m³</p>
+
+    <p>Belo Horizonte, ${dataInicio}.</p>
+    ${blocoAssinaturas(c, 'CONTRATANTE')}
+  ` + renderRodape();
+}
+
+function renderImagem(){
+  const c = dadosCliente();
+  const abrangencia = [document.getElementById('imgPessoal').checked ? 'imagem pessoal do CONTRATANTE' : null, document.getElementById('imgItens').checked ? 'imagem dos itens/bens transportados' : null].filter(Boolean).join(' e ');
+  const finalidades = [['imgRedes','divulgação em redes sociais'],['imgPortfolio','portfólio/site da empresa'],['imgImpresso','materiais publicitários impressos']].filter(([id]) => document.getElementById(id).checked).map(([,l]) => l).join(', ');
+  return renderCabecalho('Autorização de Uso de Imagem') + `
+    <p>Eu, <b>${c.nome}</b>, documento nº ${c.documento || '____________________'}, autorizo a <b>Juliano Lopes Transportes</b> a utilizar minha ${abrangencia || 'imagem'}, captada durante a prestação do serviço, para fins de ${finalidades || '____________________'}.</p>
+    <h2 class="ph-section">Prazo</h2><p>${document.getElementById('imgPrazo').value}</p>
+    <p>Esta autorização é concedida a título gratuito, sem qualquer ônus para a CONTRATADA.</p>
+    <p>Belo Horizonte, ${hojeFormatada()}.</p>
+    ${blocoAssinaturas(c, 'AUTORIZANTE')}
+  ` + renderRodape();
+}
+
+function renderComprovante(){
+  const c = dadosCliente();
+  const dataEntrega = dataFormatada(document.getElementById('comData').value) !== '____/____/______' ? dataFormatada(document.getElementById('comData').value) : hojeFormatada();
+  const recebedor = document.getElementById('comRecebedor').value || c.nome;
+  const ressalvas = document.getElementById('comRessalvas').value;
+  return renderCabecalho('Comprovante de Entrega') + `
+    <p>Cliente: <b>${c.nome}</b>, documento nº ${c.documento || '____________________'}.</p>
+    <p>Empresa: <b>JULIANO LOPES TRANSPORTES LTDA</b>, CNPJ 58.450.843/0001-70.</p>
+    <p><b>Endereço de coleta:</b> ${c.enderecoColeta || '____________________'}<br><b>Endereço de entrega:</b> ${c.enderecoEntrega || '____________________'}<br><b>Data da entrega:</b> ${dataEntrega}</p>
+    <h2 class="ph-section">Declaração</h2>
+    <p>Eu, <b>${recebedor}</b>, declaro ter recebido e conferido a mudança realizada pela JULIANO LOPES TRANSPORTES LTDA, verificando a quantidade e o estado dos itens transportados, referentes ao endereço e à data acima indicados.</p>
+    ${ressalvas ? `<h2 class="ph-section">Ressalvas</h2><p>${ressalvas}</p>` : `<p>Não foram registradas ressalvas no ato da entrega.</p>`}
+    <p>Belo Horizonte, ${dataEntrega}.</p>
+    ${blocoAssinaturas(c, 'CONTRATANTE')}
+  ` + renderRodape();
+}
+
+/* ==========================================================================
+   7. GERAR PRÉVIA E IMPRIMIR / SALVAR EM PDF
+   Exportação usa a impressão nativa do navegador (mais confiável que
+   bibliotecas de captura em canvas). Ao clicar em imprimir, escolha
+   "Salvar como PDF" no destino da impressora.
+   ========================================================================== */
+function gerarDocumento(){
+  salvarPreenchimento();
+  const renderers = { orcamento: renderOrcamento, contrato: renderContrato, inventario: renderInventario, guarda: renderGuarda, imagem: renderImagem, comprovante: renderComprovante };
+  document.getElementById('docPreview').innerHTML = renderers[tipoAtual]();
+  document.getElementById('previewWrap').classList.add('show');
+  document.getElementById('docPreviewWrap').style.display = 'block';
+  document.getElementById('docPreviewWrap').scrollIntoView({behavior:'smooth', block:'start'});
+}
+/* Padrão oficial: Documento(Tipo)_NOMEdoCLIENTE_JLT — usado como título da página,
+   que o navegador sugere como nome do arquivo ao "Salvar como PDF".
+   INTEGRAÇÃO FUTURA: ao anexar automaticamente na ficha do cliente (módulo Clientes),
+   usar este mesmo nome para o arquivo salvo em cliente.anexos. */
+function nomeArquivoDocumento(){
+  const tipoLabel = { orcamento:'Orcamento', contrato:'Contrato', inventario:'Inventario', guarda:'ContratoGuardaMoveis', imagem:'AutorizacaoImagem', comprovante:'ComprovanteEntrega' }[tipoAtual] || 'Documento';
+  const nomeCliente = (document.getElementById('docNome').value || 'CLIENTE').toUpperCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^A-Z0-9]+/g,'');
+  return `Documento(${tipoLabel})_${nomeCliente}_JLT`;
+}
+function baixarPDF(){
+  gerarDocumento();
+  document.title = nomeArquivoDocumento();
+  setTimeout(() => window.print(), 150);
+}
+
+popularSelectClientes();
+popularCatalogo();
+</script>
+
+<style>
+/* ==========================================================================
+   8. IMPRESSÃO — ao imprimir (ou "salvar como PDF"), só o documento aparece
+   ========================================================================== */
+@media print{
+  body{ background:#fff; }
+  .no-print{ display:none !important; }
+  .app{ display:block; }
+  .sidebar{ display:none !important; }
+  .main{ padding:0; max-width:none; }
+  #docPreviewWrap{ display:block !important; }
+  #docPreview{ border:none; box-shadow:none; max-width:none; padding:0; margin:0; font-size:11.5px; }
+  #docPreview .ph-header{ padding-bottom:8px; }
+  #docPreview .ph-titlebox{ padding:10px 16px; margin-bottom:12px; }
+  #docPreview h2.ph-section{ margin:12px 0 6px; }
+  #docPreview .ph-signline{ margin-top:24px; }
+  #docPreview .ph-footer{ margin-top:14px; padding-top:6px; }
+  #docPreview p{ orphans:3; widows:3; }
+  #docPreview h2.ph-section{ break-after:avoid; page-break-after:avoid; }
+  #docPreview .ph-footer{ break-inside:avoid; page-break-inside:avoid; }
+  @page{ size: A4; margin: 10mm 14mm; }
+}
+</style>
+</body>
+</html>

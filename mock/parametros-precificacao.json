@@ -1,0 +1,23 @@
+{
+  "faixasVolume": [
+    { "id": "fxa_001", "ate": 15, "valorBase": 1500 },
+    { "id": "fxa_002", "ate": 30, "valorBase": 2800 },
+    { "id": "fxa_003", "ate": 50, "valorBase": 4600 },
+    { "id": "fxa_004", "ate": 80, "valorBase": 7200 },
+    { "id": "fxa_005", "ate": 120, "valorBase": 11000 },
+    { "id": "fxa_006", "ate": 999, "valorBase": 16000 }
+  ],
+  "adicionais": [
+    { "id": "adi_001", "nome": "Embalagem completa", "tipo": "percentual", "valor": 12 },
+    { "id": "adi_002", "nome": "Seguro de carga estendido", "tipo": "percentual", "valor": 8 },
+    { "id": "adi_003", "nome": "Desmontagem e montagem de móveis", "tipo": "fixo", "valor": 850 },
+    { "id": "adi_004", "nome": "Içamento por sacada", "tipo": "fixo", "valor": 1600 },
+    { "id": "adi_005", "nome": "Manuseio de equipamento sensível", "tipo": "percentual", "valor": 15 },
+    { "id": "adi_006", "nome": "Acesso difícil (ladeira, rua estreita)", "tipo": "fixo", "valor": 600 },
+    { "id": "adi_007", "nome": "Transporte de automóvel/motocicleta", "tipo": "fixo", "valor": 1200 },
+    { "id": "adi_008", "nome": "Guarda-móveis (por mês)", "tipo": "fixo", "valor": 900 }
+  ],
+  "custoPorKm": 4.85,
+  "margemMinima": 25,
+  "margemMaxima": 55
+}

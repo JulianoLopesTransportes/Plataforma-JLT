@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<title>Juliano Lopes Transportes — Guia Visual</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Montserrat:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+
+/* ==========================================================================
+   1. DESIGN TOKENS — mude tudo por aqui. O resto do arquivo usa só isso.
+   ========================================================================== */
+:root{
+  /* Cores de marca — atualizado conforme nova logo (identidade oficial) */
+  --color-primary:        #820901; /* vermelho institucional (logo) */
+  --color-primary-dark:   #5a0601; /* vermelho escuro / hover / sidebar */
+  --color-primary-light:  #a30d03; /* vermelho vivo / destaque, alertas */
+  --color-black:          #000000; /* preto institucional (logo) */
+  --color-gold:           #b8862f; /* dourado — cor terciária: selos, destaques pontuais */
+  --color-gold-light:     #d9b45f; /* dourado claro — hover em elementos dourados */
+  --color-white:          #ffffff;
+
+  /* Neutros / fundo */
+  --color-bg:             #faf8f6; /* fundo geral das telas */
+  --color-surface:        #ffffff; /* cards, tabelas, formulários */
+  --color-border:         #e6dfd6;
+  --color-gray-600:       #6f665d; /* texto secundário */
+  --color-text:           #241d1a; /* texto principal */
+
+  /* Estados / status (usados em badges de status de cliente) */
+  --color-success:        #2f6b3a;
+  --color-success-bg:     #e7f2e8;
+  --color-warning:        #a3760f;
+  --color-warning-bg:     #f7edd9;
+  --color-danger:         #a3241c;
+  --color-danger-bg:      #f7e3e1;
+  --color-info:           #2f5a80;
+  --color-info-bg:        #e4edf4;
+
+  /* Tipografia — atualizado conforme nova logo */
+  --font-display: 'Bebas Neue', sans-serif; /* títulos, sidebar, cabeçalhos — igual "JULIANO LOPES" na logo */
+  --font-body:    'Montserrat', sans-serif; /* textos corridos, formulários, tabelas — igual "TRANSPORTES" na logo */
+
+  /* Espaçamento — densidade "confortável" */
+  --space-1: 6px;
+  --space-2: 12px;
+  --space-3: 20px;
+  --space-4: 28px;
+  --space-5: 40px;
+  --space-6: 56px;
+
+  /* Raio e sombra padrão */
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 14px;
+  --shadow-card: 0 2px 10px rgba(28,22,20,0.06);
+}
+
+* { box-sizing: border-box; }
+body{
+  margin:0;
+  background: var(--color-bg);
+  color: var(--color-text);
+  font-family: var(--font-body);
+  line-height:1.55;
+}
+h1,h2,h3,h4,.font-display{
+  font-family: var(--font-display);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  font-weight:600;
+  margin:0;
+}
+
+/* ==========================================================================
+   2. LAYOUT BASE — sidebar fixa + área de conteúdo
+   Esse bloco é o que será reaproveitado em TODAS as ferramentas do sistema.
+   ========================================================================== */
+.app{ display:flex; min-height:100vh; }
+
+.sidebar{
+  width:250px;
+  flex-shrink:0;
+  background: linear-gradient(180deg, var(--color-black) 0%, var(--color-primary-dark) 100%);
+  color: var(--color-white);
+  display:flex;
+  flex-direction:column;
+  padding: var(--space-4) 0;
+  position: sticky;
+  top:0;
+  height:100vh;
+}
+.sidebar-brand{
+  display:flex;
+  align-items:center;
+  padding: 0 var(--space-3) var(--space-4);
+  border-bottom: 1px solid rgba(255,255,255,0.08);
+  margin-bottom: var(--space-3);
+}
+.sidebar-brand .logo-plate{
+  background: var(--color-white);
+  border-radius: var(--radius-md);
+  padding: 8px 10px;
+  width:100%;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+}
+.sidebar-brand .logo-plate img{ width:100%; height:auto; display:block; }
+
+.nav-group-label{
+  font-size:11px;
+  color: rgba(255,255,255,0.45);
+  padding: var(--space-2) var(--space-3) var(--space-1);
+  letter-spacing:0.08em;
+  text-transform:uppercase;
+  font-family:var(--font-body);
+}
+.nav-item{
+  display:flex;
+  align-items:center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  color: rgba(255,255,255,0.82);
+  text-decoration:none;
+  font-size:14.5px;
+  font-weight:500;
+  border-left: 3px solid transparent;
+  cursor:pointer;
+  transition: background .15s ease, color .15s ease;
+}
+.nav-item svg{ width:19px; height:19px; stroke: currentColor; flex-shrink:0; }
+.nav-item:hover{ background: rgba(255,255,255,0.06); color: var(--color-white); }
+.nav-item.active{
+  background: rgba(184,134,47,0.14);
+  border-left-color: var(--color-gold);
+  color: var(--color-gold-light);
+}
+
+.main{ flex:1; padding: var(--space-5); max-width: 1180px; }
+.main > section{ margin-bottom: var(--space-6); }
+.page-title{ font-size:26px; margin-bottom: var(--space-1); }
+.page-subtitle{ color: var(--color-gray-600); font-size:14.5px; margin-bottom: var(--space-4); font-family:var(--font-body); text-transform:none; letter-spacing:0; }
+
+hr.rule{ border:none; border-top:3px solid var(--color-primary); margin: var(--space-2) 0 var(--space-4); width:60px; }
+
+/* ==========================================================================
+   3. SWATCHES DE COR — só documentação, não usar essa classe no sistema real
+   ========================================================================== */
+.swatch-grid{ display:grid; grid-template-columns: repeat(auto-fill, minmax(160px,1fr)); gap: var(--space-3); }
+.swatch{ border-radius: var(--radius-md); overflow:hidden; box-shadow: var(--shadow-card); background: var(--color-surface); }
+.swatch-color{ height:70px; }
+.swatch-info{ padding: var(--space-2); font-size:12.5px; }
+.swatch-info b{ display:block; font-size:13.5px; }
+
+/* ==========================================================================
+   4. TIPOGRAFIA — amostras
+   ========================================================================== */
+.type-sample{ padding: var(--space-3) 0; border-bottom:1px solid var(--color-border); }
+.type-sample .label{ font-family:var(--font-body); text-transform:none; letter-spacing:0; font-size:12px; color:var(--color-gray-600); margin-bottom:4px; }
+
+/* ==========================================================================
+   5. BOTÕES
+   ========================================================================== */
+.btn{
+  font-family: var(--font-body);
+  font-weight:600;
+  font-size:14px;
+  padding: 11px 20px;
+  border-radius: var(--radius-sm);
+  border:1.5px solid transparent;
+  cursor:pointer;
+  display:inline-flex;
+  align-items:center;
+  gap:8px;
+  transition: filter .15s ease;
+}
+.btn:hover{ filter:brightness(1.08); }
+.btn-primary{ background: var(--color-primary); color:var(--color-white); }
+.btn-gold{ background: var(--color-gold); color:var(--color-black); }
+.btn-outline{ background:transparent; border-color: var(--color-primary); color: var(--color-primary); }
+.btn-ghost{ background:transparent; color: var(--color-gray-600); }
+.btn-danger{ background: var(--color-danger); color: var(--color-white); }
+
+/* ==========================================================================
+   6. CARDS / FORMULÁRIOS / TABELA
+   ========================================================================== */
+.card{ background: var(--color-surface); border:1px solid var(--color-border); border-radius: var(--radius-lg); padding: var(--space-4); box-shadow: var(--shadow-card); }
+.card + .card{ margin-top: var(--space-3); }
+
+.form-row{ display:grid; grid-template-columns: 1fr 1fr; gap: var(--space-3); margin-bottom: var(--space-3); }
+.field label{ display:block; font-size:13px; font-weight:600; margin-bottom:6px; color: var(--color-text); }
+.field input, .field select{
+  width:100%;
+  font-family: var(--font-body);
+  font-size:14.5px;
+  padding: 11px 13px;
+  border:1.5px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-white);
+  color: var(--color-text);
+}
+.field input:focus, .field select:focus{ outline:none; border-color: var(--color-primary); }
+
+table{ width:100%; border-collapse: collapse; background: var(--color-surface); border-radius: var(--radius-md); overflow:hidden; box-shadow: var(--shadow-card); }
+th{ text-align:left; font-family:var(--font-display); font-size:12px; letter-spacing:0.05em; text-transform:uppercase; background: var(--color-primary-dark); color: var(--color-white); padding: 13px 16px; }
+td{ padding: 14px 16px; border-bottom:1px solid var(--color-border); font-size:14.5px; }
+tr:last-child td{ border-bottom:none; }
+tr:hover td{ background: var(--color-bg); }
+
+.badge{ display:inline-flex; align-items:center; gap:6px; font-size:12.5px; font-weight:600; padding:5px 12px; border-radius:20px; }
+.badge-success{ background: var(--color-success-bg); color: var(--color-success); }
+.badge-warning{ background: var(--color-warning-bg); color: var(--color-warning); }
+.badge-danger{ background: var(--color-danger-bg); color: var(--color-danger); }
+.badge-info{ background: var(--color-info-bg); color: var(--color-info); }
+
+.icon-row{ display:flex; gap: var(--space-4); flex-wrap:wrap; }
+.icon-demo{ display:flex; flex-direction:column; align-items:center; gap:8px; font-size:11.5px; color:var(--color-gray-600); }
+.icon-demo svg{ width:26px; height:26px; stroke: var(--color-primary); }
+
+</style>
+</head>
+<body>
+<div class="app">
+
+  <!-- ============ SIDEBAR (padrão para todo o sistema) ============ -->
+  <aside class="sidebar">
+    <div class="sidebar-brand">
+      <div class="logo-plate">
+        <img src="assets/logo-jlt.jpeg" alt="Juliano Lopes Transportes">
+      </div>
+    </div>
+
+    <div class="nav-group-label">Operação</div>
+    <a class="nav-item active">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8"><path d="M3 12l2-2 5 5L21 4l2 2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      Dashboard
+    </a>
+    <a class="nav-item">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8"><circle cx="12" cy="8" r="3.5"/><path d="M5 20c0-3.5 3-6 7-6s7 2.5 7 6" stroke-linecap="round"/></svg>
+      Clientes
+    </a>
+    <a class="nav-item">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8"><path d="M6 3h9l4 4v14H6z" stroke-linejoin="round"/><path d="M9 11h7M9 15h7" stroke-linecap="round"/></svg>
+      Documentos
+    </a>
+    <a class="nav-item">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8"><rect x="3.5" y="5" width="17" height="16" rx="2"/><path d="M8 3v4M16 3v4M3.5 10h17" stroke-linecap="round"/></svg>
+      Agenda
+    </a>
+    <a class="nav-item">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8"><path d="M4 18c3-.5 3.5-3 2-5s-.5-6 3-6 1.5 4.5 4 4.5S15 7 18 7" stroke-linecap="round"/><circle cx="4.5" cy="18.5" r="1.6"/><circle cx="18.5" cy="6.5" r="1.6"/></svg>
+      Rotas
+    </a>
+
+    <div class="nav-group-label">Frota</div>
+    <a class="nav-item">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8"><path d="M3 16V8h11l4 4h3v4" stroke-linejoin="round"/><circle cx="7.5" cy="17" r="1.8"/><circle cx="17" cy="17" r="1.8"/></svg>
+      Veículos
+    </a>
+    <a class="nav-item">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8"><circle cx="12" cy="8" r="3.5"/><path d="M4.5 20c1-3.8 4-6 7.5-6s6.5 2.2 7.5 6" stroke-linecap="round"/></svg>
+      Motoristas
+    </a>
+
+    <div class="nav-group-label">Financeiro</div>
+    <a class="nav-item">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8"><path d="M3 17l5-5 4 3 8-8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      Gastos &amp; Ganhos
+    </a>
+    <a class="nav-item">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8"><rect x="4" y="4" width="16" height="16" rx="2"/><path d="M8 9h8M8 13h5M8 17h3" stroke-linecap="round"/></svg>
+      Orçamentos
+    </a>
+  </aside>
+
+  <!-- ============ CONTEÚDO: GUIA DE ESTILO ============ -->
+  <main class="main">
+
+    <section>
+      <div class="page-title">Guia de Identidade Visual</div>
+      <div class="page-subtitle">Referência base para todas as ferramentas da plataforma Juliano Lopes Transportes.</div>
+      <hr class="rule">
+    </section>
+
+    <section>
+      <h2>Paleta de cores</h2>
+      <p class="page-subtitle">Identidade oficial da logo: preto, vermelho institucional e branco. Dourado mantido como cor terciária, para selos e destaques pontuais.</p>
+      <div class="swatch-grid">
+        <div class="swatch"><div class="swatch-color" style="background:var(--color-primary)"></div><div class="swatch-info"><b>Vermelho institucional</b>#820901</div></div>
+        <div class="swatch"><div class="swatch-color" style="background:var(--color-primary-dark)"></div><div class="swatch-info"><b>Vermelho escuro</b>#5a0601</div></div>
+        <div class="swatch"><div class="swatch-color" style="background:var(--color-primary-light)"></div><div class="swatch-info"><b>Vermelho vivo</b>#a30d03</div></div>
+        <div class="swatch"><div class="swatch-color" style="background:var(--color-black)"></div><div class="swatch-info"><b>Preto</b>#000000</div></div>
+        <div class="swatch"><div class="swatch-color" style="background:var(--color-gold)"></div><div class="swatch-info"><b>Dourado (terciária)</b>#b8862f</div></div>
+        <div class="swatch"><div class="swatch-color" style="background:var(--color-gold-light)"></div><div class="swatch-info"><b>Dourado claro</b>#d9b45f</div></div>
+        <div class="swatch"><div class="swatch-color; border:1px solid var(--color-border)" style="background:var(--color-white)"></div><div class="swatch-info"><b>Branco</b>#ffffff</div></div>
+        <div class="swatch"><div class="swatch-color" style="background:var(--color-bg)"></div><div class="swatch-info"><b>Fundo</b>#faf8f6</div></div>
+      </div>
+    </section>
+
+    <section>
+      <h2>Tipografia</h2>
+      <p class="page-subtitle">Bebas Neue nos títulos — mesma fonte usada em "JULIANO LOPES" na logo. Montserrat no corpo — mesma fonte usada em "TRANSPORTES" na logo.</p>
+      <div class="type-sample"><div class="label">Título de página — Bebas Neue, 26px</div><div style="font-family:var(--font-display);font-size:26px;text-transform:uppercase;">Cadastro de Clientes</div></div>
+      <div class="type-sample"><div class="label">Subtítulo / seção — Bebas Neue, 15px</div><div style="font-family:var(--font-display);font-size:15px;text-transform:uppercase;letter-spacing:.05em;">Informações Gerais</div></div>
+      <div class="type-sample"><div class="label">Texto corrido — Montserrat 400, 14.5px</div><div style="font-family:var(--font-body);font-size:14.5px;">Em atenção à solicitação encaminhada, a Juliano Lopes Transportes apresenta abaixo a proposta comercial referente ao serviço.</div></div>
+      <div class="type-sample"><div class="label">Texto auxiliar / legenda — Montserrat 300, 12.5px</div><div style="font-family:var(--font-body);font-weight:300;font-size:12.5px;color:var(--color-gray-600);">Válido por 15 dias a partir da data de emissão.</div></div>
+    </section>
+
+    <section>
+      <h2>Ícones (outline)</h2>
+      <p class="page-subtitle">Linha fina, sem preenchimento, mesmo peso visual em todo o sistema.</p>
+      <div class="icon-row">
+        <div class="icon-demo"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8"><circle cx="12" cy="8" r="3.5"/><path d="M5 20c0-3.5 3-6 7-6s7 2.5 7 6" stroke-linecap="round"/></svg>Clientes</div>
+        <div class="icon-demo"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8"><path d="M6 3h9l4 4v14H6z" stroke-linejoin="round"/><path d="M9 11h7M9 15h7" stroke-linecap="round"/></svg>Documentos</div>
+        <div class="icon-demo"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8"><rect x="3.5" y="5" width="17" height="16" rx="2"/><path d="M8 3v4M16 3v4M3.5 10h17" stroke-linecap="round"/></svg>Agenda</div>
+        <div class="icon-demo"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8"><path d="M4 18c3-.5 3.5-3 2-5s-.5-6 3-6 1.5 4.5 4 4.5S15 7 18 7" stroke-linecap="round"/><circle cx="4.5" cy="18.5" r="1.6"/><circle cx="18.5" cy="6.5" r="1.6"/></svg>Rotas</div>
+        <div class="icon-demo"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8"><path d="M3 16V8h11l4 4h3v4" stroke-linejoin="round"/><circle cx="7.5" cy="17" r="1.8"/><circle cx="17" cy="17" r="1.8"/></svg>Veículos</div>
+        <div class="icon-demo"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8"><path d="M3 17l5-5 4 3 8-8" stroke-linecap="round" stroke-linejoin="round"/></svg>Financeiro</div>
+        <div class="icon-demo"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8"><rect x="4" y="4" width="16" height="16" rx="2"/><path d="M8 9h8M8 13h5M8 17h3" stroke-linecap="round"/></svg>Orçamento</div>
+      </div>
+    </section>
+
+    <section>
+      <h2>Botões</h2>
+      <div style="display:flex;gap:14px;flex-wrap:wrap;">
+        <button class="btn btn-primary">Salvar cliente</button>
+        <button class="btn btn-gold">Gerar orçamento</button>
+        <button class="btn btn-outline">Cancelar</button>
+        <button class="btn btn-ghost">Ver detalhes</button>
+        <button class="btn btn-danger">Excluir</button>
+      </div>
+    </section>
+
+    <section>
+      <h2>Status (badges)</h2>
+      <p class="page-subtitle">Padrão de cores para acompanhamento de status de clientes/serviços.</p>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;">
+        <span class="badge badge-info">Novo</span>
+        <span class="badge badge-warning">Em andamento</span>
+        <span class="badge badge-success">Concluído</span>
+        <span class="badge badge-danger">Cancelado</span>
+      </div>
+    </section>
+
+    <section>
+      <h2>Formulário — exemplo</h2>
+      <div class="card">
+        <div class="form-row">
+          <div class="field"><label>Nome do cliente</label><input placeholder="Ex: Maria da Silva"></div>
+          <div class="field"><label>Telefone</label><input placeholder="(31) 90000-0000"></div>
+        </div>
+        <div class="form-row">
+          <div class="field"><label>Endereço de coleta</label><input placeholder="Rua, número, bairro, cidade"></div>
+          <div class="field"><label>Endereço de entrega</label><input placeholder="Rua, número, bairro, cidade"></div>
+        </div>
+        <button class="btn btn-primary">Salvar cadastro</button>
+      </div>
+    </section>
+
+    <section>
+      <h2>Tabela — exemplo</h2>
+      <table>
+        <thead><tr><th>Cliente</th><th>Serviço</th><th>Data</th><th>Status</th></tr></thead>
+        <tbody>
+          <tr><td>Maria da Silva</td><td>Mudança residencial</td><td>18/07/2026</td><td><span class="badge badge-warning">Em andamento</span></td></tr>
+          <tr><td>Carlos Andrade</td><td>Transporte de carga</td><td>20/07/2026</td><td><span class="badge badge-info">Novo</span></td></tr>
+          <tr><td>Empresa Vetta Ltda</td><td>Mudança comercial</td><td>10/07/2026</td><td><span class="badge badge-success">Concluído</span></td></tr>
+        </tbody>
+      </table>
+    </section>
+
+  </main>
+</div>
+</body>
+</html>

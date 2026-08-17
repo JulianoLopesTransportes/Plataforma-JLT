@@ -1,0 +1,857 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Juliano Lopes Transportes — Agenda</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Montserrat:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+
+/* ==========================================================================
+   1. DESIGN TOKENS
+   ========================================================================== */
+:root{
+  --color-primary:        #820901;
+  --color-primary-dark:   #5a0601;
+  --color-primary-light:  #a30d03;
+  --color-black:          #000000;
+  --color-gold:           #b8862f;
+  --color-gold-light:     #d9b45f;
+  --color-white:          #ffffff;
+  --color-bg:             #faf8f6;
+  --color-surface:        #ffffff;
+  --color-border:         #e6dfd6;
+  --color-gray-600:       #6f665d;
+  --color-text:           #241d1a;
+  --color-success:        #2f6b3a; --color-success-bg:#e7f2e8;
+  --color-warning:        #a3760f; --color-warning-bg:#f7edd9;
+  --color-danger:         #a3241c; --color-danger-bg:#f7e3e1;
+  --color-info:           #2f5a80; --color-info-bg:#e4edf4;
+  --color-neutral:        #6f665d; --color-neutral-bg:#ece8e3;
+  --font-display: 'Bebas Neue', sans-serif;
+  --font-body:    'Montserrat', sans-serif;
+  --space-1:6px; --space-2:12px; --space-3:20px; --space-4:28px; --space-5:40px; --space-6:56px;
+  --radius-sm:4px; --radius-md:8px; --radius-lg:14px;
+  --shadow-card: 0 2px 10px rgba(28,22,20,0.06);
+}
+* { box-sizing: border-box; }
+body{ margin:0; background: var(--color-bg); color: var(--color-text); font-family: var(--font-body); line-height:1.55; }
+h1,h2,h3,h4{ font-family: var(--font-display); text-transform: uppercase; letter-spacing: 0.03em; font-weight:600; margin:0; }
+
+/* ==========================================================================
+   2. LAYOUT BASE (sidebar + main)
+   ========================================================================== */
+.app{ display:flex; min-height:100vh; }
+.sidebar{ width:250px; flex-shrink:0; background: linear-gradient(180deg, var(--color-black) 0%, var(--color-primary-dark) 100%); color: var(--color-white); display:flex; flex-direction:column; padding: var(--space-4) 0; position: sticky; top:0; height:100vh; overflow-y:auto; }
+.sidebar-brand{ display:flex; align-items:center; padding: 0 var(--space-3) var(--space-4); border-bottom: 1px solid rgba(255,255,255,0.08); margin-bottom: var(--space-3); }
+.sidebar-brand .logo-plate{ background: var(--color-white); border-radius: var(--radius-md); padding: 8px 10px; width:100%; display:flex; align-items:center; justify-content:center; }
+.sidebar-brand .logo-plate img{ width:100%; height:auto; display:block; }
+.nav-group-label{ font-size:11px; color: rgba(255,255,255,0.45); padding: var(--space-2) var(--space-3) var(--space-1); letter-spacing:0.08em; text-transform:uppercase; }
+.nav-item{ display:flex; align-items:center; gap: var(--space-2); padding: var(--space-2) var(--space-3); color: rgba(255,255,255,0.82); text-decoration:none; font-size:14.5px; font-weight:500; border-left: 3px solid transparent; cursor:pointer; }
+.nav-item svg{ width:19px; height:19px; stroke: currentColor; flex-shrink:0; }
+.nav-item:hover{ background: rgba(255,255,255,0.06); color: var(--color-white); }
+.nav-item.active{ background: rgba(184,134,47,0.14); border-left-color: var(--color-gold); color: var(--color-gold-light); }
+.main{ flex:1; padding: var(--space-5); max-width: 1300px; }
+.page-title{ font-size:26px; margin-bottom: var(--space-1); }
+.page-subtitle{ color: var(--color-gray-600); font-size:14.5px; margin-bottom: var(--space-4); }
+hr.rule{ border:none; border-top:3px solid var(--color-primary); margin: var(--space-2) 0 var(--space-4); width:60px; }
+
+/* ==========================================================================
+   3. COMPONENTES COMPARTILHADOS
+   ========================================================================== */
+.btn{ font-family: var(--font-body); font-weight:600; font-size:14px; padding: 11px 20px; border-radius: var(--radius-sm); border:1.5px solid transparent; cursor:pointer; display:inline-flex; align-items:center; gap:8px; }
+.btn:hover{ filter:brightness(1.08); }
+.btn-primary{ background: var(--color-primary); color:var(--color-white); }
+.btn-gold{ background: var(--color-gold); color:var(--color-black); }
+.btn-outline{ background:transparent; border-color: var(--color-primary); color: var(--color-primary); }
+.btn-ghost{ background:transparent; color: var(--color-gray-600); }
+.btn-sm{ padding:7px 12px; font-size:12.5px; }
+.btn-icon{ width:36px; height:36px; padding:0; justify-content:center; }
+.field label{ display:block; font-size:13px; font-weight:600; margin-bottom:6px; }
+.field input, .field select, .field textarea{ width:100%; font-family: var(--font-body); font-size:14.5px; padding: 11px 13px; border:1.5px solid var(--color-border); border-radius: var(--radius-sm); background: var(--color-white); color: var(--color-text); }
+.field textarea{ resize:vertical; min-height:60px; }
+.field input:focus, .field select:focus, .field textarea:focus{ outline:none; border-color: var(--color-primary); }
+.field-hint{ font-size:12px; color:var(--color-gray-600); margin-top:-8px; margin-bottom:14px; }
+.checkbox-row{ display:flex; align-items:center; gap:8px; padding:6px 0; font-size:14px; }
+.checkbox-row input{ width:auto; }
+.checkbox-grid{ display:grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap:2px 12px; margin-bottom: var(--space-2); }
+.form-grid{ display:grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: var(--space-3); margin-bottom: var(--space-3); }
+.badge{ display:inline-flex; align-items:center; gap:6px; font-size:11.5px; font-weight:600; padding:4px 10px; border-radius:20px; border:none; font-family:var(--font-body); cursor:pointer; }
+.badge-static{ cursor:default; }
+.badge-info{ background: var(--color-info-bg); color: var(--color-info); }
+.badge-warning{ background: var(--color-warning-bg); color: var(--color-warning); }
+.badge-success{ background: var(--color-success-bg); color: var(--color-success); }
+.badge-danger{ background: var(--color-danger-bg); color: var(--color-danger); }
+.badge-neutral{ background: var(--color-neutral-bg); color: var(--color-neutral); }
+
+/* ==========================================================================
+   4. LAYOUT DA AGENDA (calendário + lista lateral)
+   ========================================================================== */
+.agenda-layout{ display:grid; grid-template-columns: minmax(320px, 2fr) minmax(280px, 340px); gap: var(--space-4); align-items:start; }
+@media (max-width: 900px){ .agenda-layout{ grid-template-columns: 1fr; } }
+
+.calendar-card{ background: var(--color-surface); border:1px solid var(--color-border); border-radius: var(--radius-lg); box-shadow: var(--shadow-card); overflow:hidden; }
+.calendar-header{ display:flex; align-items:center; justify-content:space-between; padding: var(--space-3) var(--space-4); border-bottom:1px solid var(--color-border); }
+.calendar-header .mes-label{ font-family:var(--font-display); font-size:18px; letter-spacing:.04em; }
+.calendar-nav{ display:flex; gap:8px; align-items:center; }
+
+.weekdays{ display:grid; grid-template-columns: repeat(7,1fr); border-bottom:1px solid var(--color-border); }
+.weekdays div{ text-align:center; font-size:11.5px; font-weight:600; color:var(--color-gray-600); padding:10px 0; text-transform:uppercase; letter-spacing:.04em; }
+
+.days-grid{ display:grid; grid-template-columns: repeat(7,1fr); }
+.day-cell{ min-height:96px; border-right:1px solid var(--color-border); border-bottom:1px solid var(--color-border); padding:8px; cursor:pointer; position:relative; transition: background .12s ease; }
+.day-cell:nth-child(7n){ border-right:none; }
+.day-cell:hover{ background: var(--color-bg); }
+.day-cell.outro-mes{ background:#fbfaf9; color: var(--color-gray-600); opacity:.5; }
+.day-cell.hoje{ background: rgba(184,134,47,0.08); }
+.day-cell.selecionado{ box-shadow: inset 0 0 0 2px var(--color-primary); }
+.day-number{ font-size:13px; font-weight:600; margin-bottom:6px; }
+.day-dots{ display:flex; flex-wrap:wrap; gap:4px; }
+.dot{ width:8px; height:8px; border-radius:50%; flex-shrink:0; }
+.dot-novo{ background: var(--color-info); }
+.dot-em-andamento{ background: var(--color-warning); }
+.dot-concluido{ background: var(--color-success); }
+.dot-cancelado{ background: var(--color-danger); }
+.dot-interno{ background: var(--color-neutral); }
+.dot-rota{ background: var(--color-gold); }
+.day-mais{ font-size:10px; color:var(--color-gray-600); margin-top:2px; }
+
+.legenda{ display:flex; gap:16px; padding: var(--space-3) var(--space-4); font-size:12.5px; color:var(--color-gray-600); flex-wrap:wrap; }
+.legenda span{ display:inline-flex; align-items:center; gap:6px; }
+.legenda .obs{ width:100%; font-size:11.5px; margin-top:4px; }
+
+.side-panel{ background: var(--color-surface); border:1px solid var(--color-border); border-radius: var(--radius-lg); box-shadow: var(--shadow-card); padding: var(--space-4); position:sticky; top: var(--space-4); }
+.side-panel .dia-label{ font-family:var(--font-display); font-size:16px; margin-bottom:2px; }
+.side-panel .dia-sub{ font-size:12.5px; color:var(--color-gray-600); margin-bottom: var(--space-3); text-transform:capitalize; }
+.compromisso-item{ border:1px solid var(--color-border); border-radius: var(--radius-md); padding: var(--space-2); margin-bottom: var(--space-2); }
+.compromisso-item .top-row{ display:flex; justify-content:space-between; align-items:flex-start; gap:8px; }
+.compromisso-item .hora{ font-family:var(--font-display); font-size:13px; color:var(--color-primary); }
+.compromisso-item .tipo-tag{ font-size:10.5px; color:var(--color-gray-600); text-transform:uppercase; letter-spacing:.03em; }
+.compromisso-item .titulo-item{ font-weight:600; font-size:14px; margin:3px 0; }
+.compromisso-item .detalhe{ font-size:12px; color:var(--color-gray-600); line-height:1.5; }
+.compromisso-item .acoes{ display:flex; gap:6px; margin-top:8px; flex-wrap:wrap; }
+.empty-day{ text-align:center; padding: var(--space-4) 0; color:var(--color-gray-600); font-size:13.5px; }
+
+/* ==========================================================================
+   5. MODAL — novo agendamento
+   ========================================================================== */
+.modal-overlay{ display:none; position:fixed; inset:0; background:rgba(28,22,20,0.55); align-items:center; justify-content:center; z-index:100; padding: var(--space-4); }
+.modal-overlay.show{ display:flex; }
+.modal-box{ background: var(--color-surface); border-radius: var(--radius-lg); padding: var(--space-4); width:100%; max-width:560px; max-height:85vh; overflow-y:auto; box-shadow: 0 10px 40px rgba(0,0,0,0.25); }
+.status-readonly{ display:flex; align-items:center; gap:10px; padding:11px 13px; border:1.5px solid var(--color-border); border-radius: var(--radius-sm); background:var(--color-bg); margin-bottom:var(--space-3); }
+
+/* ==========================================================================
+   6. FICHA DE COMPROMISSO (PDF para o motorista) — mesmo padrão visual dos
+   demais documentos da empresa (ver módulo Documentos).
+   ========================================================================== */
+#fichaPreview{ background:#ffffff; color:#241d1a; font-family:'Montserrat',sans-serif; font-size:13px; padding:40px 44px; max-width:800px; margin:0 auto; }
+#fichaPreview .ph-header{ display:flex; justify-content:space-between; align-items:flex-start; padding-bottom:14px; }
+#fichaPreview .ph-brand{ display:flex; flex-direction:column; gap:5px; }
+#fichaPreview .ph-brand img{ height:50px; width:auto; display:block; }
+#fichaPreview .ph-brand small{ display:block; font-family:'Montserrat',sans-serif; font-size:11px; color:#6f665d; text-transform:none; font-weight:400; margin-top:2px; }
+#fichaPreview .ph-contact{ text-align:right; font-size:11.5px; color:#6f665d; }
+#fichaPreview .ph-rule{ border:none; border-top:3px solid #820901; margin:0 0 20px; }
+#fichaPreview .ph-titlebox{ display:flex; justify-content:space-between; align-items:center; background:#f5efe9; border-radius:8px; padding:16px 20px; margin-bottom:20px; }
+#fichaPreview .ph-titlebox h1{ font-family:'Bebas Neue',sans-serif; font-size:19px; color:#8a8378; letter-spacing:.04em; text-transform:uppercase; margin:0; }
+#fichaPreview .ph-badge{ font-size:11px; font-weight:700; color:#820901; text-transform:uppercase; }
+#fichaPreview h2.ph-section{ font-family:'Bebas Neue',sans-serif; font-size:13px; color:#820901; text-transform:uppercase; letter-spacing:.05em; border-bottom:2px solid #820901; padding-bottom:4px; margin:20px 0 10px; }
+#fichaPreview p{ margin:0 0 10px; line-height:1.6; }
+#fichaPreview ul{ margin:0 0 10px; padding-left:18px; }
+#fichaPreview li{ margin-bottom:4px; }
+#fichaPreview .ph-footer{ margin-top:26px; padding-top:8px; border-top:1px solid #e6dfd6; text-align:center; font-size:10.5px; color:#6f665d; }
+#fichaPreviewWrap{ display:none; }
+
+@media print{
+  body{ background:#fff; }
+  .no-print{ display:none !important; }
+  .app{ display:none !important; }
+  .modal-overlay{ display:none !important; }
+  #fichaPreviewWrap{ display:block !important; }
+  #fichaPreview{ border:none; box-shadow:none; max-width:none; padding:0; margin:0; font-size:11.5px; }
+  #fichaPreview .ph-header{ padding-bottom:8px; }
+  #fichaPreview .ph-titlebox{ padding:10px 16px; margin-bottom:12px; }
+  #fichaPreview h2.ph-section{ margin:12px 0 6px; break-after:avoid; page-break-after:avoid; }
+  #fichaPreview .ph-footer{ margin-top:14px; padding-top:6px; break-inside:avoid; page-break-inside:avoid; }
+  #fichaPreview p{ orphans:3; widows:3; }
+  @page{ size: A4; margin: 10mm 14mm; }
+}
+
+</style>
+</head>
+<body>
+<div class="app">
+
+  <!-- ============ SIDEBAR ============ -->
+  <aside class="sidebar">
+    <div class="sidebar-brand"><div class="logo-plate"><img src="assets/logo-jlt.jpeg" alt="Juliano Lopes Transportes"></div></div>
+    <div class="nav-group-label">Operação</div>
+    <a class="nav-item"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8"><path d="M3 12l2-2 5 5L21 4l2 2" stroke-linecap="round" stroke-linejoin="round"/></svg>Dashboard</a>
+    <a class="nav-item"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8"><circle cx="12" cy="8" r="3.5"/><path d="M5 20c0-3.5 3-6 7-6s7 2.5 7 6" stroke-linecap="round"/></svg>Clientes</a>
+    <a class="nav-item"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8"><path d="M6 3h9l4 4v14H6z" stroke-linejoin="round"/><path d="M9 11h7M9 15h7" stroke-linecap="round"/></svg>Documentos</a>
+    <a class="nav-item active"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8"><rect x="3.5" y="5" width="17" height="16" rx="2"/><path d="M8 3v4M16 3v4M3.5 10h17" stroke-linecap="round"/></svg>Agenda</a>
+    <a class="nav-item"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8"><path d="M4 18c3-.5 3.5-3 2-5s-.5-6 3-6 1.5 4.5 4 4.5S15 7 18 7" stroke-linecap="round"/><circle cx="4.5" cy="18.5" r="1.6"/><circle cx="18.5" cy="6.5" r="1.6"/></svg>Rotas</a>
+    <div class="nav-group-label">Frota</div>
+    <a class="nav-item"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8"><path d="M3 16V8h11l4 4h3v4" stroke-linejoin="round"/><circle cx="7.5" cy="17" r="1.8"/><circle cx="17" cy="17" r="1.8"/></svg>Veículos</a>
+    <a class="nav-item"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8"><circle cx="12" cy="8" r="3.5"/><path d="M4.5 20c1-3.8 4-6 7.5-6s6.5 2.2 7.5 6" stroke-linecap="round"/></svg>Motoristas</a>
+    <div class="nav-group-label">Financeiro</div>
+    <a class="nav-item"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8"><path d="M3 17l5-5 4 3 8-8" stroke-linecap="round" stroke-linejoin="round"/></svg>Gastos &amp; Ganhos</a>
+    <a class="nav-item"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8"><rect x="4" y="4" width="16" height="16" rx="2"/><path d="M8 9h8M8 13h5M8 17h3" stroke-linecap="round"/></svg>Orçamentos</a>
+  </aside>
+
+  <!-- ============ CONTEÚDO ============ -->
+  <main class="main">
+    <div class="page-title">Agenda</div>
+    <div class="page-subtitle">Clique em um dia para ver ou cadastrar compromissos.</div>
+    <hr class="rule">
+
+    <div class="agenda-layout">
+
+      <!-- ===================== CALENDÁRIO MENSAL ===================== -->
+      <div class="calendar-card">
+        <div class="calendar-header">
+          <div class="mes-label" id="mesLabel"></div>
+          <div class="calendar-nav">
+            <button class="btn btn-outline btn-icon" onclick="mudarMes(-1)">‹</button>
+            <button class="btn btn-ghost btn-sm" onclick="irParaHoje()">Hoje</button>
+            <button class="btn btn-outline btn-icon" onclick="mudarMes(1)">›</button>
+          </div>
+        </div>
+        <div class="weekdays"><div>Dom</div><div>Seg</div><div>Ter</div><div>Qua</div><div>Qui</div><div>Sex</div><div>Sáb</div></div>
+        <div class="days-grid" id="diasGrid"></div>
+        <div class="legenda">
+          <span><span class="dot dot-novo"></span> Novo</span>
+          <span><span class="dot dot-em-andamento"></span> Em andamento</span>
+          <span><span class="dot dot-concluido"></span> Concluído</span>
+          <span><span class="dot dot-cancelado"></span> Cancelado</span>
+          <span><span class="dot dot-interno"></span> Compromisso interno</span>
+          <span><span class="dot dot-rota"></span> Início de rota</span>
+          <div class="obs">Nos atendimentos a cliente, a cor vem do status cadastrado na ficha do cliente — mudar aqui muda lá, e vice-versa.</div>
+        </div>
+      </div>
+
+      <!-- ===================== LISTA LATERAL DO DIA SELECIONADO ===================== -->
+      <div class="side-panel">
+        <div class="dia-label" id="diaLabel">—</div>
+        <div class="dia-sub" id="diaSub"></div>
+        <div id="listaDia"></div>
+        <button class="btn btn-primary btn-sm" style="width:100%; justify-content:center;" onclick="abrirModalNovo()">+ Novo compromisso</button>
+      </div>
+
+    </div>
+  </main>
+</div>
+
+<!-- ============ MODAL: NOVO / EDITAR COMPROMISSO ============ -->
+<div id="modalAgendamento" class="modal-overlay">
+  <div class="modal-box">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: var(--space-3);">
+      <div style="font-family:var(--font-display); font-size:15px; letter-spacing:.04em; color:var(--color-primary);" id="modalTitulo">Novo compromisso</div>
+      <button class="btn btn-ghost btn-sm" onclick="fecharModal()">Fechar ✕</button>
+    </div>
+
+    <div class="field" style="margin-bottom:var(--space-3);">
+      <label>Tipo de compromisso</label>
+      <select id="agTipo" onchange="atualizarCamposTipo()">
+        <option value="cliente">Atendimento a cliente</option>
+        <option value="visita">Visita a cliente</option>
+        <option value="rota">Início de rota</option>
+        <option value="equipe">Alinhamento de equipe</option>
+        <option value="pessoal">Compromisso pessoal do motorista</option>
+        <option value="outro">Outro</option>
+      </select>
+    </div>
+
+    <div class="form-grid">
+      <div class="field"><label>Data</label><input id="agData" type="date"></div>
+      <div class="field">
+        <label>Horário</label>
+        <input id="agHorario" type="time" value="08:00" oninput="calcularTerminoRota()">
+        <div class="checkbox-row" style="margin-top:6px;"><input type="checkbox" id="agDiaInteiro" onchange="toggleDiaInteiro()"><label for="agDiaInteiro" style="font-weight:500;">Dia inteiro (sem horário fixo)</label></div>
+      </div>
+    </div>
+
+    <!-- Campos: atendimento a cliente -->
+    <div id="campos-cliente">
+      <div class="field" style="margin-bottom:var(--space-3);"><label>Cliente</label><select id="agCliente" onchange="atualizarStatusReadonly()"></select></div>
+      <div class="status-readonly">
+        <span style="font-size:12.5px;color:var(--color-gray-600);">Status do cliente:</span>
+        <span class="badge badge-static" id="statusClienteBadge">Novo</span>
+        <span style="font-size:11.5px;color:var(--color-gray-600);margin-left:auto;">Para alterar, edite pelo cadastro do cliente</span>
+      </div>
+      <div class="checkbox-row" style="margin-bottom:var(--space-2);"><input type="checkbox" id="agSincronizarData" checked><label for="agSincronizarData">Esta é a data oficial de coleta do cliente (sincroniza com o cadastro)</label></div>
+      <div class="field" style="margin-bottom:var(--space-3);">
+        <label>Serviço</label>
+        <select id="agServico">
+          <option>Mudança residencial</option><option>Mudança comercial</option><option>Transporte de carga</option>
+          <option>Guarda de móveis (retirada/entrega)</option><option>Outro</option>
+        </select>
+      </div>
+      <div class="form-grid">
+        <div class="field"><label>Veículo designado</label><select id="agVeiculo"></select></div>
+        <div class="field"><label>Motorista designado</label><select id="agMotorista"></select></div>
+      </div>
+      <div class="form-grid">
+        <div class="field"><label>Endereço de coleta</label><input id="agEnderecoColeta" placeholder="Rua, número, bairro, cidade"></div>
+        <div class="field"><label>Endereço de entrega</label><input id="agEnderecoEntrega" placeholder="Rua, número, bairro, cidade"></div>
+      </div>
+
+      <div class="field" style="margin-bottom:var(--space-2);">
+        <label>Características do compromisso</label>
+        <div class="checkbox-grid">
+          <div class="checkbox-row"><input type="checkbox" id="carEmbalagem"><label for="carEmbalagem">Embalagem</label></div>
+          <div class="checkbox-row"><input type="checkbox" id="carDesmontagem"><label for="carDesmontagem">Desmontagem</label></div>
+          <div class="checkbox-row"><input type="checkbox" id="carMontagem"><label for="carMontagem">Montagem</label></div>
+          <div class="checkbox-row"><input type="checkbox" id="carIcamento"><label for="carIcamento">Içamento</label></div>
+          <div class="checkbox-row"><input type="checkbox" id="carCarregamentoVeiculo"><label for="carCarregamentoVeiculo">Carregamento de automóvel/motocicleta</label></div>
+          <div class="checkbox-row"><input type="checkbox" id="carElevador"><label for="carElevador">Uso de elevador</label></div>
+        </div>
+      </div>
+
+      <div class="field" style="margin-bottom:6px;">
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+          <label style="margin-bottom:0;">Itens / observações de carga</label>
+          <button type="button" class="btn btn-outline btn-sm" onclick="puxarItensInventario()">Puxar itens do inventário do cliente</button>
+        </div>
+      </div>
+      <div class="field" style="margin-bottom:var(--space-3);"><textarea id="agItens" placeholder="Ex: Sofá 3 lugares&#10;Geladeira Duplex&#10;12 caixas grandes"></textarea>
+        <div class="field-hint" style="margin-top:4px;">O botão acima busca os itens já declarados no inventário do cliente (módulo Documentos) — quando não houver inventário salvo, preencha manualmente.</div>
+      </div>
+
+      <div class="field" style="margin-bottom:var(--space-3);">
+        <label>Rota vinculada (opcional)</label>
+        <select id="agRotaVinculada"><option value="">— Nenhuma —</option></select>
+        <div class="field-hint" style="margin-top:4px;">Liga este atendimento a uma rota do módulo Rotas, quando existir.</div>
+      </div>
+    </div>
+
+    <!-- Campos: visita a cliente -->
+    <div id="campos-visita" style="display:none;">
+      <div class="field" style="margin-bottom:var(--space-3);"><label>Cliente</label><select id="agClienteVisita"></select></div>
+      <div class="field" style="margin-bottom:var(--space-3);"><label>Motivo da visita</label><input id="agMotivoVisita" placeholder="Ex: vistoria prévia, apresentação comercial"></div>
+      <div class="field" style="margin-bottom:var(--space-3);"><label>Responsável pela visita</label><select id="agResponsavelVisita"></select></div>
+    </div>
+
+    <!-- Campos: início de rota -->
+    <div id="campos-rota" style="display:none;">
+      <div class="field" style="margin-bottom:var(--space-3);"><label>Identificação da rota</label><input id="agNomeRota" placeholder="Ex: Rota Zona Sul, Rota 1 do dia"></div>
+      <div class="form-grid">
+        <div class="field"><label>Veículo</label><select id="agVeiculoRota"></select></div>
+        <div class="field"><label>Motorista</label><select id="agMotoristaRota"></select></div>
+      </div>
+      <div class="form-grid">
+        <div class="field"><label>Duração prevista (horas)</label><input id="agDuracaoRota" type="number" min="0" step="0.5" placeholder="Ex: 3.5" oninput="calcularTerminoRota()"></div>
+        <div class="field"><label>Previsão de término</label><input id="agTerminoRota" readonly style="background:var(--color-bg);" placeholder="calculado automaticamente"></div>
+      </div>
+    </div>
+
+    <!-- Campos: alinhamento de equipe -->
+    <div id="campos-equipe" style="display:none;">
+      <div class="field" style="margin-bottom:var(--space-3);"><label>Título</label><input id="agTituloEquipe" placeholder="Ex: Alinhamento semanal" value="Alinhamento de equipe"></div>
+      <div class="field" style="margin-bottom:var(--space-3);"><label>Local</label><input id="agLocalEquipe" placeholder="Ex: Sede / videochamada"></div>
+    </div>
+
+    <!-- Campos: compromisso pessoal do motorista -->
+    <div id="campos-pessoal" style="display:none;">
+      <div class="field" style="margin-bottom:var(--space-3);"><label>Motorista</label><select id="agMotoristaPessoal"></select></div>
+      <div class="field" style="margin-bottom:var(--space-3);"><label>Motivo</label><input id="agMotivoPessoal" placeholder="Ex: consulta médica, folga"></div>
+    </div>
+
+    <!-- Campos: outro -->
+    <div id="campos-outro" style="display:none;">
+      <div class="field" style="margin-bottom:var(--space-3);"><label>Título</label><input id="agTituloOutro" placeholder="Ex: Manutenção do veículo"></div>
+    </div>
+
+    <div class="field" style="margin-bottom:var(--space-3);"><label>Observações</label><textarea id="agObservacoes"></textarea></div>
+
+    <div style="display:flex; gap:10px;">
+      <button class="btn btn-primary" onclick="salvarAgendamento()">Salvar compromisso</button>
+      <button class="btn btn-ghost" onclick="fecharModal()">Cancelar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Ficha de compromisso — visível apenas na impressão/PDF -->
+<div id="fichaPreviewWrap">
+  <div id="fichaPreview"></div>
+</div>
+
+<script>
+/* ==========================================================================
+   1. DADOS DE EXEMPLO — clientes (com status), veículos e motoristas.
+   O status do cliente é o mesmo dado usado no módulo de Clientes: mudar
+   aqui (avançarStatus) muda lá, e uma mudança lá refletiria aqui, pois é a
+   MESMA informação — quando integrarmos ao banco de dados real, ambos os
+   módulos vão ler/escrever no mesmo registro de cliente.
+   ========================================================================== */
+const clientesMock = [
+  { id:1, nome:'Maria da Silva', status:'Em andamento', telefone:'(31) 99999-1234', documento:'111.222.333-44', enderecoColeta:'Rua A, 100, Centro, Belo Horizonte', enderecoEntrega:'Rua B, 200, Savassi, Belo Horizonte', dataPrevista: dataISOHoje() },
+  { id:2, nome:'Empresa Vetta Ltda', status:'Novo', telefone:'(31) 98888-4321', documento:'12.345.678/0001-90', enderecoColeta:'Av. C, 300, Belo Horizonte', enderecoEntrega:'Av. D, 400, Contagem', dataPrevista:'' },
+  { id:3, nome:'Carlos Andrade', status:'Concluído', telefone:'(31) 97777-5678', documento:'222.333.444-55', enderecoColeta:'Rua E, 50, Belo Horizonte', enderecoEntrega:'Rua F, 60, Nova Lima', dataPrevista:'' }
+];
+const veiculosMock = [
+  { id:1, nome:'Caminhão Baú 3/4 — ABC-1234' },
+  { id:2, nome:'Van Sprinter — XYZ-5678' },
+  { id:3, nome:'Caminhão Truck — JKL-9012' }
+];
+const motoristasMock = [
+  { id:1, nome:'José Ricardo' },
+  { id:2, nome:'Antônio Pereira' },
+  { id:3, nome:'Marcos Vinícius' }
+];
+/* INTEGRAÇÃO FUTURA: esta lista representa os itens já declarados no inventário
+   do cliente (módulo Documentos, aba Inventário/Guarda). Quando os módulos forem
+   unificados com camada de dados compartilhada, isso lê direto de lá — por ora,
+   é uma cópia de exemplo para demonstrar o botão "Puxar itens do inventário". */
+const inventariosMock = {
+  1: [ { item:'Sofá 3 Lugares', qtd:1 }, { item:'Geladeira Duplex', qtd:1 }, { item:'Cama Casal Box', qtd:1 }, { item:'Caixa grande', qtd:14 } ],
+  3: [ { item:'Guarda-roupa 3 P', qtd:2 }, { item:'Mesa para 6 cadeiras', qtd:1 }, { item:'TV de 44" a 65"', qtd:1 } ]
+};
+/* INTEGRAÇÃO FUTURA (módulo Rotas): cada rota poderá ser vinculada a um ou mais
+   atendimentos da Agenda pelo campo agRotaVinculada / a.rotaId — por ora, mock local. */
+const rotasMock = [
+  { id:1, nome:'Rota Zona Sul — manhã' },
+  { id:2, nome:'Rota Contagem — tarde' }
+];
+
+function popularSelects(){
+  ['agCliente','agClienteVisita'].forEach(idSel => {
+    const sel = document.getElementById(idSel);
+    clientesMock.forEach(c => sel.appendChild(new Option(c.nome, c.id)));
+  });
+  ['agVeiculo','agVeiculoRota'].forEach(idSel => {
+    const sel = document.getElementById(idSel);
+    sel.appendChild(new Option('— Nenhum —', ''));
+    veiculosMock.forEach(v => sel.appendChild(new Option(v.nome, v.id)));
+  });
+
+  ['agMotorista','agResponsavelVisita','agMotoristaPessoal','agMotoristaRota'].forEach(idSel => {
+    const sel = document.getElementById(idSel);
+    sel.appendChild(new Option('— Nenhum —', ''));
+    motoristasMock.forEach(m => sel.appendChild(new Option(m.nome, m.id)));
+  });
+
+  const selRota = document.getElementById('agRotaVinculada');
+  rotasMock.forEach(r => selRota.appendChild(new Option(r.nome, r.id)));
+}
+
+/* ==========================================================================
+   1B. DIA INTEIRO / PUXAR ITENS DO INVENTÁRIO / DURAÇÃO DA ROTA
+   ========================================================================== */
+function toggleDiaInteiro(){
+  const marcado = document.getElementById('agDiaInteiro').checked;
+  const horario = document.getElementById('agHorario');
+  horario.disabled = marcado;
+  horario.style.opacity = marcado ? '0.5' : '1';
+}
+function puxarItensInventario(){
+  const clienteId = document.getElementById('agCliente').value;
+  const itens = inventariosMock[clienteId];
+  if(!itens || itens.length === 0){ alert('Nenhum inventário salvo para este cliente ainda.'); return; }
+  document.getElementById('agItens').value = itens.map(i => `${i.item} (${i.qtd}x)`).join('\n');
+}
+function calcularTerminoRota(){
+  const horario = document.getElementById('agHorario').value;
+  const duracao = parseFloat(document.getElementById('agDuracaoRota').value);
+  const campo = document.getElementById('agTerminoRota');
+  if(!horario || isNaN(duracao)){ campo.value = ''; return; }
+  const [h, m] = horario.split(':').map(Number);
+  const totalMin = h*60 + m + Math.round(duracao*60);
+  const hFinal = Math.floor((totalMin/60) % 24).toString().padStart(2,'0');
+  const mFinal = (totalMin % 60).toString().padStart(2,'0');
+  campo.value = `${hFinal}:${mFinal}`;
+}
+
+
+
+/* ==========================================================================
+   2. ESTADO — compromissos em memória (somem ao recarregar a página).
+   Repare que o compromisso do tipo "cliente" NÃO guarda status próprio —
+   ele sempre lê o status atual de clientesMock.
+   ========================================================================== */
+let agendamentos = [
+  { id:1, tipo:'cliente', data: dataISOHoje(), horario:'09:00', clienteId:1, servico:'Mudança residencial', veiculoId:1, motoristaId:1, observacoes:'' },
+  { id:2, tipo:'equipe', data: dataISOHoje(), horario:'18:00', titulo:'Alinhamento semanal', local:'Sede', observacoes:'' }
+];
+let contadorAg = 3;
+
+function dataISOHoje(){ return new Date().toISOString().slice(0,10); }
+
+const nomesMes = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+const hoje = new Date();
+let mesAtual = hoje.getMonth();
+let anoAtual = hoje.getFullYear();
+let diaSelecionado = dataISOHoje();
+
+/* ==========================================================================
+   3. CALENDÁRIO — geração da grade mensal
+   ========================================================================== */
+function mudarMes(delta){
+  mesAtual += delta;
+  if(mesAtual < 0){ mesAtual = 11; anoAtual--; }
+  if(mesAtual > 11){ mesAtual = 0; anoAtual++; }
+  renderCalendario();
+}
+function irParaHoje(){
+  mesAtual = hoje.getMonth(); anoAtual = hoje.getFullYear();
+  diaSelecionado = dataISOHoje();
+  renderCalendario();
+}
+function toISO(ano, mes, dia){ return `${ano}-${String(mes+1).padStart(2,'0')}-${String(dia).padStart(2,'0')}`; }
+
+function renderCalendario(){
+  document.getElementById('mesLabel').textContent = `${nomesMes[mesAtual]} de ${anoAtual}`;
+  const grid = document.getElementById('diasGrid');
+  grid.innerHTML = '';
+
+  const primeiroDiaSemana = new Date(anoAtual, mesAtual, 1).getDay();
+  const diasNoMes = new Date(anoAtual, mesAtual+1, 0).getDate();
+  const diasMesAnterior = new Date(anoAtual, mesAtual, 0).getDate();
+
+  for(let i = primeiroDiaSemana - 1; i >= 0; i--){
+    grid.appendChild(criarCelulaDia(diasMesAnterior - i, true, mesAtual === 0 ? anoAtual-1 : anoAtual, mesAtual === 0 ? 11 : mesAtual-1));
+  }
+  for(let d = 1; d <= diasNoMes; d++){
+    grid.appendChild(criarCelulaDia(d, false, anoAtual, mesAtual));
+  }
+  const totalCelulas = primeiroDiaSemana + diasNoMes;
+  const restante = (7 - (totalCelulas % 7)) % 7;
+  for(let d = 1; d <= restante; d++){
+    grid.appendChild(criarCelulaDia(d, true, mesAtual === 11 ? anoAtual+1 : anoAtual, mesAtual === 11 ? 0 : mesAtual+1));
+  }
+
+  renderListaDia();
+}
+
+function dotClasse(a){
+  if(a.tipo === 'cliente'){
+    const status = clienteStatus(a.clienteId);
+    return { 'Novo':'dot-novo', 'Em andamento':'dot-em-andamento', 'Concluído':'dot-concluido', 'Cancelado':'dot-cancelado' }[status] || 'dot-novo';
+  }
+  if(a.tipo === 'rota') return 'dot-rota';
+  return 'dot-interno';
+}
+function horarioExibicao(a){ return a.diaInteiro ? 'Dia inteiro' : a.horario; }
+
+function criarCelulaDia(dia, outroMes, ano, mes){
+  const iso = toISO(ano, mes, dia);
+  const cell = document.createElement('div');
+  cell.className = 'day-cell' + (outroMes ? ' outro-mes' : '') + (iso === dataISOHoje() ? ' hoje' : '') + (iso === diaSelecionado ? ' selecionado' : '');
+  cell.onclick = () => selecionarDia(iso, true);
+
+  const doDia = agendamentos.filter(a => a.data === iso);
+  const dots = doDia.slice(0,6).map(a => `<span class="dot ${dotClasse(a)}"></span>`).join('');
+  const mais = doDia.length > 6 ? `<div class="day-mais">+${doDia.length - 6}</div>` : '';
+
+  cell.innerHTML = `<div class="day-number">${dia}</div><div class="day-dots">${dots}</div>${mais}`;
+  return cell;
+}
+
+/* ==========================================================================
+   4. LISTA LATERAL DO DIA SELECIONADO
+   ========================================================================== */
+function selecionarDia(iso, abrirModal){
+  diaSelecionado = iso;
+  renderCalendario();
+  if(abrirModal) abrirModalNovo();
+}
+
+function nomeCliente(id){ const c = clientesMock.find(c => c.id == id); return c ? c.nome : '—'; }
+function nomeVeiculo(id){ const v = veiculosMock.find(v => v.id == id); return v ? v.nome : 'Nenhum'; }
+function nomeMotorista(id){ const m = motoristasMock.find(m => m.id == id); return m ? m.nome : 'Nenhum'; }
+function clienteStatus(id){ const c = clientesMock.find(c => c.id == id); return c ? c.status : 'Novo'; }
+function classeStatus(status){ return { 'Novo':'badge-info', 'Em andamento':'badge-warning', 'Concluído':'badge-success', 'Cancelado':'badge-danger' }[status] || 'badge-info'; }
+function proximoStatus(status){ const ordem = ['Novo','Em andamento','Concluído']; const i = ordem.indexOf(status); return i === -1 || i === ordem.length-1 ? 'Novo' : ordem[i+1]; }
+function labelTipo(tipo){ return { cliente:'Atendimento a cliente', visita:'Visita a cliente', rota:'Início de rota', equipe:'Alinhamento de equipe', pessoal:'Compromisso pessoal', outro:'Outro' }[tipo]; }
+
+function tituloCompromisso(a){
+  if(a.tipo === 'cliente') return nomeCliente(a.clienteId);
+  if(a.tipo === 'visita') return `Visita: ${nomeCliente(a.clienteId)}`;
+  if(a.tipo === 'rota') return `Rota: ${a.nomeRota || '—'}`;
+  if(a.tipo === 'equipe') return a.titulo || 'Alinhamento de equipe';
+  if(a.tipo === 'pessoal') return `${nomeMotorista(a.motoristaId)} — pessoal`;
+  return a.titulo || 'Compromisso';
+}
+function detalheCompromisso(a){
+  if(a.tipo === 'cliente') return `${a.servico}<br>Veículo: ${nomeVeiculo(a.veiculoId)}<br>Motorista: ${nomeMotorista(a.motoristaId)}`;
+  if(a.tipo === 'visita') return `${a.motivo || ''}<br>Responsável: ${nomeMotorista(a.motoristaId)}`;
+  if(a.tipo === 'rota') return `Veículo: ${nomeVeiculo(a.veiculoId)}<br>Motorista: ${nomeMotorista(a.motoristaId)}<br>Duração prevista: ${a.duracaoPrevista ? a.duracaoPrevista+'h' : '-'}${a.terminoPrevisto ? ' (término ~ '+a.terminoPrevisto+')' : ''}`;
+  if(a.tipo === 'equipe') return a.local ? `Local: ${a.local}` : '';
+  if(a.tipo === 'pessoal') return a.motivo || '';
+  return a.observacoes || '';
+}
+
+function renderListaDia(){
+  const data = new Date(diaSelecionado+'T00:00:00');
+  document.getElementById('diaLabel').textContent = data.toLocaleDateString('pt-BR', { day:'2-digit', month:'long' });
+  document.getElementById('diaSub').textContent = data.toLocaleDateString('pt-BR', { weekday:'long' });
+
+  const lista = document.getElementById('listaDia');
+  const doDia = agendamentos.filter(a => a.data === diaSelecionado).sort((a,b) => {
+    if(a.diaInteiro && !b.diaInteiro) return -1;
+    if(!a.diaInteiro && b.diaInteiro) return 1;
+    if(a.diaInteiro && b.diaInteiro) return 0;
+    return a.horario.localeCompare(b.horario);
+  });
+
+  if(doDia.length === 0){
+    lista.innerHTML = `<div class="empty-day">Nenhum compromisso neste dia.</div>`;
+    return;
+  }
+
+  lista.innerHTML = doDia.map(a => {
+    const statusBadge = a.tipo === 'cliente'
+      ? `<button class="badge ${classeStatus(clienteStatus(a.clienteId))}" onclick="avancarStatusCliente(${a.clienteId})" title="Clique para avançar o status do cliente">${clienteStatus(a.clienteId)}</button>`
+      : `<span class="badge badge-neutral badge-static">${labelTipo(a.tipo)}</span>`;
+    return `
+    <div class="compromisso-item">
+      <div class="top-row">
+        <div><div class="hora">${horarioExibicao(a)}</div><div class="tipo-tag">${labelTipo(a.tipo)}</div></div>
+        ${statusBadge}
+      </div>
+      <div class="titulo-item">${tituloCompromisso(a)}</div>
+      <div class="detalhe">${detalheCompromisso(a)}</div>
+      <div class="acoes">
+        <button class="btn btn-outline btn-sm" onclick="editarAgendamento(${a.id})">Editar</button>
+        ${(a.tipo === 'cliente' || a.tipo === 'visita') ? `<button class="btn btn-gold btn-sm" onclick="gerarPDFCompromisso(${a.id})">Gerar PDF</button>` : ''}
+        <button class="btn btn-ghost btn-sm" onclick="excluirAgendamento(${a.id})">Excluir</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function avancarStatusCliente(clienteId){
+  const c = clientesMock.find(c => c.id === clienteId);
+  c.status = proximoStatus(c.status);
+  renderCalendario();
+}
+function excluirAgendamento(id){
+  if(!confirm('Excluir este compromisso?')) return;
+  agendamentos = agendamentos.filter(a => a.id !== id);
+  renderCalendario();
+}
+
+/* ==========================================================================
+   5. MODAL — mostrar/ocultar campos conforme o tipo escolhido
+   ========================================================================== */
+let editandoId = null;
+const blocosTipo = { cliente:'campos-cliente', visita:'campos-visita', rota:'campos-rota', equipe:'campos-equipe', pessoal:'campos-pessoal', outro:'campos-outro' };
+
+function atualizarCamposTipo(){
+  const tipo = document.getElementById('agTipo').value;
+  Object.entries(blocosTipo).forEach(([t, id]) => document.getElementById(id).style.display = (t === tipo) ? 'block' : 'none');
+  if(tipo === 'cliente') atualizarStatusReadonly();
+}
+/* Sincronização de data de coleta ↔ cadastro do cliente:
+   quando "agSincronizarData" está marcado, a data deste compromisso É a
+   clientesMock.dataPrevista do cliente (mesma lógica já usada para status).
+   Ao abrir/trocar de cliente, puxa a data prevista já salva (se existir). */
+function atualizarStatusReadonly(){
+  const clienteId = document.getElementById('agCliente').value;
+  const status = clienteStatus(clienteId);
+  const badge = document.getElementById('statusClienteBadge');
+  badge.textContent = status;
+  badge.className = 'badge badge-static ' + classeStatus(status);
+  const c = clientesMock.find(c => c.id == clienteId);
+  if(c){
+    document.getElementById('agEnderecoColeta').value = c.enderecoColeta || '';
+    document.getElementById('agEnderecoEntrega').value = c.enderecoEntrega || '';
+    if(document.getElementById('agSincronizarData').checked && c.dataPrevista){
+      document.getElementById('agData').value = c.dataPrevista;
+    }
+  }
+}
+function sincronizarDataCliente(clienteId, novaData){
+  const c = clientesMock.find(c => c.id == clienteId);
+  if(c) c.dataPrevista = novaData;
+}
+
+function abrirModalNovo(){
+  editandoId = null;
+  document.getElementById('modalTitulo').textContent = 'Novo compromisso';
+  document.getElementById('agTipo').value = 'cliente';
+  document.getElementById('agData').value = diaSelecionado;
+  document.getElementById('agHorario').value = '08:00';
+  document.getElementById('agDiaInteiro').checked = false;
+  toggleDiaInteiro();
+  document.getElementById('agCliente').value = clientesMock[0]?.id || '';
+  document.getElementById('agClienteVisita').value = clientesMock[0]?.id || '';
+  document.getElementById('agServico').value = 'Mudança residencial';
+  document.getElementById('agVeiculo').value = '';
+  document.getElementById('agMotorista').value = '';
+  document.getElementById('agEnderecoColeta').value = '';
+  document.getElementById('agEnderecoEntrega').value = '';
+  document.getElementById('agItens').value = '';
+  document.getElementById('agRotaVinculada').value = '';
+  document.getElementById('agSincronizarData').checked = true;
+  ['carEmbalagem','carDesmontagem','carMontagem','carIcamento','carCarregamentoVeiculo','carElevador'].forEach(id => document.getElementById(id).checked = false);
+  document.getElementById('agResponsavelVisita').value = '';
+  document.getElementById('agMotoristaPessoal').value = '';
+  document.getElementById('agMotivoVisita').value = '';
+  document.getElementById('agNomeRota').value = '';
+  document.getElementById('agVeiculoRota').value = '';
+  document.getElementById('agMotoristaRota').value = '';
+  document.getElementById('agDuracaoRota').value = '';
+  document.getElementById('agTerminoRota').value = '';
+  document.getElementById('agTituloEquipe').value = 'Alinhamento de equipe';
+  document.getElementById('agLocalEquipe').value = '';
+  document.getElementById('agMotivoPessoal').value = '';
+  document.getElementById('agTituloOutro').value = '';
+  document.getElementById('agObservacoes').value = '';
+  atualizarCamposTipo();
+  document.getElementById('modalAgendamento').classList.add('show');
+}
+
+function editarAgendamento(id){
+  const a = agendamentos.find(a => a.id === id);
+  editandoId = id;
+  document.getElementById('modalTitulo').textContent = 'Editar compromisso';
+  document.getElementById('agTipo').value = a.tipo;
+  atualizarCamposTipo();
+  document.getElementById('agData').value = a.data;
+  document.getElementById('agHorario').value = a.horario || '';
+  document.getElementById('agDiaInteiro').checked = !!a.diaInteiro;
+  toggleDiaInteiro();
+  document.getElementById('agObservacoes').value = a.observacoes || '';
+
+  if(a.tipo === 'cliente'){
+    document.getElementById('agCliente').value = a.clienteId; document.getElementById('agServico').value = a.servico; document.getElementById('agVeiculo').value = a.veiculoId || ''; document.getElementById('agMotorista').value = a.motoristaId || ''; document.getElementById('agEnderecoColeta').value = a.enderecoColeta || ''; document.getElementById('agEnderecoEntrega').value = a.enderecoEntrega || ''; document.getElementById('agItens').value = a.itens || ''; document.getElementById('agRotaVinculada').value = a.rotaId || ''; document.getElementById('agSincronizarData').checked = !!a.sincronizarData; document.getElementById('statusClienteBadge').textContent = clienteStatus(a.clienteId); document.getElementById('statusClienteBadge').className = 'badge badge-static ' + classeStatus(clienteStatus(a.clienteId));
+    ['carEmbalagem','carDesmontagem','carMontagem','carIcamento','carCarregamentoVeiculo','carElevador'].forEach(id => document.getElementById(id).checked = (a.caracteristicas || []).includes(id));
+  }
+  if(a.tipo === 'visita'){ document.getElementById('agClienteVisita').value = a.clienteId; document.getElementById('agMotivoVisita').value = a.motivo || ''; document.getElementById('agResponsavelVisita').value = a.motoristaId || ''; }
+  if(a.tipo === 'rota'){ document.getElementById('agNomeRota').value = a.nomeRota || ''; document.getElementById('agVeiculoRota').value = a.veiculoId || ''; document.getElementById('agMotoristaRota').value = a.motoristaId || ''; document.getElementById('agDuracaoRota').value = a.duracaoPrevista || ''; document.getElementById('agTerminoRota').value = a.terminoPrevisto || ''; }
+  if(a.tipo === 'equipe'){ document.getElementById('agTituloEquipe').value = a.titulo || ''; document.getElementById('agLocalEquipe').value = a.local || ''; }
+  if(a.tipo === 'pessoal'){ document.getElementById('agMotoristaPessoal').value = a.motoristaId || ''; document.getElementById('agMotivoPessoal').value = a.motivo || ''; }
+  if(a.tipo === 'outro'){ document.getElementById('agTituloOutro').value = a.titulo || ''; }
+
+  document.getElementById('modalAgendamento').classList.add('show');
+}
+
+function fecharModal(){ document.getElementById('modalAgendamento').classList.remove('show'); }
+
+function salvarAgendamento(){
+  const tipo = document.getElementById('agTipo').value;
+  const data = document.getElementById('agData').value;
+  const diaInteiro = document.getElementById('agDiaInteiro').checked;
+  const horario = diaInteiro ? null : document.getElementById('agHorario').value;
+  const observacoes = document.getElementById('agObservacoes').value;
+  if(!data){ alert('Preencha a data.'); return; }
+
+  let dados = { tipo, data, horario, diaInteiro, observacoes };
+
+  if(tipo === 'cliente'){
+    dados.clienteId = parseInt(document.getElementById('agCliente').value);
+    dados.servico = document.getElementById('agServico').value;
+    dados.veiculoId = document.getElementById('agVeiculo').value || null;
+    dados.motoristaId = document.getElementById('agMotorista').value || null;
+    dados.enderecoColeta = document.getElementById('agEnderecoColeta').value;
+    dados.enderecoEntrega = document.getElementById('agEnderecoEntrega').value;
+    dados.itens = document.getElementById('agItens').value;
+    dados.rotaId = document.getElementById('agRotaVinculada').value || null;
+    dados.sincronizarData = document.getElementById('agSincronizarData').checked;
+    dados.caracteristicas = ['carEmbalagem','carDesmontagem','carMontagem','carIcamento','carCarregamentoVeiculo','carElevador'].filter(id => document.getElementById(id).checked);
+    if(dados.sincronizarData) sincronizarDataCliente(dados.clienteId, data);
+  } else if(tipo === 'visita'){
+    dados.clienteId = parseInt(document.getElementById('agClienteVisita').value);
+    dados.motivo = document.getElementById('agMotivoVisita').value;
+    dados.motoristaId = document.getElementById('agResponsavelVisita').value || null;
+  } else if(tipo === 'rota'){
+    dados.nomeRota = document.getElementById('agNomeRota').value || 'Rota sem nome';
+    dados.veiculoId = document.getElementById('agVeiculoRota').value || null;
+    dados.motoristaId = document.getElementById('agMotoristaRota').value || null;
+    dados.duracaoPrevista = document.getElementById('agDuracaoRota').value || null;
+    dados.terminoPrevisto = document.getElementById('agTerminoRota').value || null;
+  } else if(tipo === 'equipe'){
+    dados.titulo = document.getElementById('agTituloEquipe').value || 'Alinhamento de equipe';
+    dados.local = document.getElementById('agLocalEquipe').value;
+  } else if(tipo === 'pessoal'){
+    dados.motoristaId = document.getElementById('agMotoristaPessoal').value || null;
+    dados.motivo = document.getElementById('agMotivoPessoal').value;
+  } else if(tipo === 'outro'){
+    dados.titulo = document.getElementById('agTituloOutro').value || 'Compromisso';
+  }
+
+  if(editandoId){
+    agendamentos = agendamentos.map(a => a.id === editandoId ? { id: editandoId, ...dados } : a);
+  } else {
+    agendamentos.push({ id: contadorAg++, ...dados });
+  }
+  diaSelecionado = data;
+  fecharModal();
+  renderCalendario();
+}
+
+/* ==========================================================================
+   6. FICHA DE COMPROMISSO — PDF para enviar ao motorista/equipe
+   ========================================================================== */
+function dataExtenso(iso){ return new Date(iso+'T00:00:00').toLocaleDateString('pt-BR', { weekday:'long', day:'2-digit', month:'long', year:'numeric' }); }
+
+function renderCabecalhoFicha(titulo, badge){
+  return `
+    <div class="ph-header">
+      <div class="ph-brand"><img src="assets/logo-jlt.jpeg" alt="Juliano Lopes Transportes"><small>CNPJ: 58.450.843/0001-70</small></div>
+      <div class="ph-contact">contato@julianoltransportes.com.br<br>(31) 97339-0837 · (31) 99441-3919</div>
+    </div>
+    <hr class="ph-rule">
+    <div class="ph-titlebox"><h1>${titulo}</h1>${badge ? `<div class="ph-badge">${badge}</div>` : ''}</div>
+  `;
+}
+function renderRodapeFicha(){ return `<div class="ph-footer">JULIANO LOPES TRANSPORTES LTDA · CNPJ 58.450.843/0001-70 · Documento gerado em: ${new Date().toLocaleDateString('pt-BR')}</div>`; }
+
+function renderFichaCompromisso(a){
+  const c = clientesMock.find(c => c.id == a.clienteId) || {};
+  const itensLista = (a.itens || '').split('\n').filter(l => l.trim()).map(l => `<li>${l}</li>`).join('');
+  const labelsCaracteristicas = { carEmbalagem:'Embalagem', carDesmontagem:'Desmontagem', carMontagem:'Montagem', carIcamento:'Içamento', carCarregamentoVeiculo:'Carregamento de automóvel/motocicleta', carElevador:'Uso de elevador' };
+  const caracteristicasTexto = (a.caracteristicas || []).map(id => labelsCaracteristicas[id]).join(', ');
+
+  if(a.tipo === 'cliente'){
+    return renderCabecalhoFicha('Ficha de Atendimento', dataExtenso(a.data)) + `
+      <h2 class="ph-section">Compromisso</h2>
+      <p><b>Horário:</b> ${horarioExibicao(a)}<br><b>Serviço:</b> ${a.servico}<br><b>Veículo designado:</b> ${nomeVeiculo(a.veiculoId)}<br><b>Motorista designado:</b> ${nomeMotorista(a.motoristaId)}</p>
+      <h2 class="ph-section">Cliente</h2>
+      <p><b>Nome:</b> ${c.nome || nomeCliente(a.clienteId)}<br><b>Documento:</b> ${c.documento || '-'}<br><b>Telefone:</b> ${c.telefone || '-'}</p>
+      <h2 class="ph-section">Endereços</h2>
+      <p><b>Coleta:</b> ${a.enderecoColeta || c.enderecoColeta || '-'}<br><b>Entrega:</b> ${a.enderecoEntrega || c.enderecoEntrega || '-'}</p>
+      <h2 class="ph-section">Características do compromisso</h2>
+      <p>${caracteristicasTexto || 'Nenhuma característica marcada.'}</p>
+      <h2 class="ph-section">Itens / observações de carga</h2>
+      ${itensLista ? `<ul>${itensLista}</ul>` : '<p><i>Nenhum item listado.</i></p>'}
+      ${a.observacoes ? `<h2 class="ph-section">Observações gerais</h2><p>${a.observacoes}</p>` : ''}
+    ` + renderRodapeFicha();
+  }
+
+  // tipo === 'visita'
+  return renderCabecalhoFicha('Ficha de Visita', dataExtenso(a.data)) + `
+    <h2 class="ph-section">Compromisso</h2>
+    <p><b>Horário:</b> ${horarioExibicao(a)}<br><b>Responsável:</b> ${nomeMotorista(a.motoristaId)}<br><b>Motivo:</b> ${a.motivo || '-'}</p>
+    <h2 class="ph-section">Cliente</h2>
+    <p><b>Nome:</b> ${c.nome || nomeCliente(a.clienteId)}<br><b>Documento:</b> ${c.documento || '-'}<br><b>Telefone:</b> ${c.telefone || '-'}</p>
+    <h2 class="ph-section">Endereço</h2>
+    <p>${c.enderecoColeta || '-'}</p>
+    ${a.observacoes ? `<h2 class="ph-section">Observações</h2><p>${a.observacoes}</p>` : ''}
+  ` + renderRodapeFicha();
+}
+
+/* Padrão oficial: Documento(Tipo)_NOMEdoCLIENTE_JLT — mesmo usado no módulo
+   Documentos. Definido como título da página, que o navegador sugere como
+   nome do arquivo ao "Salvar como PDF". */
+function nomeArquivoFicha(a){
+  const tipoLabel = a.tipo === 'visita' ? 'FichaVisita' : 'FichaAtendimento';
+  const nome = (nomeCliente(a.clienteId) || 'CLIENTE').toUpperCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^A-Z0-9]+/g,'');
+  return `Documento(${tipoLabel})_${nome}_JLT`;
+}
+function gerarPDFCompromisso(id){
+  const a = agendamentos.find(a => a.id === id);
+  document.getElementById('fichaPreview').innerHTML = renderFichaCompromisso(a);
+  document.title = nomeArquivoFicha(a);
+  setTimeout(() => window.print(), 150);
+}
+
+/* ==========================================================================
+   7. INICIALIZAÇÃO
+   ========================================================================== */
+popularSelects();
+renderCalendario();
+</script>
+</body>
+</html>

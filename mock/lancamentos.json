@@ -1,0 +1,167 @@
+[
+  {
+    "id": "lan_001",
+    "tipo": "ganho",
+    "data": "2026-08-14",
+    "valor": 18500,
+    "categoria": "Frete",
+    "descricao": "Mudança comercial Vetta Engenharia — BH/Contagem",
+    "veiculoId": "vei_005",
+    "motoristaId": "mot_001",
+    "clienteId": "cli_002"
+  },
+  {
+    "id": "lan_002",
+    "tipo": "gasto",
+    "data": "2026-08-14",
+    "valor": 2840.5,
+    "categoria": "Combustível",
+    "descricao": "Abastecimento diesel S10 — posto Fernão Dias",
+    "veiculoId": "vei_005",
+    "motoristaId": "mot_001",
+    "clienteId": null
+  },
+  {
+    "id": "lan_003",
+    "tipo": "gasto",
+    "data": "2026-08-12",
+    "valor": 6200,
+    "categoria": "Manutenção",
+    "descricao": "Troca de embreagem Ford Cargo 1119",
+    "veiculoId": "vei_004",
+    "motoristaId": null,
+    "clienteId": null
+  },
+  {
+    "id": "lan_004",
+    "tipo": "ganho",
+    "data": "2026-08-10",
+    "valor": 7400,
+    "categoria": "Frete",
+    "descricao": "Mudança residencial Fernanda Coelho — Sion/Barro Preto",
+    "veiculoId": "vei_002",
+    "motoristaId": "mot_003",
+    "clienteId": "cli_005"
+  },
+  {
+    "id": "lan_005",
+    "tipo": "gasto",
+    "data": "2026-08-09",
+    "valor": 1180,
+    "categoria": "Pedágio",
+    "descricao": "Pedágios rota BH — Juiz de Fora (ida e volta)",
+    "veiculoId": "vei_001",
+    "motoristaId": "mot_002",
+    "clienteId": "cli_004"
+  },
+  {
+    "id": "lan_006",
+    "tipo": "gasto",
+    "data": "2026-08-05",
+    "valor": 24800,
+    "categoria": "Folha de pagamento",
+    "descricao": "Salários da equipe operacional — competência julho",
+    "veiculoId": null,
+    "motoristaId": null,
+    "clienteId": null
+  },
+  {
+    "id": "lan_007",
+    "tipo": "ganho",
+    "data": "2026-08-04",
+    "valor": 32000,
+    "categoria": "Frete",
+    "descricao": "Transporte de carga paletizada — Distribuidora Alto Vale",
+    "veiculoId": "vei_001",
+    "motoristaId": "mot_002",
+    "clienteId": "cli_004"
+  },
+  {
+    "id": "lan_008",
+    "tipo": "gasto",
+    "data": "2026-08-03",
+    "valor": 3950,
+    "categoria": "Combustível",
+    "descricao": "Abastecimento da frota — semana 31",
+    "veiculoId": null,
+    "motoristaId": null,
+    "clienteId": null
+  },
+  {
+    "id": "lan_009",
+    "tipo": "gasto",
+    "data": "2026-08-01",
+    "valor": 4100,
+    "categoria": "Seguro",
+    "descricao": "Parcela mensal do seguro de carga e frota",
+    "veiculoId": null,
+    "motoristaId": null,
+    "clienteId": null
+  },
+  {
+    "id": "lan_010",
+    "tipo": "ganho",
+    "data": "2026-07-30",
+    "valor": 12300,
+    "categoria": "Frete",
+    "descricao": "Mudança Móveis Bela Vista — BH/Uberlândia",
+    "veiculoId": "vei_005",
+    "motoristaId": "mot_001",
+    "clienteId": "cli_008"
+  },
+  {
+    "id": "lan_011",
+    "tipo": "gasto",
+    "data": "2026-07-28",
+    "valor": 1560,
+    "categoria": "Material de embalagem",
+    "descricao": "Caixas, plástico bolha e fita — reposição de estoque",
+    "veiculoId": null,
+    "motoristaId": null,
+    "clienteId": null
+  },
+  {
+    "id": "lan_012",
+    "tipo": "ganho",
+    "data": "2026-07-22",
+    "valor": 9800,
+    "categoria": "Frete",
+    "descricao": "Mudança residencial Roberto Nunes — BH/Ouro Preto",
+    "veiculoId": "vei_002",
+    "motoristaId": "mot_003",
+    "clienteId": "cli_007"
+  },
+  {
+    "id": "lan_013",
+    "tipo": "gasto",
+    "data": "2026-07-18",
+    "valor": 2350,
+    "categoria": "Manutenção",
+    "descricao": "Revisão preventiva e troca de pneus — Iveco Daily",
+    "veiculoId": "vei_003",
+    "motoristaId": null,
+    "clienteId": null
+  },
+  {
+    "id": "lan_014",
+    "tipo": "ganho",
+    "data": "2026-07-15",
+    "valor": 45000,
+    "categoria": "Frete",
+    "descricao": "Transporte de canteiro de obras — Construtora Âncora",
+    "veiculoId": "vei_005",
+    "motoristaId": "mot_005",
+    "clienteId": "cli_010"
+  },
+  {
+    "id": "lan_015",
+    "tipo": "gasto",
+    "data": "2026-07-10",
+    "valor": 8700,
+    "categoria": "Impostos",
+    "descricao": "IPVA e licenciamento — lote da frota",
+    "veiculoId": null,
+    "motoristaId": null,
+    "clienteId": null
+  }
+]

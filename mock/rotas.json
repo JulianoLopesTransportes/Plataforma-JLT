@@ -1,0 +1,268 @@
+[
+  {
+    "id": "rot_001",
+    "nome": "BH → Uberlândia (Triângulo)",
+    "status": "em_transito",
+    "veiculoId": "vei_005",
+    "motoristaId": "mot_001",
+    "origem": "Belo Horizonte - MG",
+    "destino": "Uberlândia - MG",
+    "dataSaida": "2026-08-16",
+    "dataPrevistaRetorno": "2026-08-19",
+    "mudancas": [
+      {
+        "id": "mud_001",
+        "clienteNome": "Móveis Bela Vista Comércio ME",
+        "telefone": "(31) 3555-1122",
+        "documento": "45.678.901/0001-23",
+        "volumeM3": 38,
+        "enderecoColeta": "Av. Amazonas, 5600, Gameleira, Belo Horizonte - MG",
+        "enderecoEntrega": "Av. Afonso Pena, 1200, Centro, Uberlândia - MG",
+        "observacao": "Carga de mostruário. Manter na vertical."
+      },
+      {
+        "id": "mud_002",
+        "clienteNome": "Editora Serra Azul Ltda",
+        "telefone": "(31) 3777-2200",
+        "documento": "67.890.123/0001-45",
+        "volumeM3": 14,
+        "enderecoColeta": "Rua Curitiba, 900, Centro, Belo Horizonte - MG",
+        "enderecoEntrega": "Rua Goiás, 300, Centro, Araxá - MG",
+        "observacao": "Caixas de livros — peso elevado."
+      },
+      {
+        "id": "mud_003",
+        "clienteNome": "Anderson Gomes Ribeiro",
+        "telefone": "(31) 93333-6655",
+        "documento": "666.777.888-99",
+        "volumeM3": 8,
+        "enderecoColeta": "Rua Tupinambás, 500, Centro, Belo Horizonte - MG",
+        "enderecoEntrega": "Rua Rio Grande do Sul, 88, Centro, Araxá - MG",
+        "observacao": ""
+      }
+    ],
+    "paradas": [
+      {
+        "id": "par_001",
+        "tipo": "coleta",
+        "cidade": "Belo Horizonte",
+        "uf": "MG",
+        "endereco": "Av. Amazonas, 5600, Gameleira",
+        "data": "2026-08-16",
+        "embarcam": ["mud_001", "mud_002", "mud_003"],
+        "desembarcam": [],
+        "observacao": "Coleta consolidada das três cargas."
+      },
+      {
+        "id": "par_002",
+        "tipo": "entrega",
+        "cidade": "Araxá",
+        "uf": "MG",
+        "endereco": "Rua Goiás, 300, Centro",
+        "data": "2026-08-17",
+        "embarcam": [],
+        "desembarcam": ["mud_002", "mud_003"],
+        "observacao": "Duas entregas na mesma cidade."
+      },
+      {
+        "id": "par_003",
+        "tipo": "entrega",
+        "cidade": "Uberlândia",
+        "uf": "MG",
+        "endereco": "Av. Afonso Pena, 1200, Centro",
+        "data": "2026-08-18",
+        "embarcam": [],
+        "desembarcam": ["mud_001"],
+        "observacao": "Descarga com ajudante contratado no local."
+      }
+    ]
+  },
+  {
+    "id": "rot_002",
+    "nome": "BH → Juiz de Fora (Zona da Mata)",
+    "status": "carregando",
+    "veiculoId": "vei_001",
+    "motoristaId": "mot_002",
+    "origem": "Vespasiano - MG",
+    "destino": "Juiz de Fora - MG",
+    "dataSaida": "2026-08-18",
+    "dataPrevistaRetorno": "2026-08-20",
+    "mudancas": [
+      {
+        "id": "mud_004",
+        "clienteNome": "Distribuidora Alto Vale S/A",
+        "telefone": "(31) 3222-7788",
+        "documento": "23.456.789/0001-01",
+        "volumeM3": 40,
+        "enderecoColeta": "Rod. Fernão Dias, km 12, Galpão 4, Vespasiano - MG",
+        "enderecoEntrega": "Av. Getúlio Vargas, 2100, Centro, Juiz de Fora - MG",
+        "observacao": "Carga paletizada. Empilhadeira disponível no destino."
+      }
+    ],
+    "paradas": [
+      {
+        "id": "par_004",
+        "tipo": "coleta",
+        "cidade": "Vespasiano",
+        "uf": "MG",
+        "endereco": "Rod. Fernão Dias, km 12, Galpão 4",
+        "data": "2026-08-18",
+        "embarcam": ["mud_004"],
+        "desembarcam": [],
+        "observacao": "Janela de carregamento das 7h às 11h."
+      },
+      {
+        "id": "par_005",
+        "tipo": "entrega",
+        "cidade": "Juiz de Fora",
+        "uf": "MG",
+        "endereco": "Av. Getúlio Vargas, 2100, Centro",
+        "data": "2026-08-19",
+        "embarcam": [],
+        "desembarcam": ["mud_004"],
+        "observacao": ""
+      }
+    ]
+  },
+  {
+    "id": "rot_003",
+    "nome": "BH → Ouro Preto (Região Central)",
+    "status": "planejada",
+    "veiculoId": "vei_002",
+    "motoristaId": "mot_003",
+    "origem": "Belo Horizonte - MG",
+    "destino": "Ouro Preto - MG",
+    "dataSaida": "2026-08-29",
+    "dataPrevistaRetorno": "2026-08-30",
+    "mudancas": [
+      {
+        "id": "mud_005",
+        "clienteNome": "Roberto Nunes Barbosa",
+        "telefone": "(31) 95555-3344",
+        "documento": "444.555.666-77",
+        "volumeM3": 40,
+        "enderecoColeta": "Rua Piauí, 1420, Funcionários, Belo Horizonte - MG",
+        "enderecoEntrega": "Rua Coronel Pedro Jorge, 90, Centro, Ouro Preto - MG",
+        "observacao": "Rua estreita com ladeira. Confirmar acesso do caminhão."
+      }
+    ],
+    "paradas": [
+      {
+        "id": "par_006",
+        "tipo": "coleta",
+        "cidade": "Belo Horizonte",
+        "uf": "MG",
+        "endereco": "Rua Piauí, 1420, Funcionários",
+        "data": "2026-08-29",
+        "embarcam": ["mud_005"],
+        "desembarcam": [],
+        "observacao": ""
+      },
+      {
+        "id": "par_007",
+        "tipo": "entrega",
+        "cidade": "Ouro Preto",
+        "uf": "MG",
+        "endereco": "Rua Coronel Pedro Jorge, 90, Centro",
+        "data": "2026-08-30",
+        "embarcam": [],
+        "desembarcam": ["mud_005"],
+        "observacao": "Possível necessidade de transbordo para veículo menor."
+      }
+    ]
+  },
+  {
+    "id": "rot_004",
+    "nome": "BH → Vitória (Interestadual ES)",
+    "status": "planejada",
+    "veiculoId": null,
+    "motoristaId": null,
+    "origem": "Belo Horizonte - MG",
+    "destino": "Vitória - ES",
+    "dataSaida": "2026-09-12",
+    "dataPrevistaRetorno": "2026-09-15",
+    "mudancas": [
+      {
+        "id": "mud_006",
+        "clienteNome": "Juliana Prates Camargo",
+        "telefone": "(31) 94444-8877",
+        "documento": "555.666.777-88",
+        "volumeM3": 52,
+        "enderecoColeta": "Rua Rio de Janeiro, 2200, Lourdes, Belo Horizonte - MG",
+        "enderecoEntrega": "Rua Sete de Setembro, 45, Centro, Vitória - ES",
+        "observacao": "Mudança interestadual. Emitir CT-e e conferir seguro."
+      }
+    ],
+    "paradas": [
+      {
+        "id": "par_008",
+        "tipo": "coleta",
+        "cidade": "Belo Horizonte",
+        "uf": "MG",
+        "endereco": "Rua Rio de Janeiro, 2200, Lourdes",
+        "data": "2026-09-12",
+        "embarcam": ["mud_006"],
+        "desembarcam": [],
+        "observacao": ""
+      },
+      {
+        "id": "par_009",
+        "tipo": "entrega",
+        "cidade": "Vitória",
+        "uf": "ES",
+        "endereco": "Rua Sete de Setembro, 45, Centro",
+        "data": "2026-09-14",
+        "embarcam": [],
+        "desembarcam": ["mud_006"],
+        "observacao": ""
+      }
+    ]
+  },
+  {
+    "id": "rot_005",
+    "nome": "Circuito metropolitano BH",
+    "status": "concluida",
+    "veiculoId": "vei_003",
+    "motoristaId": "mot_004",
+    "origem": "Belo Horizonte - MG",
+    "destino": "Betim - MG",
+    "dataSaida": "2026-08-06",
+    "dataPrevistaRetorno": "2026-08-06",
+    "mudancas": [
+      {
+        "id": "mud_007",
+        "clienteNome": "Fernanda Coelho Martins",
+        "telefone": "(31) 96666-2211",
+        "documento": "333.444.555-66",
+        "volumeM3": 18,
+        "enderecoColeta": "Rua Grão Mogol, 780, Sion, Belo Horizonte - MG",
+        "enderecoEntrega": "Rua Ouro Preto, 155, Barro Preto, Belo Horizonte - MG",
+        "observacao": ""
+      }
+    ],
+    "paradas": [
+      {
+        "id": "par_010",
+        "tipo": "mista",
+        "cidade": "Belo Horizonte",
+        "uf": "MG",
+        "endereco": "Rua Grão Mogol, 780, Sion",
+        "data": "2026-08-06",
+        "embarcam": ["mud_007"],
+        "desembarcam": [],
+        "observacao": "Coleta e entrega no mesmo dia."
+      },
+      {
+        "id": "par_011",
+        "tipo": "entrega",
+        "cidade": "Belo Horizonte",
+        "uf": "MG",
+        "endereco": "Rua Ouro Preto, 155, Barro Preto",
+        "data": "2026-08-06",
+        "embarcam": [],
+        "desembarcam": ["mud_007"],
+        "observacao": ""
+      }
+    ]
+  }
+]

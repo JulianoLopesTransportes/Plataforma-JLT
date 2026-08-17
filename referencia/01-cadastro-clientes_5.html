@@ -1,0 +1,717 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Juliano Lopes Transportes — Clientes</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Montserrat:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+
+/* ==========================================================================
+   1. DESIGN TOKENS — idênticos ao 00-guia-visual.html. Mantenha os dois em
+   sincronia se for alterar cores/fontes no futuro.
+   ========================================================================== */
+:root{
+  --color-primary:        #820901;
+  --color-primary-dark:   #5a0601;
+  --color-primary-light:  #a30d03;
+  --color-black:          #000000;
+  --color-gold:           #b8862f;
+  --color-gold-light:     #d9b45f;
+  --color-white:          #ffffff;
+
+  --color-bg:             #faf8f6;
+  --color-surface:        #ffffff;
+  --color-border:         #e6dfd6;
+  --color-gray-600:       #6f665d;
+  --color-text:           #241d1a;
+
+  --color-success:        #2f6b3a;
+  --color-success-bg:     #e7f2e8;
+  --color-warning:        #a3760f;
+  --color-warning-bg:     #f7edd9;
+  --color-danger:         #a3241c;
+  --color-danger-bg:      #f7e3e1;
+  --color-info:           #2f5a80;
+  --color-info-bg:        #e4edf4;
+
+  --font-display: 'Bebas Neue', sans-serif;
+  --font-body:    'Montserrat', sans-serif;
+
+  --space-1: 6px; --space-2: 12px; --space-3: 20px; --space-4: 28px; --space-5: 40px; --space-6: 56px;
+  --radius-sm: 4px; --radius-md: 8px; --radius-lg: 14px;
+  --shadow-card: 0 2px 10px rgba(28,22,20,0.06);
+}
+
+* { box-sizing: border-box; }
+body{ margin:0; background: var(--color-bg); color: var(--color-text); font-family: var(--font-body); line-height:1.55; }
+h1,h2,h3,h4{ font-family: var(--font-display); text-transform: uppercase; letter-spacing: 0.03em; font-weight:600; margin:0; }
+
+/* ==========================================================================
+   2. LAYOUT BASE (sidebar + main) — reaproveitado do guia visual
+   ========================================================================== */
+.app{ display:flex; min-height:100vh; }
+.sidebar{ width:250px; flex-shrink:0; background: linear-gradient(180deg, var(--color-black) 0%, var(--color-primary-dark) 100%); color: var(--color-white); display:flex; flex-direction:column; padding: var(--space-4) 0; position: sticky; top:0; height:100vh; overflow-y:auto; }
+.sidebar-brand{ display:flex; align-items:center; padding: 0 var(--space-3) var(--space-4); border-bottom: 1px solid rgba(255,255,255,0.08); margin-bottom: var(--space-3); }
+.sidebar-brand .logo-plate{ background: var(--color-white); border-radius: var(--radius-md); padding: 8px 10px; width:100%; display:flex; align-items:center; justify-content:center; }
+.sidebar-brand .logo-plate img{ width:100%; height:auto; display:block; }
+.nav-group-label{ font-size:11px; color: rgba(255,255,255,0.45); padding: var(--space-2) var(--space-3) var(--space-1); letter-spacing:0.08em; text-transform:uppercase; }
+.nav-item{ display:flex; align-items:center; gap: var(--space-2); padding: var(--space-2) var(--space-3); color: rgba(255,255,255,0.82); text-decoration:none; font-size:14.5px; font-weight:500; border-left: 3px solid transparent; cursor:pointer; }
+.nav-item svg{ width:19px; height:19px; stroke: currentColor; flex-shrink:0; }
+.nav-item:hover{ background: rgba(255,255,255,0.06); color: var(--color-white); }
+.nav-item.active{ background: rgba(184,134,47,0.14); border-left-color: var(--color-gold); color: var(--color-gold-light); }
+.main{ flex:1; padding: var(--space-5); max-width: 1180px; }
+.page-title{ font-size:26px; margin-bottom: var(--space-1); }
+.page-subtitle{ color: var(--color-gray-600); font-size:14.5px; margin-bottom: var(--space-4); font-family:var(--font-body); text-transform:none; letter-spacing:0; }
+hr.rule{ border:none; border-top:3px solid var(--color-primary); margin: var(--space-2) 0 var(--space-4); width:60px; }
+
+/* ==========================================================================
+   3. COMPONENTES COMPARTILHADOS (botão, card, campo, tabela, badge)
+   ========================================================================== */
+.btn{ font-family: var(--font-body); font-weight:600; font-size:14px; padding: 11px 20px; border-radius: var(--radius-sm); border:1.5px solid transparent; cursor:pointer; display:inline-flex; align-items:center; gap:8px; transition: filter .15s ease; }
+.btn:hover{ filter:brightness(1.08); }
+.btn-primary{ background: var(--color-primary); color:var(--color-white); }
+.btn-gold{ background: var(--color-gold); color:var(--color-black); }
+.btn-outline{ background:transparent; border-color: var(--color-primary); color: var(--color-primary); }
+.btn-ghost{ background:transparent; color: var(--color-gray-600); }
+.btn-danger{ background: var(--color-danger); color: var(--color-white); }
+.btn-sm{ padding:7px 12px; font-size:12.5px; }
+
+.card{ background: var(--color-surface); border:1px solid var(--color-border); border-radius: var(--radius-lg); padding: var(--space-4); box-shadow: var(--shadow-card); }
+
+.field label{ display:block; font-size:13px; font-weight:600; margin-bottom:6px; }
+.field input, .field select{ width:100%; font-family: var(--font-body); font-size:14.5px; padding: 11px 13px; border:1.5px solid var(--color-border); border-radius: var(--radius-sm); background: var(--color-white); color: var(--color-text); }
+.field input:focus, .field select:focus{ outline:none; border-color: var(--color-primary); }
+.field-hint{ font-size:12px; color:var(--color-gray-600); margin-top:4px; }
+
+.table-wrap{ overflow-x:auto; -webkit-overflow-scrolling:touch; }
+table{ width:100%; border-collapse: collapse; background: var(--color-surface); border-radius: var(--radius-md); overflow:hidden; box-shadow: var(--shadow-card); }
+th{ text-align:left; font-family:var(--font-display); font-size:12px; letter-spacing:0.05em; text-transform:uppercase; background: var(--color-primary-dark); color: var(--color-white); padding: 13px 16px; }
+td{ padding: 14px 16px; border-bottom:1px solid var(--color-border); font-size:14.5px; vertical-align:middle; }
+tr:last-child td{ border-bottom:none; }
+tr:hover td{ background: var(--color-bg); }
+
+.badge{ display:inline-flex; align-items:center; gap:6px; font-size:12.5px; font-weight:600; padding:5px 12px; border-radius:20px; border:none; font-family:var(--font-body); cursor:pointer; }
+.badge-info{ background: var(--color-info-bg); color: var(--color-info); }
+.badge-warning{ background: var(--color-warning-bg); color: var(--color-warning); }
+.badge-success{ background: var(--color-success-bg); color: var(--color-success); }
+.badge-danger{ background: var(--color-danger-bg); color: var(--color-danger); }
+
+/* ==========================================================================
+   4. ESPECÍFICO DESTA TELA — formulário de cadastro
+   ========================================================================== */
+.tipo-toggle{ display:flex; gap:10px; margin-bottom: var(--space-4); }
+.tipo-toggle button{ flex:1; padding:12px; border-radius: var(--radius-sm); border:1.5px solid var(--color-border); background:var(--color-white); font-family:var(--font-body); font-weight:600; font-size:14px; cursor:pointer; color:var(--color-gray-600); }
+.tipo-toggle button.active{ border-color: var(--color-primary); background: var(--color-primary); color:var(--color-white); }
+
+.form-grid{ display:grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: var(--space-3); margin-bottom: var(--space-3); }
+.form-grid.cols-3{ grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); }
+.section-label{ font-family:var(--font-display); font-size:13px; letter-spacing:0.05em; color:var(--color-primary); margin: var(--space-3) 0 var(--space-2); }
+.section-label:first-child{ margin-top:0; }
+
+.empty-state{ text-align:center; padding: var(--space-5); color: var(--color-gray-600); }
+.empty-state svg{ width:40px; height:40px; stroke: var(--color-border); margin-bottom: var(--space-2); }
+
+.actions-cell{ display:flex; gap:6px; flex-wrap:wrap; align-items:center; }
+
+.btn-trash{ background:transparent; border:1.5px solid var(--color-border); border-radius: var(--radius-sm); width:34px; height:34px; display:inline-flex; align-items:center; justify-content:center; cursor:pointer; flex-shrink:0; transition: background .15s ease, border-color .15s ease; }
+.btn-trash svg{ width:17px; height:17px; stroke: var(--color-gray-600); transition: stroke .15s ease; }
+.btn-trash:hover{ background: var(--color-danger-bg); border-color: var(--color-danger); }
+.btn-trash:hover svg{ stroke: var(--color-danger); animation: trash-shake .4s ease; }
+@keyframes trash-shake{
+  0%, 100% { transform: rotate(0deg); }
+  20% { transform: rotate(-12deg); }
+  40% { transform: rotate(10deg); }
+  60% { transform: rotate(-8deg); }
+  80% { transform: rotate(5deg); }
+}
+
+.modal-overlay{ display:none; position:fixed; inset:0; background:rgba(0,0,0,0.55); align-items:center; justify-content:center; z-index:100; padding: var(--space-4); }
+.modal-box{ background: var(--color-surface); border-radius: var(--radius-lg); padding: var(--space-4); width:100%; max-width:720px; max-height:88vh; overflow-y:auto; box-shadow: 0 10px 40px rgba(0,0,0,0.25); }
+
+/* --- Painel retrátil "Novo Cliente" --- */
+.novo-cliente-panel{ background: var(--color-surface); border:1px solid var(--color-border); border-radius: var(--radius-lg); box-shadow: var(--shadow-card); margin-bottom: var(--space-5); overflow:hidden; }
+.novo-cliente-header{ display:flex; align-items:center; justify-content:space-between; padding: var(--space-3) var(--space-4); cursor:pointer; user-select:none; }
+.novo-cliente-header .title{ display:flex; align-items:center; gap:10px; font-family:var(--font-display); font-size:16px; letter-spacing:.04em; color:var(--color-primary); }
+.novo-cliente-header .title svg{ width:20px; height:20px; stroke: var(--color-primary); }
+.novo-cliente-header .chevron{ width:18px; height:18px; stroke:var(--color-gray-600); transition: transform .18s ease; }
+.novo-cliente-panel.aberto .chevron{ transform: rotate(180deg); }
+.novo-cliente-body{ display:none; padding: 0 var(--space-4) var(--space-4); border-top:1px solid var(--color-border); }
+.novo-cliente-panel.aberto .novo-cliente-body{ display:block; padding-top: var(--space-4); }
+
+/* --- Abas do modal de detalhes --- */
+.tabs{ display:flex; gap:4px; border-bottom:2px solid var(--color-border); margin-bottom: var(--space-3); }
+.tab-btn{ font-family:var(--font-body); font-weight:600; font-size:13.5px; padding:10px 16px; border:none; background:transparent; color:var(--color-gray-600); cursor:pointer; border-bottom:2px solid transparent; margin-bottom:-2px; }
+.tab-btn.active{ color: var(--color-primary); border-bottom-color: var(--color-primary); }
+.tab-panel{ display:none; }
+.tab-panel.active{ display:block; }
+
+/* --- Anexos --- */
+.anexo-upload{ border:1.5px dashed var(--color-border); border-radius: var(--radius-md); padding: var(--space-3); text-align:center; margin-bottom: var(--space-3); }
+.anexo-upload input{ display:none; }
+.anexo-lista{ display:flex; flex-direction:column; gap:8px; }
+.anexo-item{ display:flex; align-items:center; justify-content:space-between; padding:10px 12px; background:var(--color-bg); border-radius: var(--radius-sm); font-size:13.5px; }
+.anexo-item .nome{ display:flex; align-items:center; gap:8px; }
+.anexo-item svg{ width:17px; height:17px; stroke:var(--color-primary); flex-shrink:0; }
+.anexo-vazio{ color:var(--color-gray-600); font-size:13.5px; text-align:center; padding: var(--space-2) 0; }
+
+/* --- Histórico de alterações --- */
+.historico-lista{ display:flex; flex-direction:column; gap:10px; }
+.historico-item{ padding:10px 12px; background:var(--color-bg); border-left:3px solid var(--color-gold); border-radius: 0 var(--radius-sm) var(--radius-sm) 0; font-size:13px; }
+.historico-item .quando{ color:var(--color-gray-600); font-size:11.5px; margin-bottom:3px; }
+.historico-vazio{ color:var(--color-gray-600); font-size:13.5px; text-align:center; padding: var(--space-2) 0; }
+
+/* --- Rodapé de ação do modal (modo edição) --- */
+.modal-footer{ display:flex; gap:10px; justify-content:flex-end; margin-top: var(--space-4); padding-top: var(--space-3); border-top:1px solid var(--color-border); }
+
+</style>
+</head>
+<body>
+<div class="app">
+
+  <!-- ============ SIDEBAR ============ -->
+  <aside class="sidebar">
+    <div class="sidebar-brand">
+      <div class="logo-plate"><img src="assets/logo-jlt.jpeg" alt="Juliano Lopes Transportes"></div>
+    </div>
+    <div class="nav-group-label">Operação</div>
+    <a class="nav-item"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8"><path d="M3 12l2-2 5 5L21 4l2 2" stroke-linecap="round" stroke-linejoin="round"/></svg>Dashboard</a>
+    <a class="nav-item active"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8"><circle cx="12" cy="8" r="3.5"/><path d="M5 20c0-3.5 3-6 7-6s7 2.5 7 6" stroke-linecap="round"/></svg>Clientes</a>
+    <a class="nav-item"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8"><path d="M6 3h9l4 4v14H6z" stroke-linejoin="round"/><path d="M9 11h7M9 15h7" stroke-linecap="round"/></svg>Documentos</a>
+    <a class="nav-item"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8"><rect x="3.5" y="5" width="17" height="16" rx="2"/><path d="M8 3v4M16 3v4M3.5 10h17" stroke-linecap="round"/></svg>Agenda</a>
+    <a class="nav-item"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8"><path d="M4 18c3-.5 3.5-3 2-5s-.5-6 3-6 1.5 4.5 4 4.5S15 7 18 7" stroke-linecap="round"/><circle cx="4.5" cy="18.5" r="1.6"/><circle cx="18.5" cy="6.5" r="1.6"/></svg>Rotas</a>
+    <div class="nav-group-label">Frota</div>
+    <a class="nav-item"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8"><path d="M3 16V8h11l4 4h3v4" stroke-linejoin="round"/><circle cx="7.5" cy="17" r="1.8"/><circle cx="17" cy="17" r="1.8"/></svg>Veículos</a>
+    <a class="nav-item"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8"><circle cx="12" cy="8" r="3.5"/><path d="M4.5 20c1-3.8 4-6 7.5-6s6.5 2.2 7.5 6" stroke-linecap="round"/></svg>Motoristas</a>
+    <div class="nav-group-label">Financeiro</div>
+    <a class="nav-item"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8"><path d="M3 17l5-5 4 3 8-8" stroke-linecap="round" stroke-linejoin="round"/></svg>Gastos &amp; Ganhos</a>
+    <a class="nav-item"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8"><rect x="4" y="4" width="16" height="16" rx="2"/><path d="M8 9h8M8 13h5M8 17h3" stroke-linecap="round"/></svg>Orçamentos</a>
+  </aside>
+
+  <!-- ============ CONTEÚDO ============ -->
+  <main class="main">
+
+    <div class="page-title">Clientes</div>
+    <div class="page-subtitle">CRM de clientes — cadastre e acompanhe todos os registros.</div>
+    <hr class="rule">
+
+    <!-- ===================== PAINEL RETRÁTIL: NOVO CLIENTE ===================== -->
+    <div class="novo-cliente-panel" id="painelNovoCliente">
+      <div class="novo-cliente-header" onclick="toggleNovoCliente()">
+        <div class="title">
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8"><path d="M12 5v14M5 12h14" stroke-linecap="round"/></svg>
+          Novo cliente
+        </div>
+        <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M6 9l6 6 6-6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </div>
+
+      <div class="novo-cliente-body">
+        <div class="tipo-toggle">
+          <button type="button" id="btnPF" class="active" onclick="setTipo('PF')">Pessoa Física</button>
+          <button type="button" id="btnPJ" onclick="setTipo('PJ')">Pessoa Jurídica</button>
+        </div>
+
+        <div class="section-label">Dados do cliente</div>
+        <div class="form-grid" id="camposPF">
+          <div class="field"><label>Nome completo</label><input id="nome" placeholder="Ex: Maria da Silva"></div>
+          <div class="field"><label>CPF</label><input id="cpf" placeholder="000.000.000-00" maxlength="14" oninput="this.value=maskCPF(this.value)"></div>
+        </div>
+        <div class="form-grid" id="camposPF2">
+          <div class="field"><label>RG</label><input id="rg" placeholder="MG-00.000.000"></div>
+          <div class="field"><label>Telefone</label><input id="telefonePF" placeholder="(31) 90000-0000" maxlength="15" oninput="this.value=maskPhone(this.value)"></div>
+        </div>
+
+        <div class="form-grid" id="camposPJ" style="display:none;">
+          <div class="field"><label>Razão social</label><input id="razaoSocial" placeholder="Ex: Empresa Vetta Ltda"></div>
+          <div class="field"><label>CNPJ</label><input id="cnpj" placeholder="00.000.000/0000-00" maxlength="18" oninput="this.value=maskCNPJ(this.value)"></div>
+        </div>
+        <div class="form-grid" id="camposPJ2" style="display:none;">
+          <div class="field"><label>Nome do responsável</label><input id="responsavel" placeholder="Ex: João Andrade"></div>
+          <div class="field"><label>Telefone</label><input id="telefonePJ" placeholder="(31) 90000-0000" maxlength="15" oninput="this.value=maskPhone(this.value)"></div>
+        </div>
+
+        <div class="form-grid">
+          <div class="field"><label>E-mail</label><input id="email" placeholder="cliente@email.com"></div>
+          <div class="field"><label>Data prevista para coleta</label><input id="dataPrevista" type="date"></div>
+        </div>
+
+        <div class="section-label">Endereços</div>
+        <div class="form-grid">
+          <div class="field"><label>Endereço de coleta</label><input id="enderecoColeta" placeholder="Rua, número, bairro, cidade"></div>
+          <div class="field"><label>Endereço de entrega</label><input id="enderecoEntrega" placeholder="Rua, número, bairro, cidade"></div>
+        </div>
+
+        <div class="section-label">Dados do serviço</div>
+        <div class="form-grid">
+          <div class="field">
+            <label>Tipo de serviço</label>
+            <select id="tipoServico">
+              <option>Mudança residencial</option>
+              <option>Mudança comercial</option>
+              <option>Transporte de carga</option>
+              <option>Outro</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>Volume estimado (m³)</label>
+            <input id="volume" type="number" min="0" step="0.1" placeholder="Ex: 12.5" oninput="atualizarClassificacaoVolume()">
+            <div class="field-hint" id="classificacaoVolume">Informe o volume para ver a classificação</div>
+          </div>
+        </div>
+
+        <div class="section-label">Origem do cliente</div>
+        <div class="form-grid">
+          <div class="field">
+            <label>De onde veio esse cliente</label>
+            <select id="origem" onchange="atualizarDetalheOrigem()">
+              <option value="">Selecione</option>
+              <option value="MudaMuda">MudaMuda</option>
+              <option value="WhatsApp">WhatsApp</option>
+              <option value="Instagram">Instagram</option>
+              <option value="Facebook">Facebook</option>
+              <option value="Indicação">Indicação</option>
+              <option value="Repasse">Repasse</option>
+            </select>
+          </div>
+          <div class="field" id="campoOrigemDetalheWrap" style="display:none;">
+            <label id="labelOrigemDetalhe">Detalhe</label>
+            <input id="origemDetalhe" placeholder="">
+          </div>
+        </div>
+
+        <div style="display:flex; gap:12px; margin-top: var(--space-3);">
+          <button class="btn btn-primary" onclick="salvarCliente()">Salvar cadastro</button>
+          <button class="btn btn-ghost" onclick="limparFormulario()">Limpar</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===================== LISTA / CRM ===================== -->
+    <div class="section-label" style="font-size:15px;">Clientes cadastrados</div>
+    <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>Cliente</th><th>Tipo</th><th>Telefone</th><th>Serviço</th><th>Data prevista</th><th>Status</th><th>Ações</th></tr>
+      </thead>
+      <tbody id="listaClientes"></tbody>
+    </table>
+    </div>
+    <div id="listaVazia" class="empty-state">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="1.5"><circle cx="12" cy="8" r="3.5"/><path d="M5 20c0-3.5 3-6 7-6s7 2.5 7 6" stroke-linecap="round"/></svg>
+      <div>Nenhum cliente cadastrado ainda nesta sessão.</div>
+    </div>
+
+  </main>
+</div>
+
+<!-- ============ MODAL: FICHA COMPLETA DO CLIENTE ============ -->
+<div id="modalDetalhes" class="modal-overlay">
+  <div class="modal-box">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: var(--space-3);">
+      <div class="section-label" style="margin:0;" id="modalTituloCliente">Ficha do cliente</div>
+      <button class="btn btn-ghost btn-sm" onclick="fecharDetalhes()">Fechar ✕</button>
+    </div>
+
+    <div class="tabs">
+      <button class="tab-btn active" id="tabBtnInfo" onclick="mudarAba('info')">Informações</button>
+      <button class="tab-btn" id="tabBtnDocs" onclick="mudarAba('docs')">Documentos</button>
+      <button class="tab-btn" id="tabBtnHist" onclick="mudarAba('hist')">Histórico</button>
+    </div>
+
+    <!-- ABA: INFORMAÇÕES (editável) -->
+    <div class="tab-panel active" id="tabInfo">
+      <div id="detalhesConteudo"></div>
+      <div class="modal-footer">
+        <button class="btn btn-ghost" onclick="fecharDetalhes()">Cancelar</button>
+        <button class="btn btn-primary" onclick="salvarEdicaoCliente()">Salvar alterações</button>
+      </div>
+    </div>
+
+    <!-- ABA: DOCUMENTOS -->
+    <div class="tab-panel" id="tabDocs">
+      <div class="anexo-upload">
+        <label class="btn btn-outline btn-sm" style="cursor:pointer;">
+          Selecionar arquivo
+          <input type="file" id="inputAnexo" onchange="anexarDocumento()">
+        </label>
+        <div class="field-hint">Demonstração visual — o arquivo não é enviado nem salvo de verdade ainda.</div>
+      </div>
+      <div class="anexo-lista" id="listaAnexos"></div>
+    </div>
+
+    <!-- ABA: HISTÓRICO DE ALTERAÇÕES -->
+    <div class="tab-panel" id="tabHist">
+      <div class="historico-lista" id="listaHistorico"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ==========================================================================
+   ESTADO — em memória apenas (não persiste ao recarregar a página).
+   Quando integrarmos ao banco de dados real, essa lista vira uma chamada
+   de API/consulta ao invés de array local.
+   ========================================================================== */
+let clientes = [];
+let tipoAtual = 'PF';
+let clienteAtualId = null;
+
+/* NOTA: cliente.origem usa sempre um dos valores fixos abaixo — isso é o que
+   vai alimentar o futuro módulo de estatísticas de clientes.
+   Valores possíveis: 'MudaMuda' | 'WhatsApp' | 'Instagram' | 'Facebook' | 'Indicação' | 'Repasse'
+   cliente.origemDetalhe guarda o complemento (código Muda Muda / nome de quem indicou). */
+
+function toggleNovoCliente(){
+  document.getElementById('painelNovoCliente').classList.toggle('aberto');
+}
+
+/* ==========================================================================
+   MÁSCARAS DE CAMPO — formatação automática enquanto o usuário digita
+   ========================================================================== */
+function maskCPF(v){
+  v = v.replace(/\D/g,'').slice(0,11);
+  v = v.replace(/(\d{3})(\d)/,'$1.$2');
+  v = v.replace(/(\d{3})(\d)/,'$1.$2');
+  v = v.replace(/(\d{3})(\d{1,2})$/,'$1-$2');
+  return v;
+}
+
+function maskCNPJ(v){
+  v = v.replace(/\D/g,'').slice(0,14);
+  v = v.replace(/(\d{2})(\d)/,'$1.$2');
+  v = v.replace(/(\d{3})(\d)/,'$1.$2');
+  v = v.replace(/(\d{3})(\d)/,'$1/$2');
+  v = v.replace(/(\d{4})(\d{1,2})$/,'$1-$2');
+  return v;
+}
+
+function maskPhone(v){
+  v = v.replace(/\D/g,'').slice(0,11);
+  if(v.length > 10) v = v.replace(/(\d{2})(\d{5})(\d{4})/,'($1) $2-$3');
+  else if(v.length > 6) v = v.replace(/(\d{2})(\d{4})(\d{0,4})/,'($1) $2-$3');
+  else if(v.length > 2) v = v.replace(/(\d{2})(\d{0,5})/,'($1) $2');
+  else if(v.length > 0) v = v.replace(/(\d*)/,'($1');
+  return v;
+}
+
+function classificarVolume(m3){
+  const v = parseFloat(m3);
+  if(isNaN(v)) return '-';
+  if(v <= 2.5)  return `${v} m³ — Pequeno`;
+  if(v <= 10)   return `${v} m³ — Médio-pequeno`;
+  if(v <= 25)   return `${v} m³ — Médio`;
+  if(v <= 45)   return `${v} m³ — Grande`;
+  if(v <= 60)   return `${v} m³ — Extra grande`;
+  return `${v} m³ — Fora do padrão (carga especial)`;
+}
+
+function atualizarClassificacaoVolume(){
+  const v = document.getElementById('volume').value;
+  document.getElementById('classificacaoVolume').textContent = v ? classificarVolume(v) : 'Informe o volume para ver a classificação';
+}
+
+function atualizarDetalheOrigem(prefix=''){
+  const sel = document.getElementById(prefix+'origem').value;
+  const wrap = document.getElementById(prefix+'campoOrigemDetalheWrap');
+  const label = document.getElementById(prefix+'labelOrigemDetalhe');
+  const input = document.getElementById(prefix+'origemDetalhe');
+
+  const config = {
+    'MudaMuda':   { label:'Código Muda Muda', placeholder:'Ex: MM-00123' },
+    'Indicação':  { label:'Quem indicou',     placeholder:'Nome da pessoa ou empresa' },
+    'Repasse':    { label:'Repassado por',    placeholder:'Nome da empresa ou pessoa' }
+  };
+
+  if(config[sel]){
+    wrap.style.display = 'block';
+    label.textContent = config[sel].label;
+    input.placeholder = config[sel].placeholder;
+  } else {
+    wrap.style.display = 'none';
+    input.value = '';
+  }
+}
+
+function setTipo(tipo){
+  tipoAtual = tipo;
+  document.getElementById('btnPF').classList.toggle('active', tipo==='PF');
+  document.getElementById('btnPJ').classList.toggle('active', tipo==='PJ');
+  document.getElementById('camposPF').style.display  = tipo==='PF' ? 'grid' : 'none';
+  document.getElementById('camposPF2').style.display = tipo==='PF' ? 'grid' : 'none';
+  document.getElementById('camposPJ').style.display  = tipo==='PJ' ? 'grid' : 'none';
+  document.getElementById('camposPJ2').style.display = tipo==='PJ' ? 'grid' : 'none';
+}
+
+function salvarCliente(){
+  const nome = tipoAtual === 'PF' ? document.getElementById('nome').value : document.getElementById('razaoSocial').value;
+  if(!nome.trim()){
+    alert('Preencha o nome / razão social antes de salvar.');
+    return;
+  }
+  const telefone = tipoAtual === 'PF' ? document.getElementById('telefonePF').value : document.getElementById('telefonePJ').value;
+
+  const cliente = {
+    id: Date.now(),
+    tipo: tipoAtual,
+    nome: nome,
+    documento: tipoAtual === 'PF' ? document.getElementById('cpf').value : document.getElementById('cnpj').value,
+    rg: tipoAtual === 'PF' ? document.getElementById('rg').value : '',
+    responsavel: tipoAtual === 'PJ' ? document.getElementById('responsavel').value : '',
+    telefone: telefone,
+    email: document.getElementById('email').value,
+    enderecoColeta: document.getElementById('enderecoColeta').value,
+    enderecoEntrega: document.getElementById('enderecoEntrega').value,
+    tipoServico: document.getElementById('tipoServico').value,
+    volume: document.getElementById('volume').value,
+    dataPrevista: document.getElementById('dataPrevista').value,
+    origem: document.getElementById('origem').value,
+    origemDetalhe: document.getElementById('origemDetalhe').value,
+    status: 'Novo',
+    anexos: [],
+    historico: [{ campo:'Cadastro', de:'-', para:'Cliente criado', quando: agora() }]
+  };
+
+  clientes.push(cliente);
+  renderLista();
+  limparFormulario();
+  document.getElementById('painelNovoCliente').classList.remove('aberto');
+}
+
+function agora(){
+  return new Date().toLocaleString('pt-BR');
+}
+
+function limparFormulario(){
+  ['nome','cpf','rg','telefonePF','razaoSocial','cnpj','responsavel','telefonePJ','email','dataPrevista','enderecoColeta','enderecoEntrega','volume','origem','origemDetalhe'].forEach(id=>{
+    const el = document.getElementById(id);
+    if(el) el.value = '';
+  });
+  atualizarDetalheOrigem();
+  document.getElementById('classificacaoVolume').textContent = 'Informe o volume para ver a classificação';
+}
+
+function badgeClasse(status){
+  return { 'Novo':'badge-info', 'Em andamento':'badge-warning', 'Concluído':'badge-success', 'Cancelado':'badge-danger' }[status] || 'badge-info';
+}
+
+function proximoStatus(status){
+  const ordem = ['Novo','Em andamento','Concluído'];
+  const i = ordem.indexOf(status);
+  return i === -1 || i === ordem.length - 1 ? 'Novo' : ordem[i+1];
+}
+
+function alternarStatus(id){
+  const c = clientes.find(c => c.id === id);
+  c.status = proximoStatus(c.status);
+  renderLista();
+}
+
+function excluirCliente(id){
+  if(!confirm('Excluir este cliente da lista?')) return;
+  clientes = clientes.filter(c => c.id !== id);
+  renderLista();
+}
+
+// A geração de Orçamento/Documento passa a acontecer nos módulos Orçamentos/Documentos,
+// que devem anexar o arquivo automaticamente na ficha do cliente (aba Documentos) via cliente.anexos.
+
+function verDetalhes(id){
+  const c = clientes.find(c => c.id === id);
+  clienteAtualId = id;
+
+  document.getElementById('modalTituloCliente').textContent = c.nome;
+
+  const campo = (label, id, valor, tipo='text') =>
+    `<div class="field"><label>${label}</label><input type="${tipo}" id="edit_${id}" value="${(valor||'').toString().replace(/"/g,'&quot;')}"></div>`;
+
+  const campoTerceiro = c.tipo === 'PF'
+    ? campo('RG', 'rg', c.rg)
+    : campo('Nome do responsável', 'responsavel', c.responsavel);
+
+  const origemOpcoes = ['MudaMuda','WhatsApp','Instagram','Facebook','Indicação','Repasse']
+    .map(o => `<option value="${o}" ${c.origem===o?'selected':''}>${o}</option>`).join('');
+
+  document.getElementById('detalhesConteudo').innerHTML = `
+    <div class="field-hint" style="margin-bottom:var(--space-3);">Tipo de cliente: <b>${c.tipo === 'PF' ? 'Pessoa Física' : 'Pessoa Jurídica'}</b> (não editável)</div>
+    <div class="form-grid">
+      ${campo(c.tipo === 'PF' ? 'Nome completo' : 'Razão social', 'nome', c.nome)}
+      ${campo(c.tipo === 'PF' ? 'CPF' : 'CNPJ', 'documento', c.documento)}
+    </div>
+    <div class="form-grid">
+      ${campoTerceiro}
+      ${campo('Telefone', 'telefone', c.telefone)}
+    </div>
+    <div class="form-grid">
+      ${campo('E-mail', 'email', c.email)}
+      ${campo('Data prevista para coleta', 'dataPrevista', c.dataPrevista, 'date')}
+    </div>
+    <div class="form-grid">
+      ${campo('Endereço de coleta', 'enderecoColeta', c.enderecoColeta)}
+      ${campo('Endereço de entrega', 'enderecoEntrega', c.enderecoEntrega)}
+    </div>
+    <div class="form-grid">
+      ${campo('Tipo de serviço', 'tipoServico', c.tipoServico)}
+      ${campo('Volume estimado (m³)', 'volume', c.volume, 'number')}
+    </div>
+    <div class="section-label">Origem do cliente</div>
+    <div class="form-grid">
+      <div class="field">
+        <label>De onde veio esse cliente</label>
+        <select id="edit_origem" onchange="atualizarDetalheOrigem('edit_')">
+          <option value="">Selecione</option>
+          ${origemOpcoes}
+        </select>
+      </div>
+      <div class="field" id="edit_campoOrigemDetalheWrap" style="display:none;">
+        <label id="edit_labelOrigemDetalhe">Detalhe</label>
+        <input id="edit_origemDetalhe" value="${(c.origemDetalhe||'').replace(/"/g,'&quot;')}">
+      </div>
+    </div>
+  `;
+
+  atualizarDetalheOrigem('edit_');
+  if(c.origem) document.getElementById('edit_origemDetalhe').value = c.origemDetalhe || '';
+
+  renderAnexos();
+  renderHistorico();
+  mudarAba('info');
+  document.getElementById('modalDetalhes').style.display = 'flex';
+}
+
+function fecharDetalhes(){
+  document.getElementById('modalDetalhes').style.display = 'none';
+  clienteAtualId = null;
+}
+
+function mudarAba(aba){
+  ['info','docs','hist'].forEach(a=>{
+    document.getElementById('tab'+a[0].toUpperCase()+a.slice(1)).classList.toggle('active', a===aba);
+    document.getElementById('tabBtn'+a[0].toUpperCase()+a.slice(1)).classList.toggle('active', a===aba);
+  });
+}
+
+/* --------- Edição com log automático de alterações --------- */
+const CAMPOS_EDITAVEIS = [
+  ['nome','Nome / Razão social'], ['documento','Documento'], ['rg','RG'], ['responsavel','Responsável'],
+  ['telefone','Telefone'], ['email','E-mail'], ['enderecoColeta','Endereço de coleta'], ['enderecoEntrega','Endereço de entrega'],
+  ['tipoServico','Tipo de serviço'], ['volume','Volume estimado'], ['dataPrevista','Data prevista'],
+  ['origem','Origem do cliente'], ['origemDetalhe','Detalhe da origem']
+];
+
+function salvarEdicaoCliente(){
+  const c = clientes.find(c => c.id === clienteAtualId);
+  if(!c) return;
+
+  CAMPOS_EDITAVEIS.forEach(([campo,label])=>{
+    const el = document.getElementById('edit_'+campo);
+    if(!el) return;
+    const novo = el.value;
+    const antigo = c[campo] || '';
+    if(novo !== antigo){
+      c.historico.unshift({ campo:label, de: antigo || '-', para: novo || '-', quando: agora() });
+      c[campo] = novo;
+    }
+  });
+
+  renderLista();
+  renderHistorico();
+  document.getElementById('modalTituloCliente').textContent = c.nome;
+  alert('Alterações salvas.');
+}
+
+/* --------- Documentos anexados (demonstração — não persiste arquivo) ---------
+   INTEGRAÇÃO FUTURA (módulo Documentos):
+   - Nome do arquivo gerado segue o padrão: Documento(Tipo, ex: Contrato/Inventário)_NOMEdoCLIENTE_JLT
+   - Ao gerar um documento no módulo Documentos, ele deve ser anexado automaticamente
+     aqui em cliente.anexos (mesma estrutura usada por anexarDocumento()).
+   - Ao anexar a versão assinada pelo cliente, a plataforma apenas registra que o
+     assinado foi anexado (sem upload real ainda) — mesmo padrão de anexarDocumento(). */
+function anexarDocumento(){
+  const input = document.getElementById('inputAnexo');
+  const c = clientes.find(c => c.id === clienteAtualId);
+  if(!c || !input.files.length) return;
+
+  Array.from(input.files).forEach(f=>{
+    c.anexos.push({ nome: f.name, quando: agora() });
+  });
+  c.historico.unshift({ campo:'Documento', de:'-', para:`${input.files.length} arquivo(s) anexado(s)`, quando: agora() });
+  input.value = '';
+  renderAnexos();
+  renderHistorico();
+}
+
+function removerAnexo(index){
+  const c = clientes.find(c => c.id === clienteAtualId);
+  if(!c) return;
+  const removido = c.anexos.splice(index,1)[0];
+  c.historico.unshift({ campo:'Documento', de: removido.nome, para:'Removido', quando: agora() });
+  renderAnexos();
+  renderHistorico();
+}
+
+function renderAnexos(){
+  const c = clientes.find(c => c.id === clienteAtualId);
+  const lista = document.getElementById('listaAnexos');
+  if(!c || c.anexos.length === 0){
+    lista.innerHTML = '<div class="anexo-vazio">Nenhum documento anexado ainda.</div>';
+    return;
+  }
+  lista.innerHTML = c.anexos.map((a,i)=>`
+    <div class="anexo-item">
+      <span class="nome"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8"><path d="M6 3h9l4 4v14H6z" stroke-linejoin="round"/><path d="M9 11h7M9 15h7" stroke-linecap="round"/></svg>${a.nome}</span>
+      <button class="btn btn-ghost btn-sm" onclick="removerAnexo(${i})">Remover</button>
+    </div>`).join('');
+}
+
+/* --------- Histórico de alterações --------- */
+function renderHistorico(){
+  const c = clientes.find(c => c.id === clienteAtualId);
+  const lista = document.getElementById('listaHistorico');
+  if(!c || c.historico.length === 0){
+    lista.innerHTML = '<div class="historico-vazio">Nenhuma alteração registrada ainda.</div>';
+    return;
+  }
+  lista.innerHTML = c.historico.map(h=>`
+    <div class="historico-item">
+      <div class="quando">${h.quando}</div>
+      <b>${h.campo}:</b> ${h.de} → ${h.para}
+    </div>`).join('');
+}
+
+function renderLista(){
+  const tbody = document.getElementById('listaClientes');
+  const vazio = document.getElementById('listaVazia');
+  tbody.innerHTML = '';
+
+  if(clientes.length === 0){
+    vazio.style.display = 'block';
+    document.querySelector('table').style.display = 'none';
+    return;
+  }
+  vazio.style.display = 'none';
+  document.querySelector('table').style.display = 'table';
+
+  clientes.forEach(c => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td><b>${c.nome}</b><br><span style="font-size:12px;color:var(--color-gray-600)">${c.documento || 'sem documento'}</span></td>
+      <td>${c.tipo === 'PF' ? 'Física' : 'Jurídica'}</td>
+      <td>${c.telefone || '-'}</td>
+      <td>${c.tipoServico}</td>
+      <td>${c.dataPrevista ? new Date(c.dataPrevista+'T00:00:00').toLocaleDateString('pt-BR') : '-'}</td>
+      <td><button class="badge ${badgeClasse(c.status)}" onclick="alternarStatus(${c.id})" title="Clique para avançar o status">${c.status}</button></td>
+      <td class="actions-cell">
+        <button class="btn btn-outline btn-sm" onclick="verDetalhes(${c.id})">Abrir ficha</button>
+        <button class="btn-trash" onclick="excluirCliente(${c.id})" title="Excluir cliente">
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8"><path d="M4 7h16" stroke-linecap="round"/><path d="M9 7V4.5A1.5 1.5 0 0 1 10.5 3h3A1.5 1.5 0 0 1 15 4.5V7" stroke-linecap="round" stroke-linejoin="round"/><path d="M6 7l1 13.5A1.5 1.5 0 0 0 8.5 22h7a1.5 1.5 0 0 0 1.5-1.5L18 7" stroke-linecap="round" stroke-linejoin="round"/><path d="M10 11v6M14 11v6" stroke-linecap="round"/></svg>
+        </button>
+      </td>`;
+    tbody.appendChild(tr);
+  });
+}
+
+renderLista();
+</script>
+</body>
+</html>

@@ -1,0 +1,98 @@
+.duasColunas {
+  display: grid;
+  grid-template-columns: 1.4fr 1fr;
+  gap: var(--space-3);
+  align-items: start;
+}
+
+.listaAgenda {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.itemAgenda {
+  display: flex;
+  gap: var(--space-2);
+  align-items: center;
+  padding-bottom: var(--space-2);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.itemAgenda:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.dataAgenda {
+  background: var(--color-bg);
+  border-radius: var(--radius-sm);
+  padding: 5px 9px;
+  text-align: center;
+  flex-shrink: 0;
+  min-width: 46px;
+}
+
+.diaAgenda {
+  display: block;
+  font-family: var(--font-display);
+  font-size: 19px;
+  line-height: 1;
+  color: var(--color-primary);
+}
+
+.mesAgenda {
+  display: block;
+  font-size: 10.5px;
+  color: var(--color-gray-600);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.textoAgenda {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  gap: 2px;
+}
+
+.textoAgenda strong {
+  font-size: 14px;
+}
+
+.textoAgenda span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+
+.gradeRotas {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: var(--space-2);
+}
+
+.cardRota {
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: var(--space-2) var(--space-3);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  transition: border-color var(--transition-fast);
+}
+
+.cardRota:hover {
+  border-color: var(--color-primary);
+}
+
+@media (max-width: 1024px) {
+  .duasColunas {
+    grid-template-columns: 1fr;
+  }
+}

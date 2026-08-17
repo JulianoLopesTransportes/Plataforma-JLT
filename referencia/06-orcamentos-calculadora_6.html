@@ -1,0 +1,478 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<script>if (window.self !== window.top) { document.documentElement.classList.add("embutido"); }</script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Juliano Lopes Transportes — Orçamentos</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Montserrat:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+html.embutido .sidebar{ display:none !important; }
+
+/* ==========================================================================
+   1. DESIGN TOKENS
+   ========================================================================== */
+:root{
+  --color-primary:        #820901;
+  --color-primary-dark:   #5a0601;
+  --color-primary-light:  #a30d03;
+  --color-black:          #000000;
+  --color-gold:           #b8862f;
+  --color-gold-light:     #d9b45f;
+  --color-white:          #ffffff;
+  --color-bg:             #faf8f6;
+  --color-surface:        #ffffff;
+  --color-border:         #e6dfd6;
+  --color-gray-600:       #6f665d;
+  --color-text:           #241d1a;
+  --color-success:        #2f6b3a; --color-success-bg:#e7f2e8;
+  --color-danger:         #a3241c; --color-danger-bg:#f7e3e1;
+  --font-display: 'Bebas Neue', sans-serif;
+  --font-body:    'Montserrat', sans-serif;
+  --space-1:6px; --space-2:12px; --space-3:20px; --space-4:28px; --space-5:40px; --space-6:56px;
+  --radius-sm:4px; --radius-md:8px; --radius-lg:14px;
+  --shadow-card: 0 2px 10px rgba(28,22,20,0.06);
+}
+* { box-sizing: border-box; }
+body{ margin:0; background: var(--color-bg); color: var(--color-text); font-family: var(--font-body); line-height:1.55; }
+h1,h2,h3,h4{ font-family: var(--font-display); text-transform: uppercase; letter-spacing: 0.03em; font-weight:600; margin:0; }
+
+/* ==========================================================================
+   2. LAYOUT BASE (sidebar + main)
+   ========================================================================== */
+.app{ display:flex; min-height:100vh; }
+.sidebar{ width:250px; flex-shrink:0; background: linear-gradient(180deg, var(--color-black) 0%, var(--color-primary-dark) 100%); color: var(--color-white); display:flex; flex-direction:column; padding: var(--space-4) 0; position: sticky; top:0; height:100vh; overflow-y:auto; }
+.sidebar-brand{ display:flex; align-items:center; padding: 0 var(--space-3) var(--space-4); border-bottom: 1px solid rgba(255,255,255,0.08); margin-bottom: var(--space-3); }
+.sidebar-brand .logo-plate{ background: var(--color-white); border-radius: var(--radius-md); padding: 8px 10px; width:100%; display:flex; align-items:center; justify-content:center; }
+.sidebar-brand .logo-plate img{ width:100%; height:auto; display:block; }
+.nav-group-label{ font-size:11px; color: rgba(255,255,255,0.45); padding: var(--space-2) var(--space-3) var(--space-1); letter-spacing:0.08em; text-transform:uppercase; }
+.nav-item{ display:flex; align-items:center; gap: var(--space-2); padding: var(--space-2) var(--space-3); color: rgba(255,255,255,0.82); text-decoration:none; font-size:14.5px; font-weight:500; border-left: 3px solid transparent; cursor:pointer; }
+.nav-item svg{ width:19px; height:19px; stroke: currentColor; flex-shrink:0; }
+.nav-item:hover{ background: rgba(255,255,255,0.06); color: var(--color-white); }
+.nav-item.active{ background: rgba(184,134,47,0.14); border-left-color: var(--color-gold); color: var(--color-gold-light); }
+.main{ flex:1; padding: var(--space-5); max-width: 1180px; }
+.page-title{ font-size:26px; margin-bottom: var(--space-1); }
+.page-subtitle{ color: var(--color-gray-600); font-size:14.5px; margin-bottom: var(--space-4); }
+hr.rule{ border:none; border-top:3px solid var(--color-primary); margin: var(--space-2) 0 var(--space-4); width:60px; }
+
+/* ==========================================================================
+   3. COMPONENTES COMPARTILHADOS
+   ========================================================================== */
+.btn{ font-family: var(--font-body); font-weight:600; font-size:14px; padding: 11px 20px; border-radius: var(--radius-sm); border:1.5px solid transparent; cursor:pointer; display:inline-flex; align-items:center; gap:8px; }
+.btn:hover{ filter:brightness(1.08); }
+.btn-primary{ background: var(--color-primary); color:var(--color-white); }
+.btn-gold{ background: var(--color-gold); color:var(--color-black); }
+.btn-outline{ background:transparent; border-color: var(--color-primary); color: var(--color-primary); }
+.btn-ghost{ background:transparent; color: var(--color-gray-600); }
+.btn-sm{ padding:7px 12px; font-size:12.5px; }
+.card{ background: var(--color-surface); border:1px solid var(--color-border); border-radius: var(--radius-lg); padding: var(--space-4); box-shadow: var(--shadow-card); }
+.field label{ display:block; font-size:13px; font-weight:600; margin-bottom:6px; }
+.field input, .field select{ width:100%; font-family: var(--font-body); font-size:14.5px; padding: 11px 13px; border:1.5px solid var(--color-border); border-radius: var(--radius-sm); background: var(--color-white); color: var(--color-text); }
+.field input:focus, .field select:focus{ outline:none; border-color: var(--color-primary); }
+.field-hint{ font-size:12px; color:var(--color-gray-600); margin-top:-8px; margin-bottom:14px; }
+.form-grid{ display:grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: var(--space-3); margin-bottom: var(--space-3); }
+.form-grid.cols-3{ grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); }
+.section-label{ font-family:var(--font-display); font-size:13px; letter-spacing:0.05em; color:var(--color-primary); margin: var(--space-3) 0 var(--space-2); }
+.section-label:first-child{ margin-top:0; }
+
+/* ==========================================================================
+   4. CARD RECOLHÍVEL (parâmetros de precificação)
+   ========================================================================== */
+.card-collapsible-header{ display:flex; justify-content:space-between; align-items:center; cursor:pointer; user-select:none; }
+.card-collapsible-header .chevron{ width:20px; height:20px; stroke: var(--color-primary); transition: transform .2s ease; }
+.card-collapsible-header.aberto .chevron{ transform: rotate(180deg); }
+.card-collapsible-body{ display:none; margin-top: var(--space-3); }
+.card-collapsible-body.aberto{ display:block; }
+
+/* ==========================================================================
+   5. TABELA DE PARÂMETROS (faixas de volume e adicionais editáveis)
+   ========================================================================== */
+.table-wrap{ overflow-x:auto; -webkit-overflow-scrolling:touch; }
+table.parametros{ width:100%; border-collapse:collapse; margin-bottom: var(--space-3); }
+table.parametros th{ text-align:left; font-size:11px; text-transform:uppercase; letter-spacing:.04em; color:var(--color-gray-600); padding:6px 8px; border-bottom:1.5px solid var(--color-border); }
+table.parametros td{ padding:6px 8px; border-bottom:1px solid var(--color-border); vertical-align:middle; }
+table.parametros td input, table.parametros td select{ padding:8px 10px; font-size:13.5px; }
+.remover-linha{ background:none; border:none; color:var(--color-gray-600); cursor:pointer; font-size:15px; }
+
+/* ==========================================================================
+   6. CALCULADORA — checklist de adicionais e resultado
+   ========================================================================== */
+.adicional-row{ display:flex; align-items:center; gap:10px; padding:9px 0; border-bottom:1px solid var(--color-border); }
+.adicional-row:last-child{ border-bottom:none; }
+.adicional-row input[type=checkbox]{ width:auto; }
+.adicional-row .nome{ flex:1; font-size:14px; }
+.adicional-row .preco-unit{ font-size:12.5px; color:var(--color-gray-600); min-width:120px; }
+.adicional-row .qtd{ width:70px; }
+
+.resultado-card{ display:none; }
+.resultado-card.show{ display:block; }
+.resultado-linha{ display:flex; justify-content:space-between; padding:8px 0; border-bottom:1px solid var(--color-border); font-size:14.5px; }
+.resultado-linha:last-child{ border-bottom:none; }
+.resultado-linha.total{ font-family:var(--font-display); font-size:19px; color:var(--color-primary); border-top:2px solid var(--color-primary); margin-top:8px; padding-top:12px; }
+.resultado-parcelas{ margin-top: var(--space-3); padding-top: var(--space-3); border-top:1px dashed var(--color-border); font-size:13.5px; color:var(--color-gray-600); }
+.resultado-parcelas b{ color:var(--color-text); }
+
+/* ==========================================================================
+   7. ESCALA DE OPORTUNIDADE E MARGEM DE LUCRO
+   ========================================================================== */
+.escala-wrap{ display:flex; flex-direction:column; gap:4px; }
+.escala-wrap input[type=range]{ width:100%; accent-color: var(--color-primary); }
+.escala-rotulos{ display:flex; justify-content:space-between; font-size:11px; color:var(--color-gray-600); }
+.escala-valor-grande{ font-family:var(--font-display); font-size:22px; color:var(--color-primary); text-align:center; }
+.escala-valor-grande.negativo{ color: var(--color-danger); }
+.margem-sugestao-nota{ font-size:12px; color:var(--color-gray-600); text-align:center; margin-top:2px; }
+.resultado-linha.margem-positiva{ color: var(--color-success); }
+.resultado-linha.margem-negativa{ color: var(--color-danger); }
+
+</style>
+</head>
+<body>
+<div class="app">
+
+  <!-- ============ SIDEBAR ============ -->
+  <aside class="sidebar">
+    <div class="sidebar-brand"><div class="logo-plate"><img src="assets/logo-jlt.jpeg" alt="Juliano Lopes Transportes"></div></div>
+    <div class="nav-group-label">Operação</div>
+    <a class="nav-item"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8"><path d="M3 12l2-2 5 5L21 4l2 2" stroke-linecap="round" stroke-linejoin="round"/></svg>Dashboard</a>
+    <a class="nav-item"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8"><circle cx="12" cy="8" r="3.5"/><path d="M5 20c0-3.5 3-6 7-6s7 2.5 7 6" stroke-linecap="round"/></svg>Clientes</a>
+    <a class="nav-item"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8"><path d="M6 3h9l4 4v14H6z" stroke-linejoin="round"/><path d="M9 11h7M9 15h7" stroke-linecap="round"/></svg>Documentos</a>
+    <a class="nav-item"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8"><rect x="3.5" y="5" width="17" height="16" rx="2"/><path d="M8 3v4M16 3v4M3.5 10h17" stroke-linecap="round"/></svg>Agenda</a>
+    <a class="nav-item"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8"><path d="M4 18c3-.5 3.5-3 2-5s-.5-6 3-6 1.5 4.5 4 4.5S15 7 18 7" stroke-linecap="round"/><circle cx="4.5" cy="18.5" r="1.6"/><circle cx="18.5" cy="6.5" r="1.6"/></svg>Rotas</a>
+    <div class="nav-group-label">Frota</div>
+    <a class="nav-item"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8"><path d="M3 16V8h11l4 4h3v4" stroke-linejoin="round"/><circle cx="7.5" cy="17" r="1.8"/><circle cx="17" cy="17" r="1.8"/></svg>Veículos</a>
+    <a class="nav-item"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8"><circle cx="12" cy="8" r="3.5"/><path d="M4.5 20c1-3.8 4-6 7.5-6s6.5 2.2 7.5 6" stroke-linecap="round"/></svg>Motoristas</a>
+    <div class="nav-group-label">Financeiro</div>
+    <a class="nav-item"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8"><path d="M3 17l5-5 4 3 8-8" stroke-linecap="round" stroke-linejoin="round"/></svg>Gastos &amp; Ganhos</a>
+    <a class="nav-item active"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8"><rect x="4" y="4" width="16" height="16" rx="2"/><path d="M8 9h8M8 13h5M8 17h3" stroke-linecap="round"/></svg>Orçamentos</a>
+  </aside>
+
+  <!-- ============ CONTEÚDO ============ -->
+  <main class="main">
+    <div class="page-title">Orçamentos</div>
+    <div class="page-subtitle">Calculadora de preço configurável — ajuste os parâmetros abaixo e gere o valor do orçamento.</div>
+    <hr class="rule">
+
+    <!-- ===================== PARÂMETROS (recolhível) ===================== -->
+    <div class="card" style="margin-bottom: var(--space-5);">
+      <div class="card-collapsible-header" onclick="toggleParametros()">
+        <div class="section-label" style="margin:0;">Parâmetros de precificação</div>
+        <svg class="chevron" id="chevronParametros" viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M6 9l6 6 6-6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </div>
+      <div class="card-collapsible-body" id="corpoParametros">
+        <div class="field-hint">Esses valores definem como o preço é calculado. Ajuste livremente para bater com a realidade da empresa — a calculadora sempre usa os números daqui.</div>
+
+        <div class="section-label" style="font-size:12.5px;">Valor por quilômetro rodado</div>
+        <div class="form-grid" style="max-width:300px;">
+          <div class="field" style="margin:0;"><label>R$ por km</label><input id="paramValorKm" type="number" step="0.01" value="3.50"></div>
+        </div>
+
+        <div class="section-label" style="font-size:12.5px;">Faixa de margem de lucro permitida</div>
+        <div class="field-hint">Define os limites do controle de margem na calculadora (ex: -50% a 60%, ou -30% a 60%).</div>
+        <div class="form-grid" style="max-width:400px;">
+          <div class="field" style="margin:0;"><label>Margem mínima (%)</label><input id="paramMargemMin" type="number" step="1" value="-50" onchange="atualizarFaixaMargem()"></div>
+          <div class="field" style="margin:0;"><label>Margem máxima (%)</label><input id="paramMargemMax" type="number" step="1" value="60" onchange="atualizarFaixaMargem()"></div>
+        </div>
+
+        <div class="section-label" style="font-size:12.5px;">Preço base por faixa de volume</div>
+        <div class="table-wrap"><table class="parametros">
+          <thead><tr><th>Faixa (m³)</th><th>Preço base (R$)</th></tr></thead>
+          <tbody id="corpoFaixasVolume"></tbody>
+        </table></div>
+
+        <div class="section-label" style="font-size:12.5px;">Adicionais</div>
+        <div class="field-hint">"Fixo" soma um valor único; "Por unidade" multiplica pela quantidade informada na calculadora (ex: nº de andares, nº de ajudantes).</div>
+        <div class="table-wrap"><table class="parametros">
+          <thead><tr><th>Nome do adicional</th><th>Tipo</th><th>Valor (R$)</th><th></th></tr></thead>
+          <tbody id="corpoAdicionaisParam"></tbody>
+        </table></div>
+        <button class="btn btn-outline btn-sm" onclick="adicionarLinhaAdicional()">+ Novo adicional</button>
+      </div>
+    </div>
+
+    <!-- ===================== CALCULADORA ===================== -->
+    <div class="card" style="margin-bottom: var(--space-4);">
+      <div class="section-label">Dados do orçamento</div>
+      <div class="form-grid cols-3">
+        <div class="field"><label>Distância (km)</label><input id="calcDistancia" type="number" step="0.1" placeholder="Ex: 18"></div>
+        <div class="field"><label>Volume estimado (m³)</label><input id="calcVolume" type="number" step="0.1" placeholder="Ex: 22" oninput="atualizarFaixaVolume()"></div>
+        <div class="field"><label>Faixa aplicada</label><input id="calcFaixaLabel" readonly style="background:var(--color-bg);"></div>
+      </div>
+
+      <div class="section-label" style="font-size:12.5px;">Adicionais deste orçamento</div>
+      <div id="listaAdicionaisCalc"></div>
+
+      <div class="section-label">Precificação — escala de oportunidade</div>
+      <div class="field-hint">Quão interessante é fechar esta mudança? Isso sugere uma margem de lucro sobre o custo calculado — você pode ajustar a margem manualmente depois.</div>
+      <div class="form-grid">
+        <div class="field escala-wrap">
+          <label>Escala de oportunidade</label>
+          <input type="range" id="calcEscala" min="0" max="10" step="0.5" value="5" oninput="onEscalaChange()">
+          <div class="escala-rotulos"><span>0 — pouco interessante</span><span>10 — muito atrativa</span></div>
+          <div class="escala-valor-grande" id="escalaValorGrande">5</div>
+        </div>
+        <div class="field escala-wrap">
+          <label>Margem de lucro aplicada</label>
+          <div style="display:flex; align-items:center; gap:10px;">
+            <input type="range" id="calcMargem" min="-50" max="60" step="1" value="5" oninput="onMargemChange('range')" style="flex:1;">
+            <input type="number" id="calcMargemNumero" min="-50" max="60" step="1" value="5" oninput="onMargemChange('numero')" style="width:80px; flex-shrink:0;">
+          </div>
+          <div class="escala-rotulos"><span id="rotuloMargemMin">-50%</span><span id="rotuloMargemMax">+60%</span></div>
+          <div class="escala-valor-grande" id="margemValorGrande">+5%</div>
+          <div class="margem-sugestao-nota" id="margemSugestaoNota">Sugerida pela escala — ajuste o slider ou digite o número, se quiser.</div>
+        </div>
+      </div>
+
+      <button class="btn btn-primary" style="margin-top:var(--space-4);" onclick="calcularOrcamento()">Calcular orçamento</button>
+    </div>
+
+    <!-- ===================== RESULTADO ===================== -->
+    <div class="card resultado-card" id="resultadoCard">
+      <div class="section-label">Resultado</div>
+      <div id="resultadoLinhas"></div>
+      <div class="resultado-linha total"><span>Valor total do orçamento</span><span id="resultadoTotal">R$ 0,00</span></div>
+      <div class="field-hint" id="resultadoValorRedondo" style="margin-top:6px;"></div>
+      <div class="resultado-parcelas" id="resultadoParcelas"></div>
+    </div>
+
+  </main>
+</div>
+
+<script>
+/* ==========================================================================
+   1. PARÂMETROS — faixas de volume (mesmas do cadastro de clientes) e
+   adicionais, ambos totalmente editáveis pelo usuário.
+   ========================================================================== */
+let faixasVolume = [
+  { label: '0 – 2,5 m³ (Pequeno)',    min:0,    max:2.5,  preco:600 },
+  { label: '2,5 – 10 m³ (Médio-pequeno)', min:2.5,  max:10,   preco:1100 },
+  { label: '10 – 25 m³ (Médio)',      min:10,   max:25,   preco:1900 },
+  { label: '25 – 45 m³ (Grande)',     min:25,   max:45,   preco:2900 },
+  { label: '45 – 60 m³ (Extra grande)', min:45, max:60,   preco:3900 },
+  { label: 'Acima de 60 m³ (Personalizado)', min:60, max:Infinity, preco:4900 }
+];
+
+let adicionaisParam = [
+  { nome:'Embalagem completa', tipo:'fixo', valor:300 },
+  { nome:'Seguro extra', tipo:'fixo', valor:150 },
+  { nome:'Ajudante extra (por pessoa)', tipo:'unidade', valor:150 },
+  { nome:'Andar sem elevador (por andar)', tipo:'unidade', valor:50 },
+  { nome:'Içamento de móveis', tipo:'fixo', valor:250 }
+];
+
+function toggleParametros(){
+  const corpo = document.getElementById('corpoParametros');
+  const aberto = corpo.classList.toggle('aberto');
+  corpo.previousElementSibling.classList.toggle('aberto', aberto);
+}
+
+function renderFaixasVolume(){
+  document.getElementById('corpoFaixasVolume').innerHTML = faixasVolume.map((f,i) => `
+    <tr>
+      <td>${f.label}</td>
+      <td><input type="number" step="0.01" value="${f.preco}" onchange="faixasVolume[${i}].preco = parseFloat(this.value)||0"></td>
+    </tr>
+  `).join('');
+}
+
+function renderAdicionaisParam(){
+  document.getElementById('corpoAdicionaisParam').innerHTML = adicionaisParam.map((a,i) => `
+    <tr>
+      <td><input value="${a.nome}" onchange="adicionaisParam[${i}].nome = this.value; renderListaAdicionaisCalc();"></td>
+      <td>
+        <select onchange="adicionaisParam[${i}].tipo = this.value; renderListaAdicionaisCalc();">
+          <option value="fixo" ${a.tipo==='fixo'?'selected':''}>Fixo</option>
+          <option value="unidade" ${a.tipo==='unidade'?'selected':''}>Por unidade</option>
+        </select>
+      </td>
+      <td><input type="number" step="0.01" value="${a.valor}" onchange="adicionaisParam[${i}].valor = parseFloat(this.value)||0; renderListaAdicionaisCalc();"></td>
+      <td><button class="remover-linha" onclick="removerAdicional(${i})" title="Remover">✕</button></td>
+    </tr>
+  `).join('');
+}
+
+function adicionarLinhaAdicional(){
+  adicionaisParam.push({ nome:'Novo adicional', tipo:'fixo', valor:0 });
+  renderAdicionaisParam();
+  renderListaAdicionaisCalc();
+}
+function removerAdicional(i){
+  adicionaisParam.splice(i,1);
+  renderAdicionaisParam();
+  renderListaAdicionaisCalc();
+}
+
+/* ==========================================================================
+   1B. ESCALA DE OPORTUNIDADE → MARGEM DE LUCRO SUGERIDA
+   Escala 0 (pouco interessante) sugere a margem máxima configurada.
+   Escala 10 (muito atrativa) sugere a margem mínima configurada, para ajudar
+   a fechar negócio e encaixar a mudança numa rota. Interpolação linear.
+   A margem sugerida sempre pode ser ajustada manualmente depois.
+   A faixa (mínima/máxima) é definida em "Parâmetros de precificação".
+   ========================================================================== */
+let MARGEM_MIN = -50;
+let MARGEM_MAX = 60;
+function margemSugerida(escala){ return Math.round(MARGEM_MAX - ((MARGEM_MAX - MARGEM_MIN) / 10) * escala); }
+
+function atualizarFaixaMargem(){
+  MARGEM_MIN = parseFloat(document.getElementById('paramMargemMin').value);
+  MARGEM_MAX = parseFloat(document.getElementById('paramMargemMax').value);
+  if(isNaN(MARGEM_MIN)) MARGEM_MIN = -50;
+  if(isNaN(MARGEM_MAX)) MARGEM_MAX = 60;
+  if(MARGEM_MAX <= MARGEM_MIN){ alert('A margem máxima precisa ser maior que a mínima.'); MARGEM_MAX = MARGEM_MIN + 1; document.getElementById('paramMargemMax').value = MARGEM_MAX; }
+  if(MARGEM_MAX >= 100){ alert('A margem máxima precisa ser menor que 100% (a fórmula Custo/(1-margem) tende ao infinito perto de 100%).'); MARGEM_MAX = 99; document.getElementById('paramMargemMax').value = MARGEM_MAX; }
+
+  document.getElementById('calcMargem').min = MARGEM_MIN;
+  document.getElementById('calcMargem').max = MARGEM_MAX;
+  document.getElementById('calcMargemNumero').min = MARGEM_MIN;
+  document.getElementById('calcMargemNumero').max = MARGEM_MAX;
+  document.getElementById('rotuloMargemMin').textContent = MARGEM_MIN + '%';
+  document.getElementById('rotuloMargemMax').textContent = (MARGEM_MAX > 0 ? '+' : '') + MARGEM_MAX + '%';
+
+  // Reconcilia o valor atual (slider e escala) com a nova faixa
+  onMargemChange('range');
+  onEscalaChange();
+}
+
+/* Arredondamento "atrativo" de preço (estratégia comum em precificação):
+   evita valores com centavos "de cálculo" (ex: R$3.278,92), que passam
+   sensação de conta em cima da hora. Prioriza o número redondo mais alto
+   (centena, depois dezena) que ainda fica bem próximo do valor real —
+   números redondos passam mais confiança/profissionalismo no orçamento. */
+function arredondarAtrativo(valor){
+  const bases = [100, 50, 10];
+  for(const base of bases){
+    const candidato = Math.round(valor / base) * base;
+    if(Math.abs(candidato - valor) <= Math.max(8, valor * 0.003)){
+      return candidato;
+    }
+  }
+  return Math.round(valor / 10) * 10;
+}
+
+function atualizarVisualMargem(){
+  const margem = parseInt(document.getElementById('calcMargem').value);
+  const el = document.getElementById('margemValorGrande');
+  el.textContent = (margem > 0 ? '+' : '') + margem + '%';
+  el.classList.toggle('negativo', margem < 0);
+}
+function onEscalaChange(){
+  const escala = parseFloat(document.getElementById('calcEscala').value);
+  document.getElementById('escalaValorGrande').textContent = escala.toFixed(1).replace('.0','');
+  const margem = margemSugerida(escala);
+  document.getElementById('calcMargem').value = margem;
+  document.getElementById('calcMargemNumero').value = margem;
+  document.getElementById('margemSugestaoNota').textContent = 'Sugerida pela escala — ajuste o slider ou digite o número, se quiser.';
+  atualizarVisualMargem();
+}
+function onMargemChange(origem){
+  let margem = origem === 'numero'
+    ? parseInt(document.getElementById('calcMargemNumero').value)
+    : parseInt(document.getElementById('calcMargem').value);
+  if(isNaN(margem)) margem = 0;
+  margem = Math.max(MARGEM_MIN, Math.min(MARGEM_MAX, margem));
+  document.getElementById('calcMargem').value = margem;
+  document.getElementById('calcMargemNumero').value = margem;
+  document.getElementById('margemSugestaoNota').textContent = 'Ajustada manualmente.';
+  atualizarVisualMargem();
+}
+
+/* ==========================================================================
+   2. CALCULADORA
+   ========================================================================== */
+function formatBRL(v){ return Number(v).toLocaleString('pt-BR',{style:'currency',currency:'BRL'}); }
+
+function faixaParaVolume(v){
+  return faixasVolume.find(f => v > f.min && v <= f.max) || (v <= faixasVolume[0].min ? faixasVolume[0] : faixasVolume[faixasVolume.length-1]);
+}
+function atualizarFaixaVolume(){
+  const v = parseFloat(document.getElementById('calcVolume').value);
+  const label = document.getElementById('calcFaixaLabel');
+  if(isNaN(v) || v <= 0){ label.value = ''; return; }
+  label.value = faixaParaVolume(v).label;
+}
+
+function renderListaAdicionaisCalc(){
+  const container = document.getElementById('listaAdicionaisCalc');
+  container.innerHTML = adicionaisParam.map((a,i) => `
+    <div class="adicional-row">
+      <input type="checkbox" id="calcAd${i}">
+      <span class="nome">${a.nome}</span>
+      <span class="preco-unit">${a.tipo === 'fixo' ? formatBRL(a.valor) : formatBRL(a.valor)+' / unidade'}</span>
+      ${a.tipo === 'unidade' ? `<input type="number" class="qtd" id="calcAdQtd${i}" min="0" value="1" placeholder="Qtd.">` : ''}
+    </div>
+  `).join('');
+}
+
+function calcularOrcamento(){
+  const distancia = parseFloat(document.getElementById('calcDistancia').value) || 0;
+  const volume = parseFloat(document.getElementById('calcVolume').value) || 0;
+  const valorKm = parseFloat(document.getElementById('paramValorKm').value) || 0;
+
+  if(volume <= 0){ alert('Informe o volume estimado para calcular.'); return; }
+
+  const faixa = faixaParaVolume(volume);
+  const custoBase = faixa.preco;
+  const custoDistancia = distancia * valorKm;
+
+  let linhas = [
+    { label: `Preço base (${faixa.label})`, valor: custoBase },
+    { label: `Distância (${distancia} km × ${formatBRL(valorKm)})`, valor: custoDistancia }
+  ];
+
+  adicionaisParam.forEach((a,i) => {
+    const chk = document.getElementById('calcAd'+i);
+    if(chk && chk.checked){
+      if(a.tipo === 'fixo'){
+        linhas.push({ label: a.nome, valor: a.valor });
+      } else {
+        const qtd = parseFloat(document.getElementById('calcAdQtd'+i).value) || 0;
+        linhas.push({ label: `${a.nome} (${qtd}x)`, valor: a.valor * qtd });
+      }
+    }
+  });
+
+  const total = linhas.reduce((s,l) => s + l.valor, 0);
+  const margem = parseInt(document.getElementById('calcMargem').value) || 0;
+  // Margem de lucro = (Preço - Custo) / Preço  →  Preço = Custo / (1 - margem)
+  // (diferente de markup, que seria Custo × (1 + margem)). O range vai só até
+  // +60% justamente para nunca chegar perto de 100%, que tornaria isso infinito.
+  const precoFinal = total / (1 - margem / 100);
+  const valorMargem = precoFinal - total;
+
+  const sinal = Math.max(precoFinal * 0.10, 500);
+  const saldo = precoFinal - sinal;
+  const parcela1 = saldo * 0.5;
+  const parcela2 = saldo - parcela1;
+
+  document.getElementById('resultadoLinhas').innerHTML = linhas.map(l => `
+    <div class="resultado-linha"><span>${l.label}</span><span>${formatBRL(l.valor)}</span></div>
+  `).join('') + `
+    <div class="resultado-linha"><span>Custo total estimado</span><span>${formatBRL(total)}</span></div>
+    <div class="resultado-linha ${margem >= 0 ? 'margem-positiva' : 'margem-negativa'}"><span>Margem aplicada (${margem > 0 ? '+' : ''}${margem}%)</span><span>${margem >= 0 ? '+' : ''}${formatBRL(valorMargem)}</span></div>
+  `;
+  document.getElementById('resultadoTotal').textContent = formatBRL(precoFinal);
+  const valorRedondo = arredondarAtrativo(precoFinal);
+  document.getElementById('resultadoValorRedondo').innerHTML = valorRedondo !== Math.round(precoFinal)
+    ? `Valor redondo sugerido para passar ao cliente: <b>${formatBRL(valorRedondo)}</b> <span style="color:var(--color-gray-600); font-weight:400;">(evita centavos de cálculo, passa mais confiança)</span>`
+    : '';
+  document.getElementById('resultadoParcelas').innerHTML = `
+    Sugestão de parcelamento (padrão da empresa — 10% mínimo R$500 / 50% do saldo / saldo final):<br>
+    <b>Sinal:</b> ${formatBRL(sinal)} — no ato da assinatura<br>
+    <b>1ª parcela:</b> ${formatBRL(parcela1)} — no carregamento<br>
+    <b>2ª parcela:</b> ${formatBRL(parcela2)} — antes do descarregamento
+  `;
+  document.getElementById('resultadoCard').classList.add('show');
+  document.getElementById('resultadoCard').scrollIntoView({behavior:'smooth', block:'nearest'});
+}
+
+/* ==========================================================================
+   3. INICIALIZAÇÃO
+   ========================================================================== */
+renderFaixasVolume();
+renderAdicionaisParam();
+renderListaAdicionaisCalc();
+atualizarFaixaMargem();
+</script>
+</body>
+</html>

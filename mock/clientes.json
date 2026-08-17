@@ -1,0 +1,258 @@
+[
+  {
+    "id": "cli_001",
+    "tipo": "PF",
+    "nome": "Maria da Silva Rezende",
+    "documento": "111.222.333-44",
+    "telefone": "(31) 99999-1234",
+    "email": "maria.rezende@email.com",
+    "status": "Em andamento",
+    "origem": "MudaMuda",
+    "origemDetalhe": "",
+    "enderecoColeta": "Rua Aimorés, 100, Funcionários, Belo Horizonte - MG",
+    "enderecoEntrega": "Rua Pernambuco, 200, Savassi, Belo Horizonte - MG",
+    "volumeM3": 32,
+    "dataPrevista": "2026-08-22",
+    "observacoes": "Apartamento no 8º andar, prédio com elevador de serviço. Piano de cauda exige içamento.",
+    "criadoEm": "2026-07-28T09:14:00",
+    "anexos": [],
+    "historico": [
+      { "id": "h1", "em": "2026-07-28T09:14:00", "autor": "Aline Duarte", "descricao": "Cliente cadastrado a partir de lead do MudaMuda." },
+      { "id": "h2", "em": "2026-08-04T15:02:00", "autor": "Aline Duarte", "descricao": "Status alterado de Novo para Em andamento." }
+    ]
+  },
+  {
+    "id": "cli_002",
+    "tipo": "PJ",
+    "nome": "Vetta Engenharia Ltda",
+    "documento": "12.345.678/0001-90",
+    "telefone": "(31) 98888-4321",
+    "email": "contato@vettaengenharia.com.br",
+    "status": "Concluído",
+    "origem": "Indicação",
+    "origemDetalhe": "Indicado por Construtora Âncora",
+    "enderecoColeta": "Av. Raja Gabaglia, 1300, Luxemburgo, Belo Horizonte - MG",
+    "enderecoEntrega": "Av. José Faria da Rocha, 400, Eldorado, Contagem - MG",
+    "volumeM3": 78,
+    "dataPrevista": "2026-07-15",
+    "observacoes": "Mudança de escritório completo. Desmontagem de 14 estações de trabalho.",
+    "criadoEm": "2026-06-11T11:30:00",
+    "anexos": [],
+    "historico": [
+      { "id": "h1", "em": "2026-06-11T11:30:00", "autor": "Aline Duarte", "descricao": "Cliente cadastrado." },
+      { "id": "h2", "em": "2026-07-16T18:20:00", "autor": "Marcos Vieira", "descricao": "Status alterado de Em andamento para Concluído." }
+    ]
+  },
+  {
+    "id": "cli_003",
+    "tipo": "PF",
+    "nome": "Carlos Andrade Pinto",
+    "documento": "222.333.444-55",
+    "telefone": "(31) 97777-5678",
+    "email": "carlos.andrade@email.com",
+    "status": "Novo",
+    "origem": "WhatsApp",
+    "origemDetalhe": "",
+    "enderecoColeta": "Rua Bahia, 50, Centro, Belo Horizonte - MG",
+    "enderecoEntrega": "Alameda da Serra, 600, Vila da Serra, Nova Lima - MG",
+    "volumeM3": 24,
+    "dataPrevista": "",
+    "observacoes": "Aguardando confirmação da data de entrega das chaves.",
+    "criadoEm": "2026-08-12T14:45:00",
+    "anexos": [],
+    "historico": [
+      { "id": "h1", "em": "2026-08-12T14:45:00", "autor": "Aline Duarte", "descricao": "Cliente cadastrado via WhatsApp." }
+    ]
+  },
+  {
+    "id": "cli_004",
+    "tipo": "PJ",
+    "nome": "Distribuidora Alto Vale S/A",
+    "documento": "23.456.789/0001-01",
+    "telefone": "(31) 3222-7788",
+    "email": "logistica@altovale.com.br",
+    "status": "Em andamento",
+    "origem": "Repasse",
+    "origemDetalhe": "Repasse da Transportadora Ipê",
+    "enderecoColeta": "Rod. Fernão Dias, km 12, Galpão 4, Vespasiano - MG",
+    "enderecoEntrega": "Av. Getúlio Vargas, 2100, Centro, Juiz de Fora - MG",
+    "volumeM3": 120,
+    "dataPrevista": "2026-08-26",
+    "observacoes": "Carga paletizada. Descarga com empilhadeira disponível no destino.",
+    "criadoEm": "2026-08-01T08:05:00",
+    "anexos": [],
+    "historico": [
+      { "id": "h1", "em": "2026-08-01T08:05:00", "autor": "Aline Duarte", "descricao": "Cliente cadastrado por repasse." }
+    ]
+  },
+  {
+    "id": "cli_005",
+    "tipo": "PF",
+    "nome": "Fernanda Coelho Martins",
+    "documento": "333.444.555-66",
+    "telefone": "(31) 96666-2211",
+    "email": "fernanda.coelho@email.com",
+    "status": "Concluído",
+    "origem": "Instagram",
+    "origemDetalhe": "",
+    "enderecoColeta": "Rua Grão Mogol, 780, Sion, Belo Horizonte - MG",
+    "enderecoEntrega": "Rua Ouro Preto, 155, Barro Preto, Belo Horizonte - MG",
+    "volumeM3": 18,
+    "dataPrevista": "2026-06-30",
+    "observacoes": "Mudança residencial pequena, sem itens frágeis declarados.",
+    "criadoEm": "2026-06-05T16:22:00",
+    "anexos": [],
+    "historico": [
+      { "id": "h1", "em": "2026-06-05T16:22:00", "autor": "Aline Duarte", "descricao": "Cliente cadastrado." },
+      { "id": "h2", "em": "2026-07-01T10:00:00", "autor": "Marcos Vieira", "descricao": "Status alterado de Em andamento para Concluído." }
+    ]
+  },
+  {
+    "id": "cli_006",
+    "tipo": "PJ",
+    "nome": "Clínica Santa Efigênia Ltda",
+    "documento": "34.567.890/0001-12",
+    "telefone": "(31) 3444-9900",
+    "email": "administrativo@clinicasantaefigenia.com.br",
+    "status": "Novo",
+    "origem": "Facebook",
+    "origemDetalhe": "",
+    "enderecoColeta": "Rua Domingos Vieira, 300, Santa Efigênia, Belo Horizonte - MG",
+    "enderecoEntrega": "Av. do Contorno, 4800, Funcionários, Belo Horizonte - MG",
+    "volumeM3": 45,
+    "dataPrevista": "2026-09-05",
+    "observacoes": "Equipamentos médicos exigem embalagem reforçada e seguro adicional.",
+    "criadoEm": "2026-08-14T10:35:00",
+    "anexos": [],
+    "historico": [
+      { "id": "h1", "em": "2026-08-14T10:35:00", "autor": "Aline Duarte", "descricao": "Cliente cadastrado." }
+    ]
+  },
+  {
+    "id": "cli_007",
+    "tipo": "PF",
+    "nome": "Roberto Nunes Barbosa",
+    "documento": "444.555.666-77",
+    "telefone": "(31) 95555-3344",
+    "email": "roberto.nunes@email.com",
+    "status": "Em andamento",
+    "origem": "Indicação",
+    "origemDetalhe": "Indicado por Maria da Silva Rezende",
+    "enderecoColeta": "Rua Piauí, 1420, Funcionários, Belo Horizonte - MG",
+    "enderecoEntrega": "Rua Coronel Pedro Jorge, 90, Centro, Ouro Preto - MG",
+    "volumeM3": 40,
+    "dataPrevista": "2026-08-29",
+    "observacoes": "Destino com rua estreita e ladeira. Confirmar acesso do caminhão antes.",
+    "criadoEm": "2026-08-06T13:10:00",
+    "anexos": [],
+    "historico": [
+      { "id": "h1", "em": "2026-08-06T13:10:00", "autor": "Aline Duarte", "descricao": "Cliente cadastrado por indicação." }
+    ]
+  },
+  {
+    "id": "cli_008",
+    "tipo": "PJ",
+    "nome": "Móveis Bela Vista Comércio ME",
+    "documento": "45.678.901/0001-23",
+    "telefone": "(31) 3555-1122",
+    "email": "vendas@moveisbelavista.com.br",
+    "status": "Em andamento",
+    "origem": "Repasse",
+    "origemDetalhe": "Parceria comercial recorrente",
+    "enderecoColeta": "Av. Amazonas, 5600, Gameleira, Belo Horizonte - MG",
+    "enderecoEntrega": "Av. Afonso Pena, 1200, Centro, Uberlândia - MG",
+    "volumeM3": 95,
+    "dataPrevista": "2026-08-25",
+    "observacoes": "Entregas fracionadas para clientes finais ao longo da rota.",
+    "criadoEm": "2026-07-19T09:50:00",
+    "anexos": [],
+    "historico": [
+      { "id": "h1", "em": "2026-07-19T09:50:00", "autor": "Aline Duarte", "descricao": "Cliente cadastrado." }
+    ]
+  },
+  {
+    "id": "cli_009",
+    "tipo": "PF",
+    "nome": "Juliana Prates Camargo",
+    "documento": "555.666.777-88",
+    "telefone": "(31) 94444-8877",
+    "email": "juliana.prates@email.com",
+    "status": "Novo",
+    "origem": "MudaMuda",
+    "origemDetalhe": "",
+    "enderecoColeta": "Rua Rio de Janeiro, 2200, Lourdes, Belo Horizonte - MG",
+    "enderecoEntrega": "Rua Sete de Setembro, 45, Centro, Vitória - ES",
+    "volumeM3": 52,
+    "dataPrevista": "2026-09-12",
+    "observacoes": "Mudança interestadual. Cliente pediu orçamento com e sem seguro.",
+    "criadoEm": "2026-08-15T17:05:00",
+    "anexos": [],
+    "historico": [
+      { "id": "h1", "em": "2026-08-15T17:05:00", "autor": "Aline Duarte", "descricao": "Cliente cadastrado a partir de lead do MudaMuda." }
+    ]
+  },
+  {
+    "id": "cli_010",
+    "tipo": "PJ",
+    "nome": "Construtora Âncora Ltda",
+    "documento": "56.789.012/0001-34",
+    "telefone": "(31) 3666-4455",
+    "email": "suprimentos@construtorancora.com.br",
+    "status": "Concluído",
+    "origem": "Indicação",
+    "origemDetalhe": "",
+    "enderecoColeta": "Rua Herculano de Freitas, 800, Barro Preto, Belo Horizonte - MG",
+    "enderecoEntrega": "Rod. MG-424, km 8, Canteiro de obras, Matozinhos - MG",
+    "volumeM3": 140,
+    "dataPrevista": "2026-05-20",
+    "observacoes": "Transporte de container de obra e material de escritório do canteiro.",
+    "criadoEm": "2026-04-30T07:40:00",
+    "anexos": [],
+    "historico": [
+      { "id": "h1", "em": "2026-04-30T07:40:00", "autor": "Aline Duarte", "descricao": "Cliente cadastrado." },
+      { "id": "h2", "em": "2026-05-21T16:30:00", "autor": "Marcos Vieira", "descricao": "Status alterado de Em andamento para Concluído." }
+    ]
+  },
+  {
+    "id": "cli_011",
+    "tipo": "PF",
+    "nome": "Anderson Gomes Ribeiro",
+    "documento": "666.777.888-99",
+    "telefone": "(31) 93333-6655",
+    "email": "anderson.ribeiro@email.com",
+    "status": "Em andamento",
+    "origem": "WhatsApp",
+    "origemDetalhe": "",
+    "enderecoColeta": "Rua Tupinambás, 500, Centro, Belo Horizonte - MG",
+    "enderecoEntrega": "Rua Manoel Teixeira, 210, Centro, Betim - MG",
+    "volumeM3": 15,
+    "dataPrevista": "2026-08-20",
+    "observacoes": "Mudança de estúdio. Cliente faz o próprio empacotamento.",
+    "criadoEm": "2026-08-08T12:00:00",
+    "anexos": [],
+    "historico": [
+      { "id": "h1", "em": "2026-08-08T12:00:00", "autor": "Aline Duarte", "descricao": "Cliente cadastrado via WhatsApp." }
+    ]
+  },
+  {
+    "id": "cli_012",
+    "tipo": "PJ",
+    "nome": "Editora Serra Azul Ltda",
+    "documento": "67.890.123/0001-45",
+    "telefone": "(31) 3777-2200",
+    "email": "financeiro@editoraserraazul.com.br",
+    "status": "Novo",
+    "origem": "Instagram",
+    "origemDetalhe": "",
+    "enderecoColeta": "Rua Curitiba, 900, Centro, Belo Horizonte - MG",
+    "enderecoEntrega": "Av. Brasil, 1500, Centro, Governador Valadares - MG",
+    "volumeM3": 60,
+    "dataPrevista": "2026-09-02",
+    "observacoes": "Carga de livros: peso alto para o volume, atenção ao limite de kg.",
+    "criadoEm": "2026-08-16T09:25:00",
+    "anexos": [],
+    "historico": [
+      { "id": "h1", "em": "2026-08-16T09:25:00", "autor": "Aline Duarte", "descricao": "Cliente cadastrado." }
+    ]
+  }
+]

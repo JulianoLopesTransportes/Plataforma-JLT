@@ -74,7 +74,6 @@ não só na tela. **Ao mudar a matriz, mude nos dois lugares.**
 | Gastos e Ganhos | Total | **Total** | — | — |
 | Relatórios | Total | Leitura ² | Leitura ² | Leitura ² |
 | Usuários | **Total** | — | — | — |
-| Guia visual | Leitura | Leitura | Leitura | Leitura |
 
 Dois recortes não cabem numa matriz por módulo e existem como **capacidades
 transversais**. Como RLS filtra linhas e estes requisitos são sobre colunas,
@@ -88,7 +87,7 @@ cada um exigiu um mecanismo próprio no banco:
    conforme a capacidade. Devolve `NULL`, não zero: zero seria falso. O mesmo
    recorte se aplica ao CSV exportado.
 
-Outras capacidades: `exportar`, `aprovar`, `excluir` (só admin).
+Outras capacidades: `exportar` e `excluir` (só admin).
 
 A matriz pode ser consultada na plataforma em **Usuários → Matriz de permissões**,
 renderizada do mesmo objeto que governa o sistema.
@@ -103,7 +102,7 @@ app/
   (plataforma)/            tudo que exige sessão
     layout.tsx             a moldura: sidebar + header, injetada uma vez
     dashboard/ clientes/ documentos/ agenda/ rotas/
-    frota/ orcamentos/ financeiro/ relatorios/ usuarios/ guia-visual/
+    frota/ orcamentos/ financeiro/ relatorios/ usuarios/
   api/[entidade]/          API HTTP autenticada (RLS aplica)
 middleware.ts              guarda de sessão NO SERVIDOR
 
@@ -151,8 +150,10 @@ Os arquivos originais estão preservados em `referencia/`. Nada foi descartado.
 | Gastos e Ganhos | `05-gastos-ganhos_5.html` | Lançamentos, categoria livre, gráficos |
 | Orçamentos | `06-orcamentos-calculadora_6.html` | Faixas, adicionais, margem por divisão, arredondamento comercial, parcelamento |
 | Rotas | `07-rotas_1.html` | Kanban, linha do tempo, ocupação parada a parada, alertas |
-| Guia visual | `00-guia-visual_1.html` | Tokens lidos do CSS real, não copiados |
 | Relatórios · Usuários | — | Módulos novos |
+
+O `00-guia-visual_1.html` não virou módulo: ele foi a fonte do `tokens.css`, e
+a tela que o exibia foi retirada a pedido.
 
 ### Inconsistências que a consolidação resolveu
 

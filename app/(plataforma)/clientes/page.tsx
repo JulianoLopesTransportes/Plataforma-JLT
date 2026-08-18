@@ -45,6 +45,7 @@ import {
   type Coluna,
 } from '@/components/ui';
 import { STATUS_CLIENTE, ORIGENS_CLIENTE, type Cliente, type StatusCliente } from '@/lib/tipos';
+import PainelAnexos from '@/components/modulos/PainelAnexos';
 import estilos from './clientes.module.css';
 
 const CLIENTE_VAZIO: Omit<Cliente, 'id' | 'criadoEm' | 'anexos' | 'historico'> = {
@@ -514,23 +515,27 @@ export default function PaginaClientes() {
               </dl>
             )}
 
-            {abaDetalhe === 'anexos' &&
-              (detalhe.anexos.length === 0 ? (
-                <div className="estado-vazio">
-                  <strong>Sem anexos</strong>
-                  Nenhum documento anexado a este cliente. O upload de arquivos entra junto com o
-                  armazenamento — hoje não há onde guardá-los.
-                </div>
-              ) : (
-                <ul className={estilos.listaAnexos}>
-                  {detalhe.anexos.map((a) => (
-                    <li key={a.id}>
-                      <strong>{a.nome}</strong>
-                      <span className="texto-secundario">{formatarData(a.enviadoEm.slice(0, 10))}</span>
-                    </li>
-                  ))}
-                </ul>
-              ))}
+            {abaDetalhe === 'anexos' && (
+              <PainelAnexos
+                dono="clientes"
+                donoId={detalhe.id}
+                anexos={detalhe.anexos.map((a) => ({
+                  id: a.id,
+                  nome: a.nome,
+                  caminho: a.caminho ?? '',
+                  tipo: a.tipo,
+                  tamanho: a.tamanho,
+                  enviadoEm: a.enviadoEm,
+                }))}
+                podeEnviar={podeMexer}
+                podeExcluir={podeExcluir}
+                aoMudar={async () => {
+                  await recarregar();
+                  const atualizado = await api.clientes.obter(detalhe.id);
+                  if (atualizado) setDetalhe(atualizado);
+                }}
+              />
+            )}
 
             {abaDetalhe === 'historico' && (
               <ol className={estilos.historico}>

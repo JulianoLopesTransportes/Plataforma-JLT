@@ -72,6 +72,7 @@ function paraAnexo(linha: any): Anexo {
   return {
     id: linha.id,
     nome: txt(linha.nome),
+    caminho: txt(linha.caminho),
     tipo: txt(linha.tipo),
     tamanho: num(linha.tamanho),
     enviadoEm: txt(linha.enviado_em),

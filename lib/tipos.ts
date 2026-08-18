@@ -37,6 +37,8 @@ export type ClasseVolume = 'Pequeno' | 'Médio' | 'Grande';
 export type Anexo = {
   id: string;
   nome: string;
+  /** Caminho no Supabase Storage. Vazio nos mocks da Fase A. */
+  caminho?: string;
   tipo: string;
   tamanho: number;
   /** ISO 8601. Quando o Supabase entrar, vira o created_at do storage. */

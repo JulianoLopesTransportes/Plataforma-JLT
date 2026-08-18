@@ -55,7 +55,8 @@ export type TipoDocumento =
   | 'inventario'
   | 'guarda'
   | 'imagem'
-  | 'comprovante';
+  | 'comprovante'
+  | 'ficha';
 
 export const TIPOS_DOCUMENTO: { id: TipoDocumento; rotulo: string; descricao: string }[] = [
   {
@@ -98,6 +99,7 @@ export const NOME_ARQUIVO: Record<TipoDocumento, string> = {
   guarda: 'ContratoGuardaMoveis',
   imagem: 'AutorizacaoImagem',
   comprovante: 'ComprovanteEntrega',
+  ficha: 'FichaAtendimento',
 };
 
 /** Trecho de texto: string simples ou trecho em negrito. */
@@ -110,6 +112,7 @@ export type BlocoDocumento =
   | { tipo: 'nota'; texto: string }
   | { tipo: 'tabelaItens' }
   | { tipo: 'quebraPagina' }
+  | { tipo: 'linhasEmBranco'; quantidade: number }
   | { tipo: 'assinaturas'; rotuloContratante: string };
 
 /** Dados do cliente usados na qualificação das partes. */
@@ -1073,4 +1076,128 @@ export const TITULO_DOCUMENTO: Record<TipoDocumento, string> = {
   guarda: 'Contrato de Guarda de Móveis',
   imagem: 'Autorização de Uso de Imagem',
   comprovante: 'Comprovante de Entrega',
+  ficha: 'Ficha de Atendimento',
 };
+
+/* ==========================================================================
+   7. FICHA DE ATENDIMENTO
+   ==========================================================================
+   Documento operacional, não jurídico: é o papel que a equipe leva para a
+   rua. Reúne num lugar só o que o motorista e os ajudantes precisam saber
+   sem ter que ligar para o escritório — endereços, contato do cliente,
+   serviços contratados e espaço para anotar o que aconteceu.
+   ========================================================================== */
+
+export type EntradaFicha = {
+  cliente: DadosCliente;
+  titulo: string;
+  data: string;
+  horario: string;
+  diaInteiro: boolean;
+  veiculo: string;
+  motorista: string;
+  volumeM3: number | null;
+  caracteristicas: string[];
+  observacoes: string;
+};
+
+export function gerarFicha(e: EntradaFicha): BlocoDocumento[] {
+  const c = e.cliente;
+
+  const blocos: BlocoDocumento[] = [
+    { tipo: 'secao', titulo: 'Atendimento' },
+    {
+      tipo: 'paragrafo',
+      partes: [
+        { b: 'Serviço:' },
+        ` ${ou(e.titulo, '—')}`,
+        '\n',
+        { b: 'Data:' },
+        ` ${dataOuLinha(e.data)}${e.diaInteiro ? ' — dia inteiro' : e.horario ? ` às ${e.horario}` : ''}`,
+      ],
+    },
+
+    { tipo: 'secao', titulo: 'Cliente' },
+    {
+      tipo: 'paragrafo',
+      partes: [
+        { b: 'Nome:' },
+        ` ${ou(c.nome, '[cliente]')}`,
+        '\n',
+        { b: 'Documento:' },
+        ` ${ou(c.documento)}`,
+        '\n',
+        { b: 'Telefone:' },
+        ` ${ou(c.telefone)}`,
+        ...(c.email ? (['\n', { b: 'E-mail:' }, ` ${c.email}`] as Trecho[]) : []),
+      ],
+    },
+
+    { tipo: 'secao', titulo: 'Endereços' },
+    {
+      tipo: 'paragrafo',
+      partes: [{ b: 'Coleta:' }, ` ${ou(c.enderecoColeta)}`],
+    },
+    {
+      tipo: 'paragrafo',
+      partes: [{ b: 'Entrega:' }, ` ${ou(c.enderecoEntrega)}`],
+    },
+
+    { tipo: 'secao', titulo: 'Equipe e veículo' },
+    {
+      tipo: 'paragrafo',
+      partes: [
+        { b: 'Motorista:' },
+        ` ${ou(e.motorista, 'A definir')}`,
+        '\n',
+        { b: 'Veículo:' },
+        ` ${ou(e.veiculo, 'A definir')}`,
+        ...(e.volumeM3
+          ? (['\n', { b: 'Volume estimado:' }, ` ${e.volumeM3} m³`] as Trecho[])
+          : []),
+      ],
+    },
+  ];
+
+  if (e.caracteristicas.length > 0) {
+    blocos.push(
+      { tipo: 'secao', titulo: 'Serviços contratados' },
+      { tipo: 'lista', itens: e.caracteristicas },
+    );
+  }
+
+  if (e.observacoes.trim()) {
+    blocos.push(
+      { tipo: 'secao', titulo: 'Observações' },
+      { tipo: 'paragrafo', partes: [e.observacoes] },
+    );
+  }
+
+  // Campos em branco para a equipe preencher na rua.
+  blocos.push(
+    { tipo: 'secao', titulo: 'Registro da equipe' },
+    {
+      tipo: 'paragrafo',
+      partes: [
+        { b: 'Horário de chegada:' },
+        ' ____:____        ',
+        { b: 'Início do carregamento:' },
+        ' ____:____',
+        '\n',
+        { b: 'Fim do carregamento:' },
+        ' ____:____        ',
+        { b: 'Horário de saída:' },
+        ' ____:____',
+      ],
+    },
+    {
+      tipo: 'paragrafo',
+      partes: [{ b: 'Ocorrências:' }],
+    },
+    { tipo: 'linhasEmBranco', quantidade: 4 },
+
+    { tipo: 'assinaturas', rotuloContratante: 'CLIENTE' },
+  );
+
+  return blocos;
+}

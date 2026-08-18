@@ -211,8 +211,8 @@ function ConteudoRotas() {
                       const graves = alertas.filter((a) => a.nivel === 'danger').length;
 
                       return (
+                        <div key={rota.id} className={estilos.envolucroCartao}>
                         <button
-                          key={rota.id}
                           type="button"
                           className={estilos.cartao}
                           onClick={() => setRotaAbertaId(rota.id)}
@@ -257,6 +257,24 @@ function ConteudoRotas() {
                             </span>
                           )}
                         </button>
+
+                        {podeMexer && (
+                          <select
+                            className={estilos.seletorStatus}
+                            value={rota.status}
+                            onChange={(e) =>
+                              moverRota(rota, e.target.value as Rota['status'])
+                            }
+                            aria-label={`Status de ${rota.nome}`}
+                          >
+                            {COLUNAS_KANBAN.map((c) => (
+                              <option key={c.status} value={c.status}>
+                                {c.titulo}
+                              </option>
+                            ))}
+                          </select>
+                        )}
+                      </div>
                       );
                     })
                   )}
@@ -288,18 +306,20 @@ function ConteudoRotas() {
         rodape={
           rotaAberta && (
             <>
-              {podeMexer && rotaAberta.status !== 'concluida' && (
-                <button
-                  type="button"
-                  className="btn btn-primary"
-                  onClick={() => {
-                    const indice = COLUNAS_KANBAN.findIndex((c) => c.status === rotaAberta.status);
-                    const proximo = COLUNAS_KANBAN[indice + 1];
-                    if (proximo) moverRota(rotaAberta, proximo.status);
-                  }}
-                >
-                  Avançar status
-                </button>
+              {podeMexer && (
+                <label className={estilos.statusDetalhe}>
+                  Status
+                  <select
+                    value={rotaAberta.status}
+                    onChange={(e) => moverRota(rotaAberta, e.target.value as Rota['status'])}
+                  >
+                    {COLUNAS_KANBAN.map((c) => (
+                      <option key={c.status} value={c.status}>
+                        {c.titulo}
+                      </option>
+                    ))}
+                  </select>
+                </label>
               )}
               <button
                 type="button"

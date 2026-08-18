@@ -12,7 +12,6 @@
  */
 
 import { useEffect, useState, useMemo } from 'react';
-import Image from 'next/image';
 import { api } from '@/lib/api';
 import { useUsuario } from '@/components/layout/SessaoProvider';
 import { podeEditar } from '@/lib/permissoes';
@@ -21,7 +20,6 @@ import {
   TIPOS_DOCUMENTO,
   TITULO_DOCUMENTO,
   NOME_ARQUIVO,
-  EMPRESA,
   ENDERECO_DEPOSITO,
   SERVICOS_INCLUSOS,
   ABRANGENCIA_IMAGEM,
@@ -35,9 +33,9 @@ import {
   type TipoDocumento,
   type BlocoDocumento,
   type DadosCliente,
-  type Trecho,
 } from '@/lib/negocio/documentos';
 import { TituloPagina, CampoFiltro, useToast } from '@/components/ui';
+import FolhaDocumento from '@/components/modulos/FolhaDocumento';
 import type { Cliente } from '@/lib/tipos';
 import catalogoItens from '@/mock/catalogo-itens.json';
 import estilos from './documentos.module.css';
@@ -50,9 +48,14 @@ const SUBTITULO_DOCUMENTO: Record<TipoDocumento, string> = {
   guarda: 'Contrato de prestação de serviços de guarda-móveis',
   imagem: 'Autorização de uso de imagem',
   comprovante: 'Recibo de conclusão de serviço',
+  // A ficha não é oferecida aqui: nasce de um compromisso, na Agenda.
+  ficha: 'Ficha de atendimento da equipe',
 };
 
 const CATALOGO = catalogoItens as Record<string, string[]>;
+
+/** Ambiente onde entram os itens digitados à mão, fora do catálogo. */
+const AMBIENTE_MANUAL = 'Outros itens';
 
 /** Quebra um textarea em linhas úteis — usado nos campos livres. */
 function linhas(texto: string): string[] {
@@ -100,6 +103,9 @@ export default function PaginaDocumentos() {
   // --- Inventário de itens ---
   const [itensInventario, setItensInventario] = useState<Record<string, number>>({});
   const [ambienteAberto, setAmbienteAberto] = useState<string>(Object.keys(CATALOGO)[0]);
+  // Itens que não existem no catálogo, digitados na hora.
+  const [itensManuais, setItensManuais] = useState<string[]>([]);
+  const [novoItem, setNovoItem] = useState('');
 
   const podeMexer = podeEditar(usuario.nivel, 'documentos');
 
@@ -198,6 +204,10 @@ export default function PaginaDocumentos() {
           recebedor,
           ressalvas,
         });
+
+      default:
+        // 'ficha' existe no tipo mas é gerada pela Agenda, não por esta tela.
+        return [];
     }
   }, [
     tipo, dadosCliente, validadeDias, valor, dataColeta, servicosMarcados, outrosServicos,
@@ -208,6 +218,36 @@ export default function PaginaDocumentos() {
 
   function alternar(lista: string[], set: (v: string[]) => void, item: string) {
     set(lista.includes(item) ? lista.filter((x) => x !== item) : [...lista, item]);
+  }
+
+  function acrescentarItemManual() {
+    const nome = novoItem.trim();
+    if (!nome) return;
+
+    const jaExiste =
+      itensManuais.some((i) => i.toLowerCase() === nome.toLowerCase()) ||
+      Object.values(CATALOGO).flat().some((i) => i.toLowerCase() === nome.toLowerCase());
+
+    if (jaExiste) {
+      mostrar('Este item já está na lista.', 'aviso');
+      setNovoItem('');
+      return;
+    }
+
+    setItensManuais((lista) => [...lista, nome]);
+    // Entra já com uma unidade: quem digitou quer pelo menos uma.
+    setItensInventario((atual) => ({ ...atual, [nome]: 1 }));
+    setNovoItem('');
+    setAmbienteAberto(AMBIENTE_MANUAL);
+  }
+
+  function removerItemManual(nome: string) {
+    setItensManuais((lista) => lista.filter((i) => i !== nome));
+    setItensInventario((atual) => {
+      const copia = { ...atual };
+      delete copia[nome];
+      return copia;
+    });
   }
 
   function mudarQuantidade(item: string, delta: number) {
@@ -577,7 +617,7 @@ export default function PaginaDocumentos() {
               </h3>
 
               <div className={estilos.abasAmbiente}>
-                {Object.keys(CATALOGO).map((ambiente) => (
+                {[...Object.keys(CATALOGO), AMBIENTE_MANUAL].map((ambiente) => (
                   <button
                     key={ambiente}
                     type="button"
@@ -591,8 +631,37 @@ export default function PaginaDocumentos() {
                 ))}
               </div>
 
+              {ambienteAberto === AMBIENTE_MANUAL && (
+                <div className={estilos.adicionarItem}>
+                  <input
+                    value={novoItem}
+                    onChange={(e) => setNovoItem(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        // Sem isto, o Enter enviaria o formulário do documento.
+                        e.preventDefault();
+                        acrescentarItemManual();
+                      }
+                    }}
+                    placeholder="Item fora do catálogo…"
+                    aria-label="Novo item do inventário"
+                  />
+                  <button
+                    type="button"
+                    className="btn btn-outline btn-sm"
+                    onClick={acrescentarItemManual}
+                    disabled={!novoItem.trim()}
+                  >
+                    Acrescentar
+                  </button>
+                </div>
+              )}
+
               <div className={estilos.listaItens}>
-                {CATALOGO[ambienteAberto]?.map((item) => (
+                {(ambienteAberto === AMBIENTE_MANUAL
+                  ? itensManuais
+                  : (CATALOGO[ambienteAberto] ?? [])
+                ).map((item) => (
                   <div key={item} className={estilos.linhaItem}>
                     <span className={estilos.nomeItem}>{item}</span>
                     <div className={estilos.controleQuantidade}>
@@ -612,9 +681,26 @@ export default function PaginaDocumentos() {
                       >
                         +
                       </button>
+
+                      {ambienteAberto === AMBIENTE_MANUAL && (
+                        <button
+                          type="button"
+                          className={estilos.removerItem}
+                          onClick={() => removerItemManual(item)}
+                          aria-label={`Remover ${item} da lista`}
+                        >
+                          ×
+                        </button>
+                      )}
                     </div>
                   </div>
                 ))}
+
+                {ambienteAberto === AMBIENTE_MANUAL && itensManuais.length === 0 && (
+                  <p className={estilos.listaVazia}>
+                    Nenhum item digitado. Use o campo acima para o que não está no catálogo.
+                  </p>
+                )}
               </div>
             </>
           )}
@@ -630,28 +716,18 @@ export default function PaginaDocumentos() {
               </div>
             </div>
           ) : (
-            <article className={estilos.folha}>
-              <CabecalhoDocumento
-                titulo={TITULO_DOCUMENTO[tipo]}
-                subtitulo={SUBTITULO_DOCUMENTO[tipo]}
-                selo={tipo === 'orcamento' ? `Válido por ${validadeDias} dias` : undefined}
-              />
-
-              {blocos.map((bloco, i) => (
-                <Bloco
-                  key={i}
-                  bloco={bloco}
-                  itens={itensInventario}
-                  clienteNome={dadosCliente.nome}
-                  clienteDocumento={dadosCliente.documento}
-                />
-              ))}
-
-              <footer className={estilos.rodapeDocumento}>
-                {EMPRESA.razaoSocial} · CNPJ {EMPRESA.cnpj} · Documento gerado em{' '}
-                {new Date().toLocaleDateString('pt-BR')}
-              </footer>
-            </article>
+            <FolhaDocumento
+              titulo={TITULO_DOCUMENTO[tipo]}
+              subtitulo={SUBTITULO_DOCUMENTO[tipo]}
+              selo={tipo === 'orcamento' ? `Válido por ${validadeDias} dias` : undefined}
+              blocos={blocos}
+              clienteNome={dadosCliente.nome}
+              clienteDocumento={dadosCliente.documento}
+              itens={itensInventario}
+              itensManuais={itensManuais}
+              catalogo={CATALOGO}
+              ambienteManual={AMBIENTE_MANUAL}
+            />
           )}
         </div>
       </div>
@@ -659,160 +735,3 @@ export default function PaginaDocumentos() {
   );
 }
 
-/* ==========================================================================
-   Renderização dos blocos
-   ========================================================================== */
-
-function Bloco({
-  bloco,
-  itens,
-  clienteNome,
-  clienteDocumento,
-}: {
-  bloco: BlocoDocumento;
-  itens: Record<string, number>;
-  clienteNome: string;
-  clienteDocumento: string;
-}) {
-  switch (bloco.tipo) {
-    case 'secao':
-      return <h2 className={estilos.secaoTitulo}>{bloco.titulo}</h2>;
-
-    case 'paragrafo':
-      return <p className={estilos.paragrafo}>{bloco.partes.map(renderTrecho)}</p>;
-
-    case 'lista':
-      return bloco.itens.length === 0 ? null : (
-        <ul className={estilos.lista}>
-          {bloco.itens.map((item, i) => (
-            <li key={i}>{item}</li>
-          ))}
-        </ul>
-      );
-
-    case 'nota':
-      return <p className={estilos.nota}>{bloco.texto}</p>;
-
-    case 'quebraPagina':
-      return <div className={estilos.quebraPagina} />;
-
-    case 'tabelaItens':
-      return <TabelaItens itens={itens} />;
-
-    case 'assinaturas':
-      return (
-        <div className={estilos.assinaturas}>
-          <div>
-            <div className={estilos.linhaAssinatura} />
-            <span>{bloco.rotuloContratante}</span>
-            <small>{clienteNome}</small>
-            <small>CPF/CNPJ: {clienteDocumento || '____________________'}</small>
-          </div>
-          <div>
-            <div className={estilos.linhaAssinatura} />
-            <span>CONTRATADA</span>
-            <small>{EMPRESA.razaoSocial}</small>
-            <small>CNPJ: {EMPRESA.cnpj}</small>
-          </div>
-        </div>
-      );
-  }
-}
-
-/** Renderiza um trecho, preservando quebras de linha internas. */
-function renderTrecho(trecho: Trecho, i: number) {
-  if (typeof trecho === 'string') {
-    return trecho.split('\n').map((linha, j, todas) => (
-      <span key={`${i}-${j}`}>
-        {linha}
-        {j < todas.length - 1 && <br />}
-      </span>
-    ));
-  }
-  if ('b' in trecho) return <strong key={i}>{trecho.b}</strong>;
-  return <em key={i}>{trecho.i}</em>;
-}
-
-function TabelaItens({ itens }: { itens: Record<string, number> }) {
-  const total = Object.values(itens).reduce((s, q) => s + q, 0);
-
-  if (total === 0) {
-    return (
-      <p className={estilos.aviso}>
-        Nenhum item selecionado — marque as quantidades no painel ao lado.
-      </p>
-    );
-  }
-
-  return (
-    <>
-      {Object.entries(CATALOGO).map(([ambiente, listaItens]) => {
-        const doAmbiente = listaItens.filter((i) => itens[i]);
-        if (doAmbiente.length === 0) return null;
-
-        return (
-          <div key={ambiente} className={estilos.blocoAmbiente}>
-            <h3 className={estilos.nomeAmbiente}>{ambiente}</h3>
-            <table className={estilos.tabelaDocumento}>
-              <tbody>
-                {doAmbiente.map((item) => (
-                  <tr key={item}>
-                    <td>{item}</td>
-                    <td className={estilos.quantidadeCelula}>{itens[item]}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        );
-      })}
-
-      <p className={estilos.totalInventario}>
-        Total de volumes declarados: <strong>{total}</strong>
-      </p>
-    </>
-  );
-}
-
-function CabecalhoDocumento({
-  titulo,
-  subtitulo,
-  selo,
-}: {
-  titulo: string;
-  subtitulo?: string;
-  selo?: string;
-}) {
-  return (
-    <>
-      <header className={estilos.cabecalhoDocumento}>
-        <div className={estilos.marcaDocumento}>
-          <Image
-            src="/logo-jlt.png"
-            alt={EMPRESA.nomeFantasia}
-            width={235}
-            height={157}
-            priority
-            className={estilos.logoDocumento}
-          />
-          <small>CNPJ: {EMPRESA.cnpj}</small>
-        </div>
-        <div className={estilos.contatoCabecalho}>
-          <span>{EMPRESA.email}</span>
-          <span>
-            {EMPRESA.telefone} · {EMPRESA.telefoneSecundario}
-          </span>
-        </div>
-      </header>
-
-      <hr className={estilos.reguaDocumento} />
-
-      <div className={estilos.caixaTitulo}>
-        <h1 className={estilos.tituloDocumento}>{titulo}</h1>
-        {selo && <div className={estilos.selo}>{selo}</div>}
-      </div>
-
-      {subtitulo && <p className={estilos.subtituloDocumento}>{subtitulo}</p>}
-    </>
-  );
-}

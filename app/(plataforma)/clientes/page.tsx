@@ -79,6 +79,7 @@ export default function PaginaClientes() {
   const [formAberto, setFormAberto] = useState(false);
   const [formulario, setFormulario] = useState(CLIENTE_VAZIO);
   const [salvando, setSalvando] = useState(false);
+  const [editandoId, setEditandoId] = useState<string | null>(null);
   const [erroCarga, setErroCarga] = useState('');
 
   const podeMexer = podeEditar(usuario.nivel, 'clientes');
@@ -174,6 +175,20 @@ export default function PaginaClientes() {
     }
   }
 
+  function abrirEdicao(cliente: Cliente) {
+    setEditandoId(cliente.id);
+    const { id: _i, criadoEm: _c, anexos: _a, historico: _h, ...campos } = cliente;
+    setFormulario(campos);
+    setDetalhe(null);
+    setFormAberto(true);
+  }
+
+  function abrirNovo() {
+    setEditandoId(null);
+    setFormulario(CLIENTE_VAZIO);
+    setFormAberto(true);
+  }
+
   async function salvarNovo(evento: React.FormEvent) {
     evento.preventDefault();
 
@@ -185,7 +200,11 @@ export default function PaginaClientes() {
     setSalvando(true);
 
     try {
-      if (usandoBanco()) {
+      if (editandoId) {
+        await api.clientes.atualizar(editandoId, formulario);
+        await api.clientes.registrarHistorico(editandoId, usuario.nome, 'Cadastro atualizado.');
+        await recarregar();
+      } else if (usandoBanco()) {
         const criado = await api.clientes.criar(formulario);
         await api.clientes.registrarHistorico(criado.id, usuario.nome, 'Cliente cadastrado.');
         await recarregar();
@@ -209,11 +228,36 @@ export default function PaginaClientes() {
 
       setFormAberto(false);
       setFormulario(CLIENTE_VAZIO);
-      mostrar(`${formulario.nome} cadastrado com sucesso.`, 'sucesso');
+      setEditandoId(null);
+      mostrar(`${formulario.nome} ${editandoId ? 'atualizado' : 'cadastrado'} com sucesso.`, 'sucesso');
     } catch (e) {
-      mostrar(e instanceof Error ? e.message : 'Falha ao cadastrar.', 'erro');
+      mostrar(e instanceof Error ? e.message : 'Falha ao salvar.', 'erro');
     } finally {
       setSalvando(false);
+    }
+  }
+
+  /**
+   * Troca o status direto pelo menu da tabela, sem abrir o detalhe.
+   * Registra no histórico igual ao botão de avançar — a origem da mudança
+   * não altera a necessidade de rastro.
+   */
+  async function mudarStatus(cliente: Cliente, novo: StatusCliente) {
+    if (novo === cliente.status) return;
+    const descricao = `Status alterado de ${cliente.status} para ${novo}.`;
+
+    try {
+      if (usandoBanco()) {
+        await api.clientes.atualizar(cliente.id, { status: novo });
+        await api.clientes.registrarHistorico(cliente.id, usuario.nome, descricao);
+        await recarregar();
+      } else {
+        const atualizado = registrarHistorico({ ...cliente, status: novo }, descricao);
+        setClientes((lista) => lista.map((c) => (c.id === cliente.id ? atualizado : c)));
+      }
+      mostrar(`${cliente.nome}: ${novo}.`, 'sucesso');
+    } catch (e) {
+      mostrar(e instanceof Error ? e.message : 'Falha ao alterar o status.', 'erro');
     }
   }
 
@@ -263,7 +307,28 @@ export default function PaginaClientes() {
       chave: 'status',
       rotulo: 'Status',
       ordenarPor: (c) => c.status,
-      render: (c) => <Badge texto={c.status} tom={tomDoStatus(c.status)} />,
+      render: (c) =>
+        podeMexer ? (
+          <select
+            className={`${estilos.seletorStatus} ${estilos[`status_${tomDoStatus(c.status)}`]}`}
+            value={c.status}
+            // Sem isto, o clique no menu abriria o detalhe do cliente.
+            onClick={(e) => e.stopPropagation()}
+            onChange={(e) => {
+              e.stopPropagation();
+              mudarStatus(c, e.target.value as StatusCliente);
+            }}
+            aria-label={`Status de ${c.nome}`}
+          >
+            {STATUS_CLIENTE.map((s) => (
+              <option key={s} value={s}>
+                {s}
+              </option>
+            ))}
+          </select>
+        ) : (
+          <Badge texto={c.status} tom={tomDoStatus(c.status)} />
+        ),
     },
   ];
 
@@ -279,7 +344,7 @@ export default function PaginaClientes() {
           <button
             type="button"
             className="btn btn-primary"
-            onClick={() => setFormAberto(true)}
+            onClick={abrirNovo}
             disabled={!podeMexer}
             title={podeMexer ? undefined : 'Seu nível não permite cadastrar clientes'}
           >
@@ -383,6 +448,15 @@ export default function PaginaClientes() {
                   Excluir
                 </button>
               )}
+              {podeMexer && (
+                <button
+                  type="button"
+                  className="btn btn-primary"
+                  onClick={() => abrirEdicao(detalhe)}
+                >
+                  Editar
+                </button>
+              )}
               {podeMexer && !statusFinal(detalhe.status) && (
                 <button
                   type="button"
@@ -479,17 +553,24 @@ export default function PaginaClientes() {
 
       {/* ---------- Modal de cadastro ---------- */}
       <Modal
-        titulo="Novo cliente"
+        titulo={editandoId ? 'Editar cliente' : 'Novo cliente'}
         aberto={formAberto}
         aoFechar={() => setFormAberto(false)}
         largo
         rodape={
           <>
-            <button type="button" className="btn btn-ghost" onClick={() => setFormAberto(false)}>
+            <button
+              type="button"
+              className="btn btn-ghost"
+              onClick={() => {
+                setFormAberto(false);
+                setEditandoId(null);
+              }}
+            >
               Cancelar
             </button>
             <button type="submit" form="form-cliente" className="btn btn-primary" disabled={salvando}>
-              {salvando ? 'Salvando…' : 'Salvar cliente'}
+              {salvando ? 'Salvando…' : editandoId ? 'Salvar alterações' : 'Salvar cliente'}
             </button>
           </>
         }

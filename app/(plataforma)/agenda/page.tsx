@@ -29,6 +29,8 @@ import {
   type TomBadge,
 } from '@/components/ui';
 import Icone from '@/components/layout/Icone';
+import FolhaDocumento from '@/components/modulos/FolhaDocumento';
+import { gerarFicha, TITULO_DOCUMENTO, NOME_ARQUIVO } from '@/lib/negocio/documentos';
 import type { Compromisso, Cliente, Veiculo, Motorista, TipoCompromisso } from '@/lib/tipos';
 import estilos from './agenda.module.css';
 
@@ -97,6 +99,7 @@ export default function PaginaAgenda() {
   const [editandoId, setEditandoId] = useState<string | null>(null);
   const [salvando, setSalvando] = useState(false);
   const [erroCarga, setErroCarga] = useState('');
+  const [ficha, setFicha] = useState<Compromisso | null>(null);
 
   const podeMexer = podeEditar(usuario.nivel, 'agenda');
 
@@ -240,6 +243,53 @@ export default function PaginaAgenda() {
     }
   }
 
+  /**
+   * Ficha de atendimento: o papel que a equipe leva para a rua.
+   *
+   * Só faz sentido para compromissos de mudança e de rota — são os que têm
+   * cliente, endereços e serviços contratados. Nos demais tipos o botão nem
+   * aparece.
+   */
+  const clienteDaFicha = ficha ? clientes.find((c) => c.id === ficha.clienteId) : undefined;
+
+  const blocosFicha = ficha
+    ? gerarFicha({
+        cliente: {
+          nome: clienteDaFicha?.nome ?? ficha.titulo,
+          tipoPessoa: clienteDaFicha?.tipo ?? 'PF',
+          documento: clienteDaFicha?.documento ?? '',
+          telefone: clienteDaFicha?.telefone ?? '',
+          email: clienteDaFicha?.email ?? '',
+          // O endereço do compromisso tem precedência sobre o do cadastro:
+          // esta mudança pode sair de um lugar diferente do usual.
+          enderecoColeta: ficha.enderecoColeta || clienteDaFicha?.enderecoColeta || '',
+          enderecoEntrega: ficha.enderecoEntrega || clienteDaFicha?.enderecoEntrega || '',
+        },
+        titulo: ficha.titulo,
+        data: ficha.data,
+        horario: ficha.horario,
+        diaInteiro: ficha.diaInteiro,
+        veiculo: nomeVeiculo(ficha.veiculoId) ?? '',
+        motorista: nomeMotorista(ficha.motoristaId) ?? '',
+        volumeM3: clienteDaFicha?.volumeM3 ?? null,
+        caracteristicas: ficha.caracteristicas,
+        observacoes: ficha.observacoes,
+      })
+    : [];
+
+  function imprimirFicha() {
+    const anterior = document.title;
+    const nome = (clienteDaFicha?.nome ?? ficha?.titulo ?? 'ficha').replace(/\s+/g, '-');
+    document.title = `${NOME_ARQUIVO.ficha}-${nome}`;
+    window.print();
+    document.title = anterior;
+  }
+
+  /** Tipos que rendem ficha: os que envolvem cliente e endereços. */
+  function geraFicha(c: Compromisso): boolean {
+    return c.tipo === 'cliente' || c.tipo === 'rota';
+  }
+
   function alternarCaracteristica(item: string) {
     if (!formulario) return;
     const atuais = formulario.caracteristicas;
@@ -257,6 +307,7 @@ export default function PaginaAgenda() {
 
   return (
     <>
+      <div className="sem-impressao">
       <TituloPagina
         titulo="Agenda"
         subtitulo="Mudanças, visitas técnicas, saídas de rota e compromissos internos."
@@ -442,6 +493,18 @@ export default function PaginaAgenda() {
                   Excluir
                 </button>
               )}
+              {geraFicha(detalhe) && (
+                <button
+                  type="button"
+                  className="btn btn-gold"
+                  onClick={() => {
+                    setFicha(detalhe);
+                    setDetalhe(null);
+                  }}
+                >
+                  Gerar ficha
+                </button>
+              )}
               {podeMexer && (
                 <button
                   type="button"
@@ -530,6 +593,36 @@ export default function PaginaAgenda() {
               {detalhe.observacoes || '—'}
             </Dado>
           </dl>
+        )}
+      </Modal>
+
+      </div>
+
+      {/* ---------- Ficha de atendimento ---------- */}
+      <Modal
+        titulo="Ficha de atendimento"
+        aberto={ficha !== null}
+        aoFechar={() => setFicha(null)}
+        largo
+        rodape={
+          <>
+            <button type="button" className="btn btn-ghost" onClick={() => setFicha(null)}>
+              Fechar
+            </button>
+            <button type="button" className="btn btn-primary" onClick={imprimirFicha}>
+              Imprimir / salvar PDF
+            </button>
+          </>
+        }
+      >
+        {ficha && (
+          <FolhaDocumento
+            titulo={TITULO_DOCUMENTO.ficha}
+            subtitulo="Documento operacional da equipe"
+            blocos={blocosFicha}
+            clienteNome={clienteDaFicha?.nome ?? ficha.titulo}
+            clienteDocumento={clienteDaFicha?.documento ?? ''}
+          />
         )}
       </Modal>
 

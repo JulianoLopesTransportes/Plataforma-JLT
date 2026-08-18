@@ -166,280 +166,69 @@
   font-variant-numeric: tabular-nums;
 }
 
-/* ==========================================================================
-   A FOLHA — o documento em si
-   ========================================================================== */
-.previa {
-  min-width: 0;
+
+/* --- Item digitado à mão, fora do catálogo --- */
+.adicionarItem {
+  display: flex;
+  gap: var(--space-1);
+  margin-bottom: var(--space-2);
 }
 
-.folha {
-  background: var(--color-white);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-md);
-  box-shadow: var(--shadow-card);
-  padding: var(--space-5);
+.adicionarItem input {
+  flex: 1;
+  min-width: 0;
+  font-family: var(--font-body);
   font-size: 13px;
-  line-height: 1.65;
+  padding: 7px 10px;
+  border: 1.5px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-white);
   color: var(--color-text);
 }
 
-/* --- Cabeçalho --- */
-.cabecalhoDocumento {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  gap: var(--space-3);
-  font-size: 11.5px;
+.adicionarItem input:focus {
+  outline: none;
+  border-color: var(--color-primary);
 }
 
-.marcaDocumento {
-  display: flex;
-  flex-direction: column;
-  gap: 3px;
-}
-
-.logoDocumento {
-  width: 235px;
-  height: auto;
-  display: block;
-  margin-bottom: 2px;
-}
-
-.marcaDocumento small {
+.removerItem {
+  width: 24px;
+  height: 24px;
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  font-size: 15px;
+  line-height: 1;
   color: var(--color-gray-600);
-  font-size: 11px;
-}
-
-.contatoCabecalho {
-  text-align: right;
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  color: var(--color-gray-600);
-  padding-top: 4px;
-}
-
-.reguaDocumento {
-  border: none;
-  border-top: 2px solid var(--color-primary);
-  margin: var(--space-2) 0 var(--space-3);
-}
-
-/*
- * Faixa preenchida atrás do título — o grafismo de fundo do modelo em uso
- * pela empresa: bloco claro ocupando a largura toda, título centralizado
- * em vermelho institucional. O selo de validade flutua à direita.
- */
-.caixaTitulo {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: var(--space-3);
-  margin-bottom: var(--space-2);
-  flex-wrap: wrap;
-  position: relative;
-  background: var(--color-bg);
-  border-radius: var(--radius-sm);
-  padding: var(--space-2) var(--space-4);
+  margin-left: 4px;
 }
 
-.tituloDocumento {
-  font-family: var(--font-display);
-  font-size: 23px;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  margin: 0;
-  color: var(--color-primary);
+.removerItem:hover {
+  border-color: var(--color-danger);
+  color: var(--color-danger);
+}
+
+.listaVazia {
+  padding: var(--space-3);
   text-align: center;
-}
-
-/* Legenda abaixo da faixa. */
-.subtituloDocumento {
-  text-align: center;
-  font-size: 11px;
-  color: var(--color-gray-600);
-  text-transform: uppercase;
-  letter-spacing: 0.07em;
-  margin: 0 0 var(--space-4);
-}
-
-.selo {
-  background: var(--color-gold);
-  color: var(--color-black);
-  border-radius: 20px;
-  padding: 4px 14px;
-  font-size: 11.5px;
-  font-weight: 700;
-  white-space: nowrap;
-}
-
-/* --- Corpo --- */
-.secaoTitulo {
-  font-family: var(--font-display);
-  font-size: 14px;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  color: var(--color-primary);
-  margin: var(--space-3) 0 var(--space-1);
-  padding-bottom: 3px;
-  border-bottom: 1.5px solid var(--color-primary);
-}
-
-.paragrafo {
-  margin: 0 0 7px;
-  text-align: justify;
-}
-
-.lista {
-  margin: 0 0 var(--space-2);
-  padding-left: var(--space-4);
-}
-
-.lista li {
-  padding: 1px 0;
-}
-
-.nota {
-  font-size: 11px;
-  color: var(--color-gray-600);
-  text-align: center;
-  margin: 0 0 var(--space-2);
-}
-
-.aviso {
+  font-size: 12.5px;
   color: var(--color-gray-600);
   font-style: italic;
-}
-
-.quebraPagina {
-  height: var(--space-4);
-}
-
-/* --- Inventário no documento --- */
-.blocoAmbiente {
-  margin-bottom: var(--space-2);
-  break-inside: avoid;
-}
-
-.nomeAmbiente {
-  font-family: var(--font-body);
-  font-size: 12.5px;
-  font-weight: 700;
-  text-transform: none;
-  letter-spacing: 0;
-  margin-bottom: 3px;
-}
-
-.tabelaDocumento {
-  width: 100%;
-  border-collapse: collapse;
-  box-shadow: none;
-  border-radius: 0;
-  background: transparent;
-}
-
-.tabelaDocumento td {
-  padding: 3px 6px;
-  border-bottom: 1px dotted var(--color-border);
-  font-size: 12px;
-  background: transparent;
-}
-
-.tabelaDocumento tr:hover td {
-  background: transparent;
-}
-
-.quantidadeCelula {
-  text-align: right;
-  width: 60px;
-  font-weight: 600;
-  font-variant-numeric: tabular-nums;
-}
-
-.totalInventario {
-  margin: var(--space-2) 0;
-  padding-top: var(--space-1);
-  border-top: 2px solid var(--color-primary);
-}
-
-/* --- Assinaturas --- */
-.assinaturas {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: var(--space-5);
-  text-align: center;
-  margin-top: var(--space-6);
-  break-inside: avoid;
-}
-
-.linhaAssinatura {
-  border-top: 1px solid var(--color-text);
-  margin-bottom: 5px;
-}
-
-.assinaturas span {
-  display: block;
-  font-size: 12px;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-}
-
-.assinaturas small {
-  display: block;
-  font-size: 11px;
-  color: var(--color-gray-600);
-}
-
-.rodapeDocumento {
-  margin-top: var(--space-5);
-  padding-top: var(--space-2);
-  border-top: 1px solid var(--color-border);
-  text-align: center;
-  font-size: 10.5px;
-  color: var(--color-gray-600);
-}
-
-@media (max-width: 1100px) {
-  .grade {
-    grid-template-columns: 1fr;
-  }
-
-  .painel {
-    position: static;
-    max-height: none;
-  }
+  margin: 0;
 }
 
 /* --------------------------------------------------------------------------
-   Impressão: só a folha, sem sombra nem borda, ocupando a página inteira.
+   Campos do painel, um abaixo do outro.
+
+   O painel é estreito mesmo no desktop, e no celular ocupa a tela toda.
+   Duas ou três colunas ali espremiam rótulo e campo. Empilhar resolve nos
+   dois casos, então vale sempre — não só no breakpoint.
    -------------------------------------------------------------------------- */
-@media print {
-  .grade {
-    display: block;
-  }
-
-  .folha {
-    border: none;
-    box-shadow: none;
-    border-radius: 0;
-    padding: 0;
-    font-size: 11pt;
-  }
-
-  .secaoTitulo,
-  .paragrafo {
-    break-inside: avoid;
-  }
-
-  .secaoTitulo {
-    break-after: avoid;
-  }
-
-  /* O Anexo I do guarda-móveis começa em página nova. */
-  .quebraPagina {
-    break-before: page;
-    height: 0;
-  }
+.painel :global(.form-row),
+.painel :global(.form-row-3) {
+  grid-template-columns: 1fr;
 }

@@ -345,3 +345,40 @@
   color: var(--color-gray-600);
   font-size: 14px;
 }
+
+/* --------------------------------------------------------------------------
+   Impressão de um documento aberto em modal.
+
+   O modal é um overlay fixo: no papel, isso vira uma página com o conteúdo
+   cortado e o resto da tela por baixo. Aqui ele volta ao fluxo normal e a
+   moldura do próprio modal (título e botões) some — o que vai para o papel
+   é só o documento.
+
+   Quem esconde o conteúdo atrás é a classe `sem-impressao` na página.
+   -------------------------------------------------------------------------- */
+@media print {
+  .modalFundo {
+    position: static;
+    background: none;
+    padding: 0;
+    overflow: visible;
+    display: block;
+  }
+
+  .modal,
+  .modalLargo {
+    max-width: none;
+    box-shadow: none;
+    border-radius: 0;
+    margin: 0;
+  }
+
+  .modalCabecalho,
+  .modalRodape {
+    display: none;
+  }
+
+  .modalCorpo {
+    padding: 0;
+  }
+}

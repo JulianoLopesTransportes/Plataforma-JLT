@@ -371,3 +371,62 @@
     grid-template-columns: 1fr;
   }
 }
+
+/* Cartão do kanban + menu de status logo abaixo dele. */
+.envolucroCartao {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.seletorStatus {
+  width: 100%;
+  font-family: var(--font-body);
+  font-size: 12px;
+  font-weight: 600;
+  padding: 5px 8px;
+  border: 1.5px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface);
+  color: var(--color-gray-600);
+  cursor: pointer;
+}
+
+.seletorStatus:hover,
+.seletorStatus:focus {
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+  outline: none;
+}
+
+/* Menu de status no rodapé do detalhe, à esquerda dos botões. */
+.statusDetalhe {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin-right: auto;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--color-gray-600);
+  font-weight: 600;
+}
+
+.statusDetalhe select {
+  font-family: var(--font-body);
+  font-size: 13.5px;
+  font-weight: 600;
+  text-transform: none;
+  letter-spacing: 0;
+  padding: 8px 12px;
+  border: 1.5px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface);
+  color: var(--color-text);
+  cursor: pointer;
+}
+
+.statusDetalhe select:focus {
+  outline: none;
+  border-color: var(--color-primary);
+}

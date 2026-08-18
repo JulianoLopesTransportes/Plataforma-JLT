@@ -262,3 +262,27 @@
     font-size: 12.5px;
   }
 }
+
+/* Serviços contratados, no formulário de compromisso. */
+.gradeServicos {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4px var(--space-3);
+}
+
+/* Falha ao carregar — permissão negada, rede fora, banco pausado. */
+.erroCarga {
+  background: var(--color-danger-bg);
+  color: var(--color-danger);
+  border-left: 3px solid var(--color-danger);
+  border-radius: var(--radius-sm);
+  padding: var(--space-2) var(--space-3);
+  font-size: 13.5px;
+  margin-bottom: var(--space-3);
+}
+
+@media (max-width: 640px) {
+  .gradeServicos {
+    grid-template-columns: 1fr;
+  }
+}

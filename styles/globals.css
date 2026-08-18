@@ -328,3 +328,29 @@ tbody tr:hover td {
     display: none !important;
   }
 }
+
+/* --------------------------------------------------------------------------
+   Página impressa
+
+   Sem @page, cada navegador aplica a própria margem padrão — e o mesmo
+   contrato sai diferente no Chrome e no Edge. 14mm dá respiro suficiente
+   sem desperdiçar linha, e deixa espaço para grampo na lateral.
+   -------------------------------------------------------------------------- */
+@page {
+  size: A4;
+  margin: 14mm;
+}
+
+@media print {
+  html,
+  body {
+    background: var(--color-white);
+    /* Sem isto, o Chrome herda o fundo bege da tela e imprime uma
+       chapada de cor em toda a página. */
+  }
+
+  /* Ninguém deve gerar rolagem horizontal no papel. */
+  body {
+    overflow-x: visible;
+  }
+}

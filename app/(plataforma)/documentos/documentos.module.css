@@ -5,6 +5,17 @@
   align-items: start;
 }
 
+/*
+ * Coluna da pré-visualização.
+ *
+ * min-width: 0 é obrigatório: item de grid tem min-width auto por padrão e
+ * não encolhe abaixo do próprio conteúdo. Sem isto a coluna estica e o
+ * texto do documento vaza para fora da página impressa.
+ */
+.previa {
+  min-width: 0;
+}
+
 .painel {
   position: sticky;
   top: calc(var(--header-height) + var(--space-3));
@@ -231,4 +242,25 @@
 .painel :global(.form-row),
 .painel :global(.form-row-3) {
   grid-template-columns: 1fr;
+}
+
+/* --------------------------------------------------------------------------
+   Impressão
+
+   A grade precisa virar bloco: o painel some por 'sem-impressao', mas a
+   coluna de 380px continuaria reservada, espremendo o documento no resto
+   da largura e empurrando-o para a direita.
+   -------------------------------------------------------------------------- */
+@media print {
+  .grade {
+    display: block;
+  }
+
+  .painel {
+    display: none;
+  }
+
+  .previa {
+    width: 100%;
+  }
 }

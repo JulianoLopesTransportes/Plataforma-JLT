@@ -1,10 +1,6 @@
 /* ==========================================================================
    A FOLHA — o documento em si
    ========================================================================== */
-.previa {
-  min-width: 0;
-}
-
 .folha {
   background: var(--color-white);
   border: 1px solid var(--color-border);
@@ -20,7 +16,8 @@
 /*
  * Cabeçalho enxuto: a altura é a da logo mais um respiro mínimo. A margem
  * negativa à esquerda leva a marca ao canto real da folha, sem que o resto
- * do texto perca o recuo.
+ * do texto perca o recuo — e é cancelada na impressão, onde a folha já
+ * começa na margem do papel.
  */
 .cabecalhoDocumento {
   display: flex;
@@ -260,10 +257,6 @@
    Impressão: só a folha, sem sombra nem borda, ocupando a página inteira.
    -------------------------------------------------------------------------- */
 @media print {
-  .grade {
-    display: block;
-  }
-
   .folha {
     border: none;
     box-shadow: none;
@@ -279,6 +272,26 @@
 
   .secaoTitulo {
     break-after: avoid;
+  }
+
+  /*
+   * Na tela a folha tem recuo e a margem negativa leva a logo ao canto.
+   * No papel a folha já começa na margem da página — manter a margem
+   * negativa jogaria a marca para FORA da área imprimível.
+   */
+  .cabecalhoDocumento {
+    margin-left: 0;
+    padding-left: 0;
+  }
+
+  /* Nada pode ultrapassar a largura do papel. */
+  .folha,
+  .folha * {
+    max-width: 100%;
+  }
+
+  .paragrafo {
+    overflow-wrap: break-word;
   }
 
   /* O Anexo I do guarda-móveis começa em página nova. */

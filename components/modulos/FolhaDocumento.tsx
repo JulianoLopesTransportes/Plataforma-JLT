@@ -86,8 +86,8 @@ function Cabecalho({
           <Image
             src="/logo-jlt.png"
             alt={EMPRESA.nomeFantasia}
-            width={235}
-            height={108}
+            width={200}
+            height={127}
             priority
             className={estilos.logoDocumento}
           />

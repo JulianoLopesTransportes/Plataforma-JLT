@@ -47,7 +47,7 @@ export default function Sidebar({ nivel, colapsada, aberta, aoAlternarColapso, a
               src="/logo-jlt.png"
               alt="Juliano Lopes Transportes"
               width={210}
-              height={96}
+              height={134}
               priority
               style={{ width: '100%', height: 'auto' }}
             />

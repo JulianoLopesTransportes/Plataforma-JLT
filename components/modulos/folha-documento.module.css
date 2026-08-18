@@ -34,8 +34,11 @@
   flex-direction: column;
 }
 
+/* 200px: com a proporção da logo completa (1,57:1) isso dá ~127px de
+   altura, que é a altura do cabeçalho. Mais largo que isso e o cabeçalho
+   volta a crescer. */
 .logoDocumento {
-  width: 235px;
+  width: 200px;
   height: auto;
   display: block;
 }

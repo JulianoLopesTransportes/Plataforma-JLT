@@ -11,8 +11,8 @@
  * comercial nem veem o item na sidebar.
  */
 
-import { useEffect, useState, useMemo } from 'react';
-import { api } from '@/lib/api';
+import { useEffect, useState, useMemo, useCallback } from 'react';
+import { api, usandoBanco } from '@/lib/api';
 import { useUsuario } from '@/components/layout/SessaoProvider';
 import { podeEditar, podeFazer } from '@/lib/permissoes';
 import { formatarBRL, formatarData, hojeISO, novoId, paraNumero } from '@/lib/utils/formato';
@@ -78,27 +78,36 @@ export default function PaginaFinanceiro() {
 
   const [formAberto, setFormAberto] = useState(false);
   const [formulario, setFormulario] = useState(LANCAMENTO_VAZIO);
+  const [salvando, setSalvando] = useState(false);
+  const [erroCarga, setErroCarga] = useState('');
 
   const podeMexer = podeEditar(usuario.nivel, 'financeiro');
   const podeExcluir = podeFazer(usuario.nivel, 'excluir');
   const podeExportar = podeFazer(usuario.nivel, 'exportar');
 
-  useEffect(() => {
-    Promise.all([
-      api.financeiro.listar(),
-      api.clientes.listar(),
-      api.veiculos.listar(),
-      api.motoristas.listar(),
-      api.financeiro.categorias(),
-    ]).then(([l, c, v, m, cat]) => {
+  const recarregar = useCallback(async () => {
+    try {
+      const [l, cat] = await Promise.all([api.financeiro.listar(), api.financeiro.categorias()]);
       setLancamentos(l);
-      setClientes(c);
-      setVeiculos(v);
-      setMotoristas(m);
       setCategorias(cat);
+      setErroCarga('');
+    } catch (e) {
+      setErroCarga(e instanceof Error ? e.message : 'Falha ao carregar lançamentos.');
+    } finally {
       setCarregando(false);
-    });
+    }
   }, []);
+
+  useEffect(() => {
+    Promise.all([api.clientes.listar(), api.veiculos.listar(), api.motoristas.listar()]).then(
+      ([c, v, m]) => {
+        setClientes(c);
+        setVeiculos(v);
+        setMotoristas(m);
+      },
+    );
+    recarregar();
+  }, [recarregar]);
 
   /* --- Nomes dos vínculos ----------------------------------------------- */
   const nomeCliente = (id: string | null) => clientes.find((c) => c.id === id)?.nome ?? null;
@@ -161,13 +170,23 @@ export default function PaginaFinanceiro() {
 
   /* --- Ações ------------------------------------------------------------ */
 
-  function excluirLancamento(l: Lancamento) {
+  async function excluirLancamento(l: Lancamento) {
     if (!confirm(`Excluir o lançamento "${l.descricao}"?`)) return;
-    setLancamentos((lista) => lista.filter((x) => x.id !== l.id));
-    mostrar('Lançamento excluído.', 'sucesso');
+
+    try {
+      if (usandoBanco()) {
+        await api.financeiro.excluir(l.id);
+        await recarregar();
+      } else {
+        setLancamentos((lista) => lista.filter((x) => x.id !== l.id));
+      }
+      mostrar('Lançamento excluído.', 'sucesso');
+    } catch (e) {
+      mostrar(e instanceof Error ? e.message : 'Falha ao excluir.', 'erro');
+    }
   }
 
-  function salvar(evento: React.FormEvent) {
+  async function salvar(evento: React.FormEvent) {
     evento.preventDefault();
 
     const valor = paraNumero(formulario.valor);
@@ -176,8 +195,7 @@ export default function PaginaFinanceiro() {
       return;
     }
 
-    const lancamento: Lancamento = {
-      id: novoId('lan'),
+    const dados = {
       tipo: formulario.tipo,
       data: formulario.data,
       valor,
@@ -188,13 +206,30 @@ export default function PaginaFinanceiro() {
       clienteId: formulario.clienteId || null,
     };
 
-    setLancamentos((lista) => [lancamento, ...lista]);
-    if (!categorias.includes(lancamento.categoria)) {
-      setCategorias((c) => [...c, lancamento.categoria].sort((a, b) => a.localeCompare(b, 'pt-BR')));
+    setSalvando(true);
+
+    try {
+      if (usandoBanco()) {
+        await api.financeiro.criar(dados);
+        await recarregar();
+      } else {
+        const lancamento: Lancamento = { ...dados, id: novoId('lan') };
+        setLancamentos((lista) => [lancamento, ...lista]);
+        if (!categorias.includes(lancamento.categoria)) {
+          setCategorias((c) =>
+            [...c, lancamento.categoria].sort((a, b) => a.localeCompare(b, 'pt-BR')),
+          );
+        }
+      }
+
+      setFormAberto(false);
+      setFormulario(LANCAMENTO_VAZIO);
+      mostrar('Lançamento registrado.', 'sucesso');
+    } catch (e) {
+      mostrar(e instanceof Error ? e.message : 'Falha ao registrar.', 'erro');
+    } finally {
+      setSalvando(false);
     }
-    setFormAberto(false);
-    setFormulario(LANCAMENTO_VAZIO);
-    mostrar('Lançamento registrado.', 'sucesso');
   }
 
   function exportarCSV() {
@@ -295,6 +330,8 @@ export default function PaginaFinanceiro() {
           </>
         }
       />
+
+      {erroCarga && <div className={estilos.erroCarga}>{erroCarga}</div>}
 
       <GradeMetricas>
         <CardMetrica
@@ -444,8 +481,13 @@ export default function PaginaFinanceiro() {
             <button type="button" className="btn btn-ghost" onClick={() => setFormAberto(false)}>
               Cancelar
             </button>
-            <button type="submit" form="form-lancamento" className="btn btn-primary">
-              Salvar lançamento
+            <button
+              type="submit"
+              form="form-lancamento"
+              className="btn btn-primary"
+              disabled={salvando}
+            >
+              {salvando ? 'Salvando…' : 'Salvar lançamento'}
             </button>
           </>
         }

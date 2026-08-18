@@ -234,14 +234,20 @@ export type FaixaVolume = {
   valorBase: number;
 };
 
-export type TipoAdicional = 'fixo' | 'percentual';
+export type TipoAdicional = 'fixo' | 'percentual' | 'por_unidade';
 
 export type Adicional = {
   id: string;
   nome: string;
   tipo: TipoAdicional;
-  /** BRL quando tipo='fixo'; pontos percentuais quando tipo='percentual'. */
+  /**
+   * fixo        → valor em BRL, cobrado uma vez
+   * percentual  → pontos percentuais sobre o preço base da faixa
+   * por_unidade → valor em BRL por unidade, multiplicado pela quantidade
+   */
   valor: number;
+  /** Nome da unidade quando tipo='por_unidade': caixa, diária, ajudante, km. */
+  unidade?: string;
 };
 
 export type StatusOrcamento = 'rascunho' | 'enviado' | 'aprovado' | 'recusado';

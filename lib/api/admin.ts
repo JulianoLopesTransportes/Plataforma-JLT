@@ -128,11 +128,15 @@ export const usuarios = {
    ========================================================================== */
 
 export type FaixaVolumeDb = { id: string; ate: number; valorBase: number };
+export type TipoAdicionalDb = 'fixo' | 'percentual' | 'por_unidade';
+
 export type AdicionalDb = {
   id: string;
   nome: string;
-  tipo: 'fixo' | 'percentual';
+  tipo: TipoAdicionalDb;
   valor: number;
+  /** Nome da unidade quando tipo = por_unidade. Vazio nos demais. */
+  unidade: string;
   ativo: boolean;
 };
 export type ParametrosGerais = {
@@ -155,7 +159,7 @@ export const precificacao = {
 
     const [{ data: faixas }, { data: adicionais }, { data: gerais }] = await Promise.all([
       cliente.from('faixas_volume').select('id, ate, valor_base').order('ate'),
-      cliente.from('adicionais').select('id, nome, tipo, valor, ativo').order('nome'),
+      cliente.from('adicionais').select('id, nome, tipo, valor, unidade, ativo').order('nome'),
       cliente
         .from('parametros_precificacao')
         .select('custo_por_km, margem_minima, margem_maxima')
@@ -167,8 +171,9 @@ export const precificacao = {
       adicionais: (adicionais ?? []).map((a) => ({
         id: a.id,
         nome: a.nome,
-        tipo: a.tipo as 'fixo' | 'percentual',
+        tipo: a.tipo as TipoAdicionalDb,
         valor: a.valor,
+        unidade: a.unidade ?? '',
         ativo: a.ativo,
       })),
       gerais: gerais
@@ -188,6 +193,9 @@ export const precificacao = {
     if (dados.margemMaxima >= 100) {
       // preço = custo / (1 - margem) tende ao infinito perto de 100%.
       throw new Error('A margem máxima precisa ficar abaixo de 100%.');
+    }
+    if (dados.margemMinima <= -100) {
+      throw new Error('A margem mínima precisa ficar acima de −100%.');
     }
 
     const { error } = await supabase()
@@ -222,11 +230,19 @@ export const precificacao = {
   async salvarAdicional(adicional: {
     id?: string;
     nome: string;
-    tipo: 'fixo' | 'percentual';
+    tipo: TipoAdicionalDb;
     valor: number;
+    unidade?: string;
   }): Promise<void> {
     const cliente = supabase();
-    const payload = { nome: adicional.nome, tipo: adicional.tipo, valor: adicional.valor };
+    const payload = {
+      nome: adicional.nome,
+      tipo: adicional.tipo,
+      valor: adicional.valor,
+      // A unidade só faz sentido no tipo por_unidade; nos outros fica vazia
+      // para não deixar resíduo de uma troca de tipo.
+      unidade: adicional.tipo === 'por_unidade' ? (adicional.unidade ?? '') : '',
+    };
 
     const { error } = adicional.id
       ? await cliente.from('adicionais').update(payload).eq('id', adicional.id)

@@ -1,34 +1,43 @@
 'use client';
 
 /**
- * PAINEL DE PARÂMETROS DE PRECIFICAÇÃO — editável.
+ * PARÂMETROS DE PRECIFICAÇÃO — acordeão.
  *
- * Faixas de volume, adicionais, custo por km e limites de margem. Tudo o
- * que alimenta a calculadora de orçamento.
- *
- * PERMISSÃO: só admin e financeiro chegam aqui — a capacidade é
- * `editar_parametros_precificacao`. E não é só a interface que decide: as
- * policies de `faixas_volume`, `adicionais` e `parametros_precificacao`
- * exigem a mesma capacidade, então uma chamada direta à API é recusada
- * pelo banco do mesmo jeito.
+ * Três seções que abrem uma de cada vez, para a tela ficar limpa enquanto
+ * ninguém está editando. Permissão: `editar_parametros_precificacao`, que
+ * as policies do banco também exigem.
  */
 
 import { useEffect, useState, useCallback } from 'react';
-import { precificacao, type FaixaVolumeDb, type AdicionalDb, type ParametrosGerais } from '@/lib/api/admin';
+import {
+  precificacao,
+  type FaixaVolumeDb,
+  type AdicionalDb,
+  type ParametrosGerais,
+  type TipoAdicionalDb,
+} from '@/lib/api/admin';
 import { formatarBRL, paraNumero } from '@/lib/utils/formato';
 import { Modal, useToast } from '@/components/ui';
+import Icone from '@/components/layout/Icone';
 import estilos from './painel-precificacao.module.css';
+
+type Secao = 'gerais' | 'faixas' | 'adicionais' | null;
+
+const ROTULO_TIPO: Record<TipoAdicionalDb, string> = {
+  fixo: 'Valor fixo',
+  percentual: 'Percentual',
+  por_unidade: 'Por unidade',
+};
 
 export default function PainelPrecificacao() {
   const { mostrar } = useToast();
 
+  const [aberta, setAberta] = useState<Secao>(null);
   const [faixas, setFaixas] = useState<FaixaVolumeDb[]>([]);
   const [adicionais, setAdicionais] = useState<AdicionalDb[]>([]);
-  const [gerais, setGerais] = useState<ParametrosGerais | null>(null);
   const [carregando, setCarregando] = useState(true);
   const [salvando, setSalvando] = useState(false);
 
-  // Formulário dos parâmetros gerais, como texto para aceitar vírgula decimal.
   const [custoKm, setCustoKm] = useState('');
   const [margemMin, setMargemMin] = useState('');
   const [margemMax, setMargemMax] = useState('');
@@ -40,7 +49,6 @@ export default function PainelPrecificacao() {
     const dados = await precificacao.ler();
     setFaixas(dados.faixas);
     setAdicionais(dados.adicionais);
-    setGerais(dados.gerais);
 
     if (dados.gerais) {
       setCustoKm(String(dados.gerais.custoPorKm).replace('.', ','));
@@ -65,6 +73,10 @@ export default function PainelPrecificacao() {
     } finally {
       setSalvando(false);
     }
+  }
+
+  function alternar(secao: Exclude<Secao, null>) {
+    setAberta((atual) => (atual === secao ? null : secao));
   }
 
   function salvarGerais(evento: React.FormEvent) {
@@ -105,15 +117,21 @@ export default function PainelPrecificacao() {
     evento.preventDefault();
     if (!adicionalEditando) return;
 
+    const tipo = (adicionalEditando.tipo ?? 'fixo') as TipoAdicionalDb;
     const dados = {
       id: adicionalEditando.id,
       nome: (adicionalEditando.nome ?? '').trim(),
-      tipo: (adicionalEditando.tipo ?? 'fixo') as 'fixo' | 'percentual',
+      tipo,
       valor: Number(adicionalEditando.valor),
+      unidade: (adicionalEditando.unidade ?? '').trim(),
     };
 
     if (!dados.nome || !dados.valor || dados.valor <= 0) {
       mostrar('Informe nome e valor maiores que zero.', 'erro');
+      return;
+    }
+    if (tipo === 'por_unidade' && !dados.unidade) {
+      mostrar('Informe o nome da unidade — caixa, diária, ajudante…', 'erro');
       return;
     }
 
@@ -137,70 +155,88 @@ export default function PainelPrecificacao() {
     executar(() => precificacao.excluirAdicional(a.id), 'Adicional excluído.');
   }
 
-  /** Piso da faixa: o teto da faixa anterior. */
   function pisoDaFaixa(indice: number): number {
     return indice > 0 ? faixas[indice - 1].ate : 0;
+  }
+
+  function valorDoAdicional(a: AdicionalDb): string {
+    if (a.tipo === 'fixo') return formatarBRL(a.valor);
+    if (a.tipo === 'percentual') return `${a.valor}%`;
+    return `${formatarBRL(a.valor)} / ${a.unidade || 'un'}`;
   }
 
   if (carregando) {
     return <div className="card">Carregando parâmetros…</div>;
   }
 
+  const margemNegativa = paraNumero(margemMin) < 0;
+
   return (
-    <div className="card">
-      <div className="entre" style={{ marginBottom: 8 }}>
-        <h2 className="card-title" style={{ marginBottom: 0 }}>
-          Parâmetros de precificação
-        </h2>
-      </div>
-
-      <p className="field-hint" style={{ marginBottom: 20 }}>
-        Dado interno — visível apenas para Administrador e Financeiro. Alterações valem
-        imediatamente para novos cálculos; orçamentos já emitidos não mudam.
-      </p>
-
-      {/* ---------- Gerais ---------- */}
-      <form onSubmit={salvarGerais}>
-        <div className="form-row-3">
-          <div className="field">
-            <label htmlFor="custoKm">Custo por km (R$)</label>
-            <input
-              id="custoKm"
-              inputMode="decimal"
-              value={custoKm}
-              onChange={(e) => setCustoKm(e.target.value)}
-            />
+    <div className={estilos.painel}>
+      {/* ---------------- Gerais ---------------- */}
+      <Secao
+        titulo="Parâmetros gerais"
+        resumo={`${formatarBRL(paraNumero(custoKm))}/km · margem de ${margemMin}% a ${margemMax}%`}
+        aberta={aberta === 'gerais'}
+        aoAlternar={() => alternar('gerais')}
+      >
+        <form onSubmit={salvarGerais}>
+          <div className="form-row-3">
+            <div className="field">
+              <label htmlFor="custoKm">Custo por km (R$)</label>
+              <input
+                id="custoKm"
+                inputMode="decimal"
+                value={custoKm}
+                onChange={(e) => setCustoKm(e.target.value)}
+              />
+            </div>
+            <div className="field">
+              <label htmlFor="margemMin">Margem mínima (%)</label>
+              <input
+                id="margemMin"
+                inputMode="decimal"
+                value={margemMin}
+                onChange={(e) => setMargemMin(e.target.value)}
+              />
+              <p className="field-hint">
+                Aceita valor negativo — corresponde ao fator oportunidade 10.
+              </p>
+            </div>
+            <div className="field">
+              <label htmlFor="margemMax">Margem máxima (%)</label>
+              <input
+                id="margemMax"
+                inputMode="decimal"
+                value={margemMax}
+                onChange={(e) => setMargemMax(e.target.value)}
+              />
+              <p className="field-hint">Corresponde ao fator 0. Abaixo de 100%.</p>
+            </div>
           </div>
-          <div className="field">
-            <label htmlFor="margemMin">Margem mínima (%)</label>
-            <input
-              id="margemMin"
-              inputMode="decimal"
-              value={margemMin}
-              onChange={(e) => setMargemMin(e.target.value)}
-            />
-          </div>
-          <div className="field">
-            <label htmlFor="margemMax">Margem máxima (%)</label>
-            <input
-              id="margemMax"
-              inputMode="decimal"
-              value={margemMax}
-              onChange={(e) => setMargemMax(e.target.value)}
-            />
-            <p className="field-hint">Abaixo de 100% — a fórmula tende ao infinito perto disso.</p>
-          </div>
-        </div>
 
-        <button type="submit" className="btn btn-primary btn-sm" disabled={salvando}>
-          {salvando ? 'Salvando…' : 'Salvar parâmetros gerais'}
-        </button>
-      </form>
+          {margemNegativa && (
+            <p className={estilos.avisoNegativa}>
+              Com margem mínima negativa, o fator oportunidade 10 fecha o orçamento
+              <strong> abaixo do custo</strong>.
+            </p>
+          )}
 
-      {/* ---------- Faixas de volume ---------- */}
-      <div className={estilos.secao}>
-        <div className="entre">
-          <h3 className={estilos.subtitulo}>Faixas de volume</h3>
+          <button type="submit" className="btn btn-primary btn-sm" disabled={salvando}>
+            {salvando ? 'Salvando…' : 'Salvar'}
+          </button>
+        </form>
+      </Secao>
+
+      {/* ---------------- Faixas ---------------- */}
+      <Secao
+        titulo="Faixas de volume"
+        resumo={`${faixas.length} faixa${faixas.length === 1 ? '' : 's'}`}
+        aberta={aberta === 'faixas'}
+        aoAlternar={() => alternar('faixas')}
+      >
+        <div className="entre" style={{ marginBottom: 12 }}>
+          <span className="texto-secundario">Preço base por faixa de volume.</span>
           <button
             type="button"
             className="btn btn-outline btn-sm"
@@ -216,7 +252,7 @@ export default function PainelPrecificacao() {
               <tr>
                 <th>Faixa</th>
                 <th style={{ textAlign: 'right' }}>Preço base</th>
-                <th style={{ width: 150 }}></th>
+                <th style={{ width: 150 }} />
               </tr>
             </thead>
             <tbody>
@@ -251,16 +287,25 @@ export default function PainelPrecificacao() {
             </tbody>
           </table>
         </div>
-      </div>
+      </Secao>
 
-      {/* ---------- Adicionais ---------- */}
-      <div className={estilos.secao}>
-        <div className="entre">
-          <h3 className={estilos.subtitulo}>Serviços adicionais</h3>
+      {/* ---------------- Adicionais ---------------- */}
+      <Secao
+        titulo="Serviços adicionais"
+        resumo={`${adicionais.length} serviço${adicionais.length === 1 ? '' : 's'}`}
+        aberta={aberta === 'adicionais'}
+        aoAlternar={() => alternar('adicionais')}
+      >
+        <div className="entre" style={{ marginBottom: 12 }}>
+          <span className="texto-secundario">
+            Percentual incide sobre o preço base da faixa.
+          </span>
           <button
             type="button"
             className="btn btn-outline btn-sm"
-            onClick={() => setAdicionalEditando({ nome: '', tipo: 'fixo', valor: undefined })}
+            onClick={() =>
+              setAdicionalEditando({ nome: '', tipo: 'fixo', valor: undefined, unidade: '' })
+            }
           >
             Novo adicional
           </button>
@@ -271,19 +316,17 @@ export default function PainelPrecificacao() {
             <thead>
               <tr>
                 <th>Serviço</th>
-                <th>Tipo</th>
+                <th>Cobrança</th>
                 <th style={{ textAlign: 'right' }}>Valor</th>
-                <th style={{ width: 150 }}></th>
+                <th style={{ width: 150 }} />
               </tr>
             </thead>
             <tbody>
               {adicionais.map((a) => (
                 <tr key={a.id}>
                   <td>{a.nome}</td>
-                  <td>{a.tipo === 'fixo' ? 'Valor fixo' : 'Percentual'}</td>
-                  <td className="numerico">
-                    {a.tipo === 'fixo' ? formatarBRL(a.valor) : `${a.valor}%`}
-                  </td>
+                  <td>{ROTULO_TIPO[a.tipo]}</td>
+                  <td className="numerico">{valorDoAdicional(a)}</td>
                   <td>
                     <div className="linha-acoes">
                       <button
@@ -307,14 +350,9 @@ export default function PainelPrecificacao() {
             </tbody>
           </table>
         </div>
+      </Secao>
 
-        <p className="field-hint" style={{ marginTop: 12 }}>
-          Adicional percentual incide sobre o preço base da faixa, não sobre o total — assim a
-          ordem em que os adicionais são marcados não altera o resultado.
-        </p>
-      </div>
-
-      {/* ---------- Modal de faixa ---------- */}
+      {/* ---------------- Modais ---------------- */}
       <Modal
         titulo={faixaEditando?.id ? 'Editar faixa' : 'Nova faixa de volume'}
         aberto={faixaEditando !== null}
@@ -340,12 +378,10 @@ export default function PainelPrecificacao() {
                 min="1"
                 step="0.5"
                 value={faixaEditando?.ate ?? ''}
-                onChange={(e) =>
-                  setFaixaEditando({ ...faixaEditando, ate: Number(e.target.value) })
-                }
+                onChange={(e) => setFaixaEditando({ ...faixaEditando, ate: Number(e.target.value) })}
                 required
               />
-              <p className="field-hint">A faixa de maior teto funciona como &ldquo;acima de&rdquo;.</p>
+              <p className="field-hint">A faixa de maior teto vale como &ldquo;acima de&rdquo;.</p>
             </div>
 
             <div className="field">
@@ -366,7 +402,6 @@ export default function PainelPrecificacao() {
         </form>
       </Modal>
 
-      {/* ---------- Modal de adicional ---------- */}
       <Modal
         titulo={adicionalEditando?.id ? 'Editar adicional' : 'Novo adicional'}
         aberto={adicionalEditando !== null}
@@ -397,9 +432,7 @@ export default function PainelPrecificacao() {
             <input
               id="nomeAd"
               value={adicionalEditando?.nome ?? ''}
-              onChange={(e) =>
-                setAdicionalEditando({ ...adicionalEditando, nome: e.target.value })
-              }
+              onChange={(e) => setAdicionalEditando({ ...adicionalEditando, nome: e.target.value })}
               placeholder="Içamento por sacada"
               required
             />
@@ -407,25 +440,30 @@ export default function PainelPrecificacao() {
 
           <div className="form-row">
             <div className="field">
-              <label htmlFor="tipoAd">Tipo de cobrança</label>
+              <label htmlFor="tipoAd">Forma de cobrança</label>
               <select
                 id="tipoAd"
                 value={adicionalEditando?.tipo ?? 'fixo'}
                 onChange={(e) =>
                   setAdicionalEditando({
                     ...adicionalEditando,
-                    tipo: e.target.value as 'fixo' | 'percentual',
+                    tipo: e.target.value as TipoAdicionalDb,
                   })
                 }
               >
                 <option value="fixo">Valor fixo (R$)</option>
                 <option value="percentual">Percentual (%)</option>
+                <option value="por_unidade">Valor por unidade</option>
               </select>
             </div>
 
             <div className="field">
               <label htmlFor="valorAd">
-                {adicionalEditando?.tipo === 'percentual' ? 'Percentual (%)' : 'Valor (R$)'}
+                {adicionalEditando?.tipo === 'percentual'
+                  ? 'Percentual (%)'
+                  : adicionalEditando?.tipo === 'por_unidade'
+                    ? 'Valor por unidade (R$)'
+                    : 'Valor (R$)'}
               </label>
               <input
                 id="valorAd"
@@ -440,8 +478,64 @@ export default function PainelPrecificacao() {
               />
             </div>
           </div>
+
+          {adicionalEditando?.tipo === 'por_unidade' && (
+            <div className="field">
+              <label htmlFor="unidadeAd">Nome da unidade</label>
+              <input
+                id="unidadeAd"
+                value={adicionalEditando?.unidade ?? ''}
+                onChange={(e) =>
+                  setAdicionalEditando({ ...adicionalEditando, unidade: e.target.value })
+                }
+                placeholder="caixa, diária, ajudante, km…"
+                required
+              />
+              <p className="field-hint">
+                No orçamento aparece como &ldquo;{adicionalEditando?.nome || 'Serviço'} (3{' '}
+                {adicionalEditando?.unidade || 'unidade'}s)&rdquo;.
+              </p>
+            </div>
+          )}
         </form>
       </Modal>
     </div>
+  );
+}
+
+/* ==========================================================================
+   Seção do acordeão
+   ========================================================================== */
+
+function Secao({
+  titulo,
+  resumo,
+  aberta,
+  aoAlternar,
+  children,
+}: {
+  titulo: string;
+  resumo: string;
+  aberta: boolean;
+  aoAlternar: () => void;
+  children: React.ReactNode;
+}) {
+  return (
+    <section className={`${estilos.secao} ${aberta ? estilos.secaoAberta : ''}`}>
+      <button
+        type="button"
+        className={estilos.cabecalhoSecao}
+        onClick={aoAlternar}
+        aria-expanded={aberta}
+      >
+        <span className={estilos.tituloSecao}>{titulo}</span>
+        <span className={estilos.resumoSecao}>{resumo}</span>
+        <span className={`${estilos.seta} ${aberta ? estilos.setaAberta : ''}`}>
+          <Icone nome="seta" tamanho={16} />
+        </span>
+      </button>
+
+      {aberta && <div className={estilos.corpoSecao}>{children}</div>}
+    </section>
   );
 }

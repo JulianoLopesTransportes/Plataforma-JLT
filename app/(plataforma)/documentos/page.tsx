@@ -22,7 +22,7 @@ import {
   TITULO_DOCUMENTO,
   NOME_ARQUIVO,
   EMPRESA,
-  ENDERECO_SEDE,
+  ENDERECO_DEPOSITO,
   SERVICOS_INCLUSOS,
   ABRANGENCIA_IMAGEM,
   FINALIDADES_IMAGEM,
@@ -41,6 +41,16 @@ import { TituloPagina, CampoFiltro, useToast } from '@/components/ui';
 import type { Cliente } from '@/lib/tipos';
 import catalogoItens from '@/mock/catalogo-itens.json';
 import estilos from './documentos.module.css';
+
+/** Legenda sob a faixa do título, como no modelo em uso pela empresa. */
+const SUBTITULO_DOCUMENTO: Record<TipoDocumento, string> = {
+  orcamento: 'Proposta comercial de transporte e mudança',
+  contrato: 'Contrato de prestação de serviços de transporte terrestre de mudança',
+  inventario: 'Relação de bens transportados',
+  guarda: 'Contrato de prestação de serviços de guarda-móveis',
+  imagem: 'Autorização de uso de imagem',
+  comprovante: 'Recibo de conclusão de serviço',
+};
 
 const CATALOGO = catalogoItens as Record<string, string[]>;
 
@@ -76,8 +86,7 @@ export default function PaginaDocumentos() {
   const [observacao, setObservacao] = useState('');
 
   const [diaVencimento, setDiaVencimento] = useState('10');
-  const [prazoMeses, setPrazoMeses] = useState('');
-  const [enderecoDeposito, setEnderecoDeposito] = useState(ENDERECO_SEDE);
+  const [enderecoDeposito, setEnderecoDeposito] = useState(ENDERECO_DEPOSITO);
   const [dataInicio, setDataInicio] = useState(hojeISO());
 
   const [abrangencia, setAbrangencia] = useState<string[]>(['pessoal']);
@@ -168,7 +177,6 @@ export default function PaginaDocumentos() {
           valorMensal: valor ? paraNumero(valor) : null,
           diaVencimento,
           metragem,
-          prazoMeses,
           seguroIncluso,
           enderecoDeposito,
           dataInicio,
@@ -194,7 +202,7 @@ export default function PaginaDocumentos() {
   }, [
     tipo, dadosCliente, validadeDias, valor, dataColeta, servicosMarcados, outrosServicos,
     seguroIncluso, dataExecucao, dataContrato, clausulasAdicionais, dataInventario,
-    valorDeclarado, metragem, observacao, diaVencimento, prazoMeses, enderecoDeposito,
+    valorDeclarado, metragem, observacao, diaVencimento, enderecoDeposito,
     dataInicio, abrangencia, finalidades, prazoImagem, dataEntrega, recebedor, ressalvas,
   ]);
 
@@ -408,7 +416,7 @@ export default function PaginaDocumentos() {
           {/* ---------- Guarda-móveis ---------- */}
           {tipo === 'guarda' && (
             <>
-              <div className="form-row-3" style={{ marginTop: 16 }}>
+              <div className="form-row" style={{ marginTop: 16 }}>
                 <div className="field">
                   <label htmlFor="venc">Dia do vencimento</label>
                   <input
@@ -418,17 +426,6 @@ export default function PaginaDocumentos() {
                     max="31"
                     value={diaVencimento}
                     onChange={(e) => setDiaVencimento(e.target.value)}
-                  />
-                </div>
-                <div className="field">
-                  <label htmlFor="prazo">Prazo (meses)</label>
-                  <input
-                    id="prazo"
-                    type="number"
-                    min="1"
-                    value={prazoMeses}
-                    onChange={(e) => setPrazoMeses(e.target.value)}
-                    placeholder="Vazio = indeterminado"
                   />
                 </div>
                 <div className="field">
@@ -636,6 +633,7 @@ export default function PaginaDocumentos() {
             <article className={estilos.folha}>
               <CabecalhoDocumento
                 titulo={TITULO_DOCUMENTO[tipo]}
+                subtitulo={SUBTITULO_DOCUMENTO[tipo]}
                 selo={tipo === 'orcamento' ? `Válido por ${validadeDias} dias` : undefined}
               />
 
@@ -776,7 +774,15 @@ function TabelaItens({ itens }: { itens: Record<string, number> }) {
   );
 }
 
-function CabecalhoDocumento({ titulo, selo }: { titulo: string; selo?: string }) {
+function CabecalhoDocumento({
+  titulo,
+  subtitulo,
+  selo,
+}: {
+  titulo: string;
+  subtitulo?: string;
+  selo?: string;
+}) {
   return (
     <>
       <header className={estilos.cabecalhoDocumento}>
@@ -784,8 +790,9 @@ function CabecalhoDocumento({ titulo, selo }: { titulo: string; selo?: string })
           <Image
             src="/logo-jlt.png"
             alt={EMPRESA.nomeFantasia}
-            width={160}
-            height={107}
+            width={235}
+            height={157}
+            priority
             className={estilos.logoDocumento}
           />
           <small>CNPJ: {EMPRESA.cnpj}</small>
@@ -804,6 +811,8 @@ function CabecalhoDocumento({ titulo, selo }: { titulo: string; selo?: string })
         <h1 className={estilos.tituloDocumento}>{titulo}</h1>
         {selo && <div className={estilos.selo}>{selo}</div>}
       </div>
+
+      {subtitulo && <p className={estilos.subtituloDocumento}>{subtitulo}</p>}
     </>
   );
 }

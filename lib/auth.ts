@@ -22,6 +22,7 @@ export type Usuario = {
   email: string;
   nivel: Nivel;
   cargo: string;
+  usuario: string;
 };
 
 export type ResultadoAuth = {
@@ -42,6 +43,9 @@ function traduzirErro(mensagem: string): string {
   if (m.includes('acesso autorizado')) {
     // Vem da exceção do gatilho criar_perfil_do_usuario.
     return 'Este e-mail não tem acesso autorizado à plataforma. Fale com o administrador.';
+  }
+  if (m.includes('nome de usuário já está em uso')) {
+    return 'Este nome de usuário já está em uso. Escolha outro.';
   }
   if (m.includes('user already registered')) {
     return 'Este e-mail já tem cadastro. Use "Entrar" em vez de "Criar acesso".';
@@ -69,10 +73,19 @@ export async function entrar(email: string, senha: string): Promise<ResultadoAut
  * Cria o acesso de quem já foi autorizado pelo admin.
  * Falha se o e-mail não estiver na lista — a mensagem vem do banco.
  */
-export async function criarAcesso(email: string, senha: string): Promise<ResultadoAuth> {
+export async function criarAcesso(dados: {
+  email: string;
+  senha: string;
+  nome: string;
+  usuario: string;
+}): Promise<ResultadoAuth> {
   const { error } = await supabase().auth.signUp({
-    email: email.trim().toLowerCase(),
-    password: senha,
+    email: dados.email.trim().toLowerCase(),
+    password: dados.senha,
+    options: {
+      // O gatilho no banco lê estes campos para montar o perfil.
+      data: { nome: dados.nome.trim(), usuario: dados.usuario.trim() },
+    },
   });
 
   return error ? { ok: false, erro: traduzirErro(error.message) } : { ok: true };
@@ -119,7 +132,7 @@ export async function perfilAtual(): Promise<Usuario | null> {
 
     const { data } = await cliente
       .from('perfis')
-      .select('id, nome, email, cargo, nivel, ativo')
+      .select('id, nome, email, cargo, nivel, usuario, ativo')
       .eq('id', user.id)
       .single();
 
@@ -131,6 +144,7 @@ export async function perfilAtual(): Promise<Usuario | null> {
       email: data.email,
       nivel: data.nivel as Nivel,
       cargo: data.cargo,
+      usuario: data.usuario ?? '',
     };
   } catch {
     // Rede fora, projeto pausado, chave inválida: tratamos como sem sessão.

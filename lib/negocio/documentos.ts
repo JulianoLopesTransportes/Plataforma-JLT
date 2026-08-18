@@ -32,6 +32,13 @@ export const EMPRESA = {
   site: 'julianoltransportes.com.br',
 };
 
+/**
+ * Endereço do DEPÓSITO de guarda-móveis. É diferente da sede: a cláusula 2.1
+ * do contrato de guarda aponta para cá, não para a Rua Levino Rodrigues.
+ */
+export const ENDERECO_DEPOSITO =
+  'Rua José Carcheno (ao lado do nº 146), Bairro Jaqueline, Belo Horizonte/MG';
+
 /** Endereço completo da sede, como aparece na qualificação das partes. */
 export const ENDERECO_SEDE = `${EMPRESA.logradouro}, Bairro ${EMPRESA.bairro}, ${EMPRESA.cidade}/${EMPRESA.uf}, CEP ${EMPRESA.cep}`;
 
@@ -553,7 +560,7 @@ export function gerarContrato(e: EntradaContrato): BlocoDocumento[] {
 
     ...blocoSeguro('contrato', e.seguroIncluso),
 
-    { tipo: 'secao', titulo: 'Cláusula 9 – Guarda, Manuseio e Acondicionamento dos Bens' },
+    { tipo: 'secao', titulo: 'Cláusula 9 – Guarda, Manuseio e Acondicionamento' },
     {
       tipo: 'paragrafo',
       partes: [
@@ -696,7 +703,6 @@ export type EntradaGuarda = {
   valorMensal: number | null;
   diaVencimento: string;
   metragem: string;
-  prazoMeses: string;
   seguroIncluso: boolean;
   enderecoDeposito: string;
   dataInicio: string;
@@ -857,7 +863,7 @@ export function gerarGuarda(e: EntradaGuarda): BlocoDocumento[] {
       tipo: 'paragrafo',
       partes: [
         { b: '10.1.' },
-        ` O presente contrato possui prazo${e.prazoMeses ? ` inicial de ${e.prazoMeses} meses` : ' indeterminado'}, iniciando-se na data da assinatura.`,
+        ' O presente contrato possui prazo indeterminado, iniciando-se na data da assinatura.',
       ],
     },
     {

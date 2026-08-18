@@ -5,7 +5,9 @@
   display: grid;
   grid-template-columns: repeat(4, 1fr);
   gap: var(--space-2);
-  align-items: start;
+  /* stretch: as quatro colunas terminam na mesma linha, mesmo com
+     quantidades diferentes de cartões. */
+  align-items: stretch;
 }
 
 .colunaKanban {
@@ -14,9 +16,12 @@
   border-radius: var(--radius-lg);
   padding: var(--space-2);
   min-width: 0;
+  display: flex;
+  flex-direction: column;
 }
 
 .cabecalhoColuna {
+  flex-shrink: 0;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -43,6 +48,7 @@
   display: flex;
   flex-direction: column;
   gap: var(--space-2);
+  flex: 1;
 }
 
 .colunaVazia {
@@ -76,6 +82,13 @@
 .cartaoTitulo {
   font-size: 14px;
   line-height: 1.3;
+  /* Duas linhas fixas: sem isto, rotas de nome curto e longo desalinham
+     a barra de ocupação entre cartões vizinhos. */
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  min-height: 2.6em;
 }
 
 .cartaoMeta {
@@ -87,13 +100,15 @@
 }
 
 /* --- Barra de ocupação --- */
+/* margin-top: auto empurra a barra para a base do cartão, alinhando-a
+   entre cartões vizinhos de alturas diferentes. */
 .barraOcupacao {
+  margin-top: auto;
   position: relative;
   background: var(--color-border);
   border-radius: 20px;
   height: 18px;
   overflow: hidden;
-  margin-top: 2px;
 }
 
 .preenchimento {
@@ -122,6 +137,7 @@
 }
 
 .semVeiculo {
+  margin-top: auto;
   font-size: 12px;
   color: var(--color-warning);
   font-weight: 600;

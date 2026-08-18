@@ -17,16 +17,6 @@
   color: var(--color-danger);
 }
 
-.avisoRecorte {
-  background: var(--color-info-bg);
-  color: var(--color-info);
-  border-left: 3px solid var(--color-info);
-  border-radius: var(--radius-sm);
-  padding: var(--space-2) var(--space-3);
-  font-size: 13px;
-  margin-bottom: var(--space-3);
-}
-
 .tituloTabela {
   font-family: var(--font-display);
   font-size: 16px;
@@ -35,19 +25,3 @@
   margin-bottom: var(--space-2);
 }
 
-/* Nota de metodologia: explicar como o número foi apurado é mais útil que
-   exibi-lo sem contexto, principalmente quando a apuração é aproximada. */
-.notaMetodologia {
-  margin-top: var(--space-4);
-  padding: var(--space-3);
-  background: var(--color-surface);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-md);
-  font-size: 12.5px;
-  line-height: 1.6;
-  color: var(--color-gray-600);
-}
-
-.notaMetodologia strong {
-  color: var(--color-text);
-}

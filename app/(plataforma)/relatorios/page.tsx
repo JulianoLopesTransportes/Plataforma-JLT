@@ -3,9 +3,8 @@
 /**
  * RELATÓRIOS — módulo novo, não existia nos arquivos originais.
  *
- * Filtros por período, cliente, motorista, veículo e status; três formas de
- * visualização (evolução temporal, comparativo por categoria e distribuição)
- * e exportação em CSV.
+ * Filtros por período, origem do cliente, motorista, veículo e status;
+ * quatro visualizações e exportação em CSV.
  *
  * RECORTE POR NÍVEL — a regra que o briefing fixa:
  *   Comercial   não vê custo.
@@ -38,6 +37,7 @@ import {
   type Coluna,
 } from '@/components/ui';
 import Grafico from '@/components/ui/Grafico';
+import { ORIGENS_CLIENTE } from '@/lib/tipos';
 import type { Lancamento, Cliente, Veiculo, Motorista, Rota, Orcamento } from '@/lib/tipos';
 import estilos from './relatorios.module.css';
 
@@ -46,7 +46,8 @@ type LinhaRelatorio = {
   id: string;
   rotaNome: string;
   clienteNome: string;
-  clienteId: string | null;
+  /** De onde veio o cliente: MudaMuda, Instagram, WhatsApp… */
+  origem: string;
   veiculoId: string | null;
   veiculoLabel: string;
   motoristaId: string | null;
@@ -74,7 +75,7 @@ export default function PaginaRelatorios() {
 
   const [de, setDe] = useState('');
   const [ate, setAte] = useState('');
-  const [filtroCliente, setFiltroCliente] = useState('');
+  const [filtroOrigem, setFiltroOrigem] = useState('');
   const [filtroMotorista, setFiltroMotorista] = useState('');
   const [filtroVeiculo, setFiltroVeiculo] = useState('');
   const [filtroStatus, setFiltroStatus] = useState('');
@@ -140,7 +141,7 @@ export default function PaginaRelatorios() {
         id: rota.id,
         rotaNome: rota.nome,
         clienteNome: nomesClientes.join(', ') || '—',
-        clienteId: clienteVinculado?.id ?? null,
+        origem: clienteVinculado?.origem ?? '',
         veiculoId: rota.veiculoId,
         veiculoLabel: veiculo ? `${veiculo.placa} — ${veiculo.modelo}` : 'Não atribuído',
         motoristaId: rota.motoristaId,
@@ -160,12 +161,12 @@ export default function PaginaRelatorios() {
         (l) =>
           (!de || l.data >= de) &&
           (!ate || l.data <= ate) &&
-          (!filtroCliente || l.clienteId === filtroCliente) &&
+          (!filtroOrigem || l.origem === filtroOrigem) &&
           (!filtroMotorista || l.motoristaId === filtroMotorista) &&
           (!filtroVeiculo || l.veiculoId === filtroVeiculo) &&
           (!filtroStatus || l.status === filtroStatus),
       ),
-    [linhas, de, ate, filtroCliente, filtroMotorista, filtroVeiculo, filtroStatus],
+    [linhas, de, ate, filtroOrigem, filtroMotorista, filtroVeiculo, filtroStatus],
   );
 
   /* ======================================================================
@@ -213,6 +214,16 @@ export default function PaginaRelatorios() {
     return [...mapa.entries()];
   }, [filtradas]);
 
+  /** Distribuição por canal de origem — de onde vêm as operações. */
+  const porOrigem = useMemo(() => {
+    const mapa = new Map<string, number>();
+    for (const l of filtradas) {
+      const chave = l.origem || 'Sem origem';
+      mapa.set(chave, (mapa.get(chave) ?? 0) + 1);
+    }
+    return [...mapa.entries()].sort((a, b) => b[1] - a[1]);
+  }, [filtradas]);
+
   /* ======================================================================
      Totais
      ====================================================================== */
@@ -228,6 +239,7 @@ export default function PaginaRelatorios() {
       'Rota',
       'Data de saída',
       'Cliente(s)',
+      'Origem',
       'Veículo',
       'Motorista',
       'Status',
@@ -241,6 +253,7 @@ export default function PaginaRelatorios() {
       l.rotaNome,
       formatarData(l.data),
       l.clienteNome,
+      l.origem,
       l.veiculoLabel,
       l.motoristaLabel,
       l.status,
@@ -274,6 +287,12 @@ export default function PaginaRelatorios() {
       rotulo: 'Saída',
       ordenarPor: (l) => l.data,
       render: (l) => formatarData(l.data),
+    },
+    {
+      chave: 'origem',
+      rotulo: 'Origem',
+      ordenarPor: (l) => l.origem,
+      render: (l) => l.origem || <span className="texto-secundario">—</span>,
     },
     { chave: 'veiculoLabel', rotulo: 'Veículo', ordenarPor: (l) => l.veiculoLabel },
     { chave: 'motoristaLabel', rotulo: 'Motorista', ordenarPor: (l) => l.motoristaLabel },
@@ -336,8 +355,6 @@ export default function PaginaRelatorios() {
     },
   ];
 
-  const semRecorteFinanceiro = !verCustos || !verFaturamento;
-
   return (
     <>
       <TituloPagina
@@ -355,17 +372,6 @@ export default function PaginaRelatorios() {
         }
       />
 
-      {semRecorteFinanceiro && (
-        <p className={estilos.avisoRecorte}>
-          {!verCustos && !verFaturamento
-            ? 'Seu nível de acesso não exibe dados financeiros neste relatório.'
-            : !verCustos
-              ? 'Seu nível de acesso não exibe custo interno — o relatório mostra volume e faturamento.'
-              : 'Seu nível de acesso não exibe faturamento — o relatório mostra volume e custos operacionais.'}{' '}
-          O mesmo recorte se aplica ao arquivo exportado.
-        </p>
-      )}
-
       <BarraFiltros>
         <CampoFiltro rotulo="De">
           <input type="date" value={de} onChange={(e) => setDe(e.target.value)} />
@@ -375,12 +381,12 @@ export default function PaginaRelatorios() {
           <input type="date" value={ate} onChange={(e) => setAte(e.target.value)} />
         </CampoFiltro>
 
-        <CampoFiltro rotulo="Cliente">
-          <select value={filtroCliente} onChange={(e) => setFiltroCliente(e.target.value)}>
-            <option value="">Todos</option>
-            {clientes.map((c) => (
-              <option key={c.id} value={c.id}>
-                {c.nome}
+        <CampoFiltro rotulo="Origem do cliente">
+          <select value={filtroOrigem} onChange={(e) => setFiltroOrigem(e.target.value)}>
+            <option value="">Todas</option>
+            {ORIGENS_CLIENTE.map((o) => (
+              <option key={o} value={o}>
+                {o}
               </option>
             ))}
           </select>
@@ -426,7 +432,7 @@ export default function PaginaRelatorios() {
             onClick={() => {
               setDe('');
               setAte('');
-              setFiltroCliente('');
+              setFiltroOrigem('');
               setFiltroMotorista('');
               setFiltroVeiculo('');
               setFiltroStatus('');
@@ -494,6 +500,7 @@ export default function PaginaRelatorios() {
             { chave: 'evolucao', rotulo: 'Evolução temporal' },
             { chave: 'veiculo', rotulo: 'Comparativo por veículo' },
             { chave: 'status', rotulo: 'Distribuição por status' },
+            { chave: 'origem', rotulo: 'Origem dos clientes' },
           ]}
           ativa={visao}
           aoTrocar={setVisao}
@@ -557,6 +564,16 @@ export default function PaginaRelatorios() {
                 altura={300}
               />
             )}
+
+            {visao === 'origem' && (
+              <Grafico
+                tipo="doughnut"
+                rotulos={porOrigem.map(([o]) => o)}
+                series={[{ rotulo: 'Operações', dados: porOrigem.map(([, q]) => q) }]}
+                corPorItem
+                altura={300}
+              />
+            )}
           </>
         )}
       </div>
@@ -579,14 +596,6 @@ export default function PaginaRelatorios() {
         />
       )}
 
-      <p className={estilos.notaMetodologia}>
-        <strong>Como estes números são apurados.</strong> O faturamento vem dos orçamentos
-        aprovados dos clientes com carga em cada rota. O custo reúne os lançamentos de gasto
-        vinculados ao veículo ou ao motorista da rota, dentro da janela entre a saída e o retorno
-        previsto. É uma atribuição direta, não um rateio contábil: despesas gerais da empresa
-        (folha, impostos, seguro da frota) não entram no custo por operação. Um rateio próprio
-        exige regra definida e entra junto com o banco de dados.
-      </p>
     </>
   );
 }

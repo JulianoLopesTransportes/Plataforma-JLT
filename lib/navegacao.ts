@@ -51,7 +51,6 @@ export const NAVEGACAO: GrupoNavegacao[] = [
     rotulo: 'Sistema',
     itens: [
       { modulo: 'usuarios', rotulo: 'Usuários', href: '/usuarios', icone: 'usuarios' },
-      { modulo: 'guia-visual', rotulo: 'Guia visual', href: '/guia-visual', icone: 'guia' },
     ],
   },
 ];

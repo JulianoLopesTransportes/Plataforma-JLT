@@ -183,12 +183,6 @@ export default function PaginaUsuarios() {
 
       {erro && <div className={estilos.erro}>{erro}</div>}
 
-      <div className={estilos.explicacao}>
-        <strong>Como o acesso é concedido.</strong> Você autoriza o e-mail aqui, definindo o nível.
-        A pessoa então cria a própria senha na tela de entrada — a senha nunca passa por esta tela.
-        E-mail que não estiver nesta lista tem o cadastro recusado pelo banco.
-      </div>
-
       <GradeMetricas>
         <CardMetrica
           rotulo="Com acesso ativo"
@@ -340,20 +334,6 @@ export default function PaginaUsuarios() {
             </table>
           </div>
 
-          <p className={estilos.nota}>
-            A matriz é a regra de acesso do sistema e existe em dois lugares que precisam
-            concordar: <code>lib/permissoes.ts</code>, que controla a interface, e a tabela{' '}
-            <code>permissoes_modulo</code> no Postgres, que o RLS consulta. A duplicação é
-            proposital — uma policy do banco não consegue ler um objeto TypeScript, e é o banco que
-            garante a regra mesmo contra acesso direto à API.
-          </p>
-
-          <p className={estilos.nota}>
-            Dois recortes não cabem numa matriz por módulo e vivem como capacidades transversais: o
-            Comercial usa a calculadora mas não vê custo nem margem, e o Operacional vê custo
-            operacional mas não vê faturamento. Para alterar a matriz é preciso mudar o código e o
-            banco juntos — por isso ela não é editável por esta tela.
-          </p>
         </>
       )}
 

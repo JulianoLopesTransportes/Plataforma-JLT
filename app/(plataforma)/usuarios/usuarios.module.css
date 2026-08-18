@@ -1,11 +1,3 @@
-.nota code {
-  font-family: ui-monospace, 'Cascadia Mono', 'Consolas', monospace;
-  font-size: 12px;
-  background: var(--color-bg);
-  padding: 1px 5px;
-  border-radius: 3px;
-}
-
 .gradeUsuarios {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
@@ -98,24 +90,6 @@
   border-radius: var(--radius-md);
 }
 
-.nota {
-  margin-top: var(--space-3);
-  font-size: 12.5px;
-  line-height: 1.6;
-  color: var(--color-gray-600);
-}
-
-/* Explicação do fluxo de acesso, no topo da tela. */
-.explicacao {
-  background: var(--color-info-bg);
-  color: var(--color-info);
-  border-left: 3px solid var(--color-info);
-  border-radius: var(--radius-sm);
-  padding: var(--space-2) var(--space-3);
-  font-size: 13px;
-  line-height: 1.6;
-  margin-bottom: var(--space-3);
-}
 
 .erro {
   background: var(--color-danger-bg);

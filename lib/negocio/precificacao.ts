@@ -46,26 +46,73 @@ export function rotuloFaixa(faixas: FaixaVolume[], faixa: FaixaVolume): string {
  * menor para a mesma taxa. A distinção importa: a 40%, markup devolve
  * 1,40× o custo e margem devolve 1,67×.
  *
- * Por isso a margem máxima precisa ficar bem abaixo de 100%: a fórmula
- * tende ao infinito quando a margem se aproxima de 1.
+ * MARGEM NEGATIVA É PERMITIDA e é usada de propósito para fechar abaixo do
+ * custo. A fórmula lida com isso sem caso especial: a −40% ela devolve
+ * custo / 1,4, ou seja ~71% do custo.
+ *
+ * O teto é que precisa de trava: perto de 100% a divisão tende ao infinito.
  */
+export const MARGEM_TETO = 95;
+export const MARGEM_PISO = -95;
+
 export function precoComMargem(custo: number, margemPercentual: number): number {
-  const margem = Math.min(margemPercentual, 99) / 100;
-  return custo / (1 - margem);
+  const limitada = Math.max(MARGEM_PISO, Math.min(margemPercentual, MARGEM_TETO));
+  return custo / (1 - limitada / 100);
 }
 
-/** Quanto da margem, em BRL, está embutido no preço. */
+/**
+ * Quanto a margem acrescenta ao custo, em BRL.
+ * Negativo quando a margem é negativa — é o desconto embutido.
+ */
 export function valorDaMargem(custo: number, margemPercentual: number): number {
   return precoComMargem(custo, margemPercentual) - custo;
 }
 
+/* ==========================================================================
+   Fator oportunidade
+   ========================================================================== */
+
+/** Escala do controle na tela: 0 a 10, de meio em meio. */
+export const FATOR_MIN = 0;
+export const FATOR_MAX = 10;
+export const FATOR_PASSO = 0.5;
+
 /**
- * Margem sugerida a partir de uma escala 0–10, onde 0 é a margem máxima e
- * 10 a mínima. Serve ao controle deslizante "quanto quero ser agressivo
- * neste orçamento" da tela original.
+ * FATOR OPORTUNIDADE — a escala que o operador enxerga.
+ *
+ * Vai de 0 a 10, de 0,5 em 0,5, e é deliberadamente o inverso da margem:
+ *
+ *    fator 0   →  margem máxima   (preço cheio, nenhuma concessão)
+ *    fator 10  →  margem mínima   (preço mais agressivo, pode ser negativa)
+ *
+ * A ideia é que quem monta o orçamento raciocine em "quanto esta
+ * oportunidade merece de esforço", e não em percentual de margem — que é
+ * dado interno e nem todo nível pode ver.
  */
-export function margemSugerida(escala: number, margemMin: number, margemMax: number): number {
-  return Math.round(margemMax - ((margemMax - margemMin) / 10) * escala);
+export function margemDoFator(fator: number, margemMin: number, margemMax: number): number {
+  const f = Math.max(FATOR_MIN, Math.min(fator, FATOR_MAX));
+  const margem = margemMax - ((margemMax - margemMin) / FATOR_MAX) * f;
+  // Uma casa decimal: o passo de 0,5 no fator gera frações na margem.
+  return Math.round(margem * 10) / 10;
+}
+
+/** Caminho inverso: qual fator corresponde a uma margem já escolhida. */
+export function fatorDaMargem(margem: number, margemMin: number, margemMax: number): number {
+  if (margemMax === margemMin) return 0;
+  const bruto = ((margemMax - margem) / (margemMax - margemMin)) * FATOR_MAX;
+  // Encaixa no passo de 0,5 para o controle não parar entre marcas.
+  const encaixado = Math.round(bruto / FATOR_PASSO) * FATOR_PASSO;
+  return Math.max(FATOR_MIN, Math.min(encaixado, FATOR_MAX));
+}
+
+/** Rótulo do fator para exibir ao lado do controle. */
+export function descreverFator(fator: number): string {
+  if (fator <= 1) return 'Preço cheio';
+  if (fator <= 3) return 'Pouca concessão';
+  if (fator <= 5) return 'Equilibrado';
+  if (fator <= 7) return 'Competitivo';
+  if (fator <= 9) return 'Agressivo';
+  return 'Máxima concessão';
 }
 
 /* ==========================================================================
@@ -181,12 +228,20 @@ export function calcularOrcamento(entrada: EntradaOrcamento): ResultadoOrcamento
     const adicional = entrada.adicionais.find((a) => a.id === selecao.id);
     if (!adicional) continue;
 
+    const quantidade = selecao.quantidade || 1;
+
     if (adicional.tipo === 'fixo') {
       linhas.push({ rotulo: adicional.nome, valor: adicional.valor });
+    } else if (adicional.tipo === 'por_unidade') {
+      // Ex.: "Caixas embaladas (12 caixas)".
+      const unidade = adicional.unidade || 'un';
+      linhas.push({
+        rotulo: `${adicional.nome} (${quantidade} ${unidade}${quantidade > 1 ? 's' : ''})`,
+        valor: adicional.valor * quantidade,
+      });
     } else {
       // Percentual incide sobre o preço base da faixa, não sobre o total —
       // caso contrário a ordem dos adicionais mudaria o resultado.
-      const quantidade = selecao.quantidade || 1;
       linhas.push({
         rotulo: `${adicional.nome} (${adicional.valor}%${quantidade > 1 ? ` × ${quantidade}` : ''})`,
         valor: (faixa.valorBase * adicional.valor * quantidade) / 100,

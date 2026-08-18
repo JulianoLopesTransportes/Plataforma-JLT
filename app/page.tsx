@@ -1,21 +1,17 @@
 'use client';
 
-/**
- * ENTRADA DA PLATAFORMA — autenticação real (Supabase Auth).
- *
- * Três modos na mesma tela: entrar, criar acesso e recuperar senha.
- *
- * "Criar acesso" existe porque o cadastro é uma LISTA DE CONVIDADOS: o
- * banco rejeita e-mail que o administrador não tenha autorizado antes.
- * Quem foi autorizado define a própria senha aqui, e ela nunca passa por
- * nenhum outro lugar.
- */
-
 import { useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Image from 'next/image';
 import { entrar, criarAcesso, recuperarSenha } from '@/lib/auth';
 import { supabaseConfigurado } from '@/lib/supabase/cliente';
+import {
+  conferirSenha,
+  senhaValida,
+  usuarioValido,
+  sugerirUsuario,
+  REGRA_USUARIO,
+} from '@/lib/senha';
 import estilos from './login.module.css';
 
 type Modo = 'entrar' | 'criar' | 'recuperar';
@@ -27,8 +23,8 @@ const TITULO: Record<Modo, string> = {
 };
 
 const SUBTITULO: Record<Modo, string> = {
-  entrar: 'Informe seu e-mail corporativo para acessar.',
-  criar: 'Defina sua senha. Seu e-mail precisa ter sido autorizado pelo administrador.',
+  entrar: 'Informe seu e-mail e senha para acessar.',
+  criar: 'Preencha seus dados e defina uma senha.',
   recuperar: 'Enviaremos um link para você definir uma nova senha.',
 };
 
@@ -45,15 +41,17 @@ function Formulario() {
   const parametros = useSearchParams();
 
   const [modo, setModo] = useState<Modo>('entrar');
+  const [nome, setNome] = useState('');
+  const [usuario, setUsuario] = useState('');
+  const [usuarioTocado, setUsuarioTocado] = useState(false);
   const [email, setEmail] = useState('');
   const [senha, setSenha] = useState('');
   const [erro, setErro] = useState('');
   const [aviso, setAviso] = useState('');
   const [enviando, setEnviando] = useState(false);
 
-  // Sem as variáveis de ambiente não há como autenticar. Melhor dizer isso
-  // com todas as letras do que deixar o formulário falhar sem explicação.
   const configurado = supabaseConfigurado();
+  const regras = conferirSenha(senha);
 
   function trocarModo(novo: Modo) {
     setModo(novo);
@@ -62,10 +60,32 @@ function Formulario() {
     setSenha('');
   }
 
+  /** Sugere o usuário a partir do nome, até a pessoa editar o campo. */
+  function aoMudarNome(valor: string) {
+    setNome(valor);
+    if (!usuarioTocado) setUsuario(sugerirUsuario(valor));
+  }
+
   async function aoEnviar(evento: React.FormEvent) {
     evento.preventDefault();
     setErro('');
     setAviso('');
+
+    if (modo === 'criar') {
+      if (nome.trim().split(/\s+/).length < 2) {
+        setErro('Informe o nome completo — nome e sobrenome.');
+        return;
+      }
+      if (!usuarioValido(usuario)) {
+        setErro(`Nome de usuário inválido. ${REGRA_USUARIO}`);
+        return;
+      }
+      if (!senhaValida(senha)) {
+        setErro('A senha não atende a todos os requisitos listados abaixo.');
+        return;
+      }
+    }
+
     setEnviando(true);
 
     try {
@@ -75,14 +95,13 @@ function Formulario() {
           setErro(r.erro!);
           return;
         }
-        // O middleware assume daqui: refresh recarrega já autenticado.
         router.replace(parametros.get('destino') ?? '/dashboard');
         router.refresh();
         return;
       }
 
       if (modo === 'criar') {
-        const r = await criarAcesso(email, senha);
+        const r = await criarAcesso({ email, senha, nome, usuario });
         if (!r.ok) {
           setErro(r.erro!);
           return;
@@ -91,6 +110,7 @@ function Formulario() {
           'Acesso criado. Se a confirmação por e-mail estiver ativa, confirme pelo link enviado; caso contrário, já pode entrar.',
         );
         setModo('entrar');
+        setSenha('');
         return;
       }
 
@@ -141,15 +161,44 @@ function Formulario() {
           {!configurado && (
             <div className={estilos.erro}>
               <strong>Configuração pendente.</strong> As variáveis do Supabase não estão definidas
-              neste ambiente, então o acesso não funciona. Defina{' '}
-              <code>NEXT_PUBLIC_SUPABASE_URL</code> e{' '}
-              <code>NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY</code> nas variáveis de ambiente do
-              projeto.
+              neste ambiente.
             </div>
           )}
 
           {erro && <div className={estilos.erro}>{erro}</div>}
           {aviso && <div className={estilos.sucesso}>{aviso}</div>}
+
+          {modo === 'criar' && (
+            <>
+              <div className={`field ${estilos.campo}`}>
+                <label htmlFor="nome">Nome completo</label>
+                <input
+                  id="nome"
+                  value={nome}
+                  onChange={(e) => aoMudarNome(e.target.value)}
+                  placeholder="Maria Aparecida Souza"
+                  autoComplete="name"
+                  required
+                />
+              </div>
+
+              <div className={`field ${estilos.campo}`}>
+                <label htmlFor="usuario">Nome de usuário</label>
+                <input
+                  id="usuario"
+                  value={usuario}
+                  onChange={(e) => {
+                    setUsuario(e.target.value);
+                    setUsuarioTocado(true);
+                  }}
+                  placeholder="maria.souza"
+                  autoComplete="username"
+                  required
+                />
+                <p className="field-hint">{REGRA_USUARIO}</p>
+              </div>
+            </>
+          )}
 
           <div className={`field ${estilos.campo}`}>
             <label htmlFor="email">E-mail</label>
@@ -158,8 +207,8 @@ function Formulario() {
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              placeholder="nome@julianoltransportes.com.br"
-              autoComplete="username"
+              placeholder="seu@email.com"
+              autoComplete="email"
               required
             />
           </div>
@@ -173,13 +222,20 @@ function Formulario() {
                 value={senha}
                 onChange={(e) => setSenha(e.target.value)}
                 autoComplete={modo === 'criar' ? 'new-password' : 'current-password'}
-                minLength={6}
                 required
               />
-              {modo === 'criar' && (
-                <p className="field-hint">Mínimo de 6 caracteres.</p>
-              )}
             </div>
+          )}
+
+          {modo === 'criar' && (
+            <ul className={estilos.regras}>
+              {regras.map((r) => (
+                <li key={r.id} className={r.ok ? estilos.regraOk : estilos.regraPendente}>
+                  <span aria-hidden="true">{r.ok ? '✓' : '○'}</span>
+                  {r.rotulo}
+                </li>
+              ))}
+            </ul>
           )}
 
           <button
@@ -204,7 +260,7 @@ function Formulario() {
             )}
             {modo !== 'criar' && (
               <button type="button" onClick={() => trocarModo('criar')}>
-                Primeiro acesso — definir senha
+                Primeiro acesso — criar cadastro
               </button>
             )}
             {modo !== 'recuperar' && (
@@ -213,11 +269,6 @@ function Formulario() {
               </button>
             )}
           </div>
-
-          <p className={estilos.avisoAcesso}>
-            O acesso é concedido pelo administrador. Se o seu e-mail ainda não foi autorizado, o
-            cadastro será recusado — fale com a administração.
-          </p>
         </form>
       </section>
     </div>

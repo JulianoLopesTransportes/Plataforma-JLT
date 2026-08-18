@@ -162,9 +162,36 @@
   text-underline-offset: 2px;
 }
 
-.avisoAcesso {
-  margin-top: var(--space-3);
-  font-size: 12px;
+
+/* Conferência das regras de senha, no cadastro. */
+.regras {
+  list-style: none;
+  margin: 0 0 var(--space-3);
+  padding: var(--space-2);
+  background: var(--color-bg);
+  border-radius: var(--radius-sm);
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  font-size: 12.5px;
+}
+
+.regras li {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.regras li span {
+  width: 13px;
+  text-align: center;
+  font-weight: 700;
+}
+
+.regraOk {
+  color: var(--color-success);
+}
+
+.regraPendente {
   color: var(--color-gray-600);
-  line-height: 1.5;
 }

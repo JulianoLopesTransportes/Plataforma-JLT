@@ -200,9 +200,10 @@
 }
 
 .logoDocumento {
-  width: 160px;
+  width: 235px;
   height: auto;
   display: block;
+  margin-bottom: 2px;
 }
 
 .marcaDocumento small {
@@ -225,21 +226,42 @@
   margin: var(--space-2) 0 var(--space-3);
 }
 
+/*
+ * Faixa preenchida atrás do título — o grafismo de fundo do modelo em uso
+ * pela empresa: bloco claro ocupando a largura toda, título centralizado
+ * em vermelho institucional. O selo de validade flutua à direita.
+ */
 .caixaTitulo {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: center;
   gap: var(--space-3);
-  margin-bottom: var(--space-4);
+  margin-bottom: var(--space-2);
   flex-wrap: wrap;
+  position: relative;
+  background: var(--color-bg);
+  border-radius: var(--radius-sm);
+  padding: var(--space-2) var(--space-4);
 }
 
 .tituloDocumento {
   font-family: var(--font-display);
-  font-size: 24px;
+  font-size: 23px;
   text-transform: uppercase;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.06em;
   margin: 0;
+  color: var(--color-primary);
+  text-align: center;
+}
+
+/* Legenda abaixo da faixa. */
+.subtituloDocumento {
+  text-align: center;
+  font-size: 11px;
+  color: var(--color-gray-600);
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  margin: 0 0 var(--space-4);
 }
 
 .selo {
@@ -261,7 +283,7 @@
   color: var(--color-primary);
   margin: var(--space-3) 0 var(--space-1);
   padding-bottom: 3px;
-  border-bottom: 1px solid var(--color-border);
+  border-bottom: 1.5px solid var(--color-primary);
 }
 
 .paragrafo {

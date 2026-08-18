@@ -1,110 +1,63 @@
 'use client';
 
-/**
- * ORÇAMENTOS — migrado de referencia/06-orcamentos-calculadora_6.html
- *
- * O cálculo em si vive em lib/negocio/precificacao.ts, sem DOM. Esta tela
- * só coleta os campos e apresenta o resultado.
- *
- * RECORTE DE PERMISSÃO — é o ponto mais delicado da matriz:
- *   O Comercial usa a calculadora e vê o PREÇO FINAL, porque precisa
- *   negociar. Mas não vê a composição do custo, a margem aplicada nem os
- *   parâmetros de precificação, que são dado interno. Quem controla isso
- *   é podeFazer('ver_custos') / podeFazer('editar_parametros_precificacao').
- */
-
 import { useEffect, useState, useMemo } from 'react';
 import { api, type ParametrosPrecificacao } from '@/lib/api';
 import { useUsuario } from '@/components/layout/SessaoProvider';
-import { podeEditar, podeFazer } from '@/lib/permissoes';
-import { formatarBRL, formatarData } from '@/lib/utils/formato';
+import { podeFazer } from '@/lib/permissoes';
+import { formatarBRL } from '@/lib/utils/formato';
 import {
   calcularOrcamento,
-  margemSugerida,
+  margemDoFator,
+  fatorDaMargem,
+  descreverFator,
+  FATOR_MAX,
+  FATOR_MIN,
+  FATOR_PASSO,
   type ResultadoOrcamento,
 } from '@/lib/negocio/precificacao';
-import {
-  TituloPagina,
-  Tabela,
-  Badge,
-  Abas,
-  BarraFiltros,
-  CampoFiltro,
-  AcoesFiltro,
-  GradeMetricas,
-  CardMetrica,
-  useToast,
-  EstadoVazio,
-  type Coluna,
-  type TomBadge,
-} from '@/components/ui';
-import type { Orcamento } from '@/lib/tipos';
+import { TituloPagina, useToast } from '@/components/ui';
 import PainelPrecificacao from '@/components/modulos/PainelPrecificacao';
 import estilos from './orcamentos.module.css';
-
-const TOM_STATUS: Record<Orcamento['status'], TomBadge> = {
-  rascunho: 'neutro',
-  enviado: 'info',
-  aprovado: 'success',
-  recusado: 'danger',
-};
-
-const ROTULO_STATUS: Record<Orcamento['status'], string> = {
-  rascunho: 'Rascunho',
-  enviado: 'Enviado',
-  aprovado: 'Aprovado',
-  recusado: 'Recusado',
-};
 
 export default function PaginaOrcamentos() {
   const usuario = useUsuario();
   const { mostrar } = useToast();
 
-  const [aba, setAba] = useState('calculadora');
-  const [orcamentos, setOrcamentos] = useState<Orcamento[]>([]);
   const [parametros, setParametros] = useState<ParametrosPrecificacao | null>(null);
   const [carregando, setCarregando] = useState(true);
-  const [filtroStatus, setFiltroStatus] = useState('');
-  const [busca, setBusca] = useState('');
 
-  // Campos da calculadora
   const [volume, setVolume] = useState('');
   const [distancia, setDistancia] = useState('');
-  const [escala, setEscala] = useState(5);
-  const [margem, setMargem] = useState(40);
-  const [marcados, setMarcados] = useState<Record<string, number>>({});
+  const [fator, setFator] = useState(5);
+  const [quantidades, setQuantidades] = useState<Record<string, number>>({});
   const [resultado, setResultado] = useState<ResultadoOrcamento | null>(null);
 
   const verCustos = podeFazer(usuario.nivel, 'ver_custos');
   const editarParametros = podeFazer(usuario.nivel, 'editar_parametros_precificacao');
-  const podeAprovar = podeFazer(usuario.nivel, 'aprovar');
-  const podeMexer = podeEditar(usuario.nivel, 'orcamentos');
 
   useEffect(() => {
-    Promise.all([api.orcamentos.listar(), api.orcamentos.parametros()]).then(([o, p]) => {
-      setOrcamentos(o);
+    api.orcamentos.parametros().then((p) => {
       setParametros(p);
-      setMargem(Math.round((p.margemMinima + p.margemMaxima) / 2));
+      setFator(fatorDaMargem((p.margemMinima + p.margemMaxima) / 2, p.margemMinima, p.margemMaxima));
       setCarregando(false);
     });
   }, []);
 
-  /* --- Calculadora ------------------------------------------------------ */
-
-  /** Move a margem junto com a escala de agressividade (0 = cheia, 10 = mínima). */
-  function aoMudarEscala(novaEscala: number) {
-    if (!parametros) return;
-    setEscala(novaEscala);
-    setMargem(margemSugerida(novaEscala, parametros.margemMinima, parametros.margemMaxima));
-  }
+  const margem = parametros
+    ? margemDoFator(fator, parametros.margemMinima, parametros.margemMaxima)
+    : 0;
 
   function alternarAdicional(id: string) {
-    setMarcados((atual) => {
+    setQuantidades((atual) => {
       const copia = { ...atual };
       if (id in copia) delete copia[id];
       else copia[id] = 1;
       return copia;
     });
+  }
+
+  function mudarQuantidade(id: string, valor: number) {
+    setQuantidades((atual) => ({ ...atual, [id]: Math.max(1, valor) }));
   }
 
   function calcular() {
@@ -123,7 +76,7 @@ export default function PaginaOrcamentos() {
       margemPercentual: margem,
       faixas: parametros.faixasVolume,
       adicionais: parametros.adicionais,
-      adicionaisSelecionados: Object.entries(marcados).map(([id, quantidade]) => ({
+      adicionaisSelecionados: Object.entries(quantidades).map(([id, quantidade]) => ({
         id,
         quantidade,
       })),
@@ -133,372 +86,253 @@ export default function PaginaOrcamentos() {
     if (!saida) mostrar('Não foi possível calcular com os valores informados.', 'erro');
   }
 
-  /* --- Lista ------------------------------------------------------------ */
-  const filtrados = useMemo(() => {
-    const termo = busca.toLowerCase().trim();
-    return orcamentos.filter(
-      (o) =>
-        (!termo || o.clienteNome.toLowerCase().includes(termo)) &&
-        (!filtroStatus || o.status === filtroStatus),
-    );
-  }, [orcamentos, busca, filtroStatus]);
-
-  function aprovar(o: Orcamento) {
-    setOrcamentos((lista) =>
-      lista.map((x) => (x.id === o.id ? { ...x, status: 'aprovado' as const } : x)),
-    );
-    mostrar(`Orçamento de ${o.clienteNome} aprovado.`, 'sucesso');
+  function limpar() {
+    setVolume('');
+    setDistancia('');
+    setQuantidades({});
+    setResultado(null);
+    if (parametros) {
+      setFator(
+        fatorDaMargem(
+          (parametros.margemMinima + parametros.margemMaxima) / 2,
+          parametros.margemMinima,
+          parametros.margemMaxima,
+        ),
+      );
+    }
   }
 
-  const colunas: Coluna<Orcamento>[] = [
-    {
-      chave: 'clienteNome',
-      rotulo: 'Cliente',
-      ordenarPor: (o) => o.clienteNome,
-      render: (o) => <strong>{o.clienteNome}</strong>,
-    },
-    {
-      chave: 'data',
-      rotulo: 'Data',
-      ordenarPor: (o) => o.data,
-      render: (o) => formatarData(o.data),
-    },
-    {
-      chave: 'volumeM3',
-      rotulo: 'Volume',
-      numerico: true,
-      ordenarPor: (o) => o.volumeM3,
-      render: (o) => `${o.volumeM3} m³`,
-    },
-    {
-      chave: 'distanciaKm',
-      rotulo: 'Distância',
-      numerico: true,
-      ordenarPor: (o) => o.distanciaKm,
-      render: (o) => `${o.distanciaKm} km`,
-    },
-    // Colunas de custo e margem existem apenas para quem pode ver custos.
-    ...(verCustos
-      ? ([
-          {
-            chave: 'custoBase',
-            rotulo: 'Custo',
-            numerico: true,
-            ordenarPor: (o: Orcamento) => o.custoBase,
-            render: (o: Orcamento) => formatarBRL(o.custoBase),
-          },
-          {
-            chave: 'margemPercentual',
-            rotulo: 'Margem',
-            numerico: true,
-            ordenarPor: (o: Orcamento) => o.margemPercentual,
-            render: (o: Orcamento) => `${o.margemPercentual}%`,
-          },
-        ] as Coluna<Orcamento>[])
-      : []),
-    {
-      chave: 'valorFinal',
-      rotulo: 'Valor final',
-      numerico: true,
-      ordenarPor: (o) => o.valorFinal,
-      render: (o) => <strong>{formatarBRL(o.valorFinal)}</strong>,
-    },
-    {
-      chave: 'status',
-      rotulo: 'Status',
-      ordenarPor: (o) => o.status,
-      render: (o) => <Badge texto={ROTULO_STATUS[o.status]} tom={TOM_STATUS[o.status]} />,
-    },
-    {
-      chave: 'acoes',
-      rotulo: '',
-      render: (o) =>
-        podeAprovar && o.status === 'enviado' ? (
-          <button type="button" className="btn btn-outline btn-sm" onClick={() => aprovar(o)}>
-            Aprovar
-          </button>
-        ) : null,
-    },
-  ];
+  const marcasFator = useMemo(
+    () => Array.from({ length: FATOR_MAX + 1 }, (_, i) => i),
+    [],
+  );
 
-  const aprovados = orcamentos.filter((o) => o.status === 'aprovado');
-  const taxaAprovacao =
-    orcamentos.length > 0 ? (aprovados.length / orcamentos.length) * 100 : null;
+  if (carregando || !parametros) {
+    return (
+      <>
+        <TituloPagina titulo="Orçamentos" subtitulo="Carregando parâmetros…" />
+      </>
+    );
+  }
 
   return (
     <>
       <TituloPagina
         titulo="Orçamentos"
-        subtitulo="Calculadora de precificação e histórico de propostas."
+        subtitulo="Calculadora de precificação da mudança."
+        acoes={
+          <button type="button" className="btn btn-ghost" onClick={limpar}>
+            Limpar
+          </button>
+        }
       />
 
-      <GradeMetricas>
-        <CardMetrica rotulo="Orçamentos" valor={String(orcamentos.length)} icone="orcamento" />
-        <CardMetrica
-          rotulo="Aprovados"
-          valor={String(aprovados.length)}
-          detalhe={taxaAprovacao !== null ? `${taxaAprovacao.toFixed(0)}% de aproveitamento` : ''}
-          tom="positivo"
-        />
-        <CardMetrica
-          rotulo="Valor aprovado"
-          valor={formatarBRL(aprovados.reduce((s, o) => s + o.valorFinal, 0))}
-          detalhe="Soma das propostas aceitas"
-        />
-        {verCustos && (
-          <CardMetrica
-            rotulo="Margem média"
-            valor={
-              aprovados.length > 0
-                ? `${(aprovados.reduce((s, o) => s + o.margemPercentual, 0) / aprovados.length).toFixed(1)}%`
-                : null
-            }
-            detalhe={aprovados.length > 0 ? 'Nas propostas aprovadas' : 'Sem propostas aprovadas'}
-          />
-        )}
-      </GradeMetricas>
+      <div className={estilos.gradeCalculadora}>
+        {/* ---------------- Entrada ---------------- */}
+        <div className="card">
+          <h2 className="card-title">Dados da mudança</h2>
 
-      <Abas
-        abas={[
-          { chave: 'calculadora', rotulo: 'Calculadora' },
-          { chave: 'lista', rotulo: `Propostas (${orcamentos.length})` },
-        ]}
-        ativa={aba}
-        aoTrocar={setAba}
-      />
-
-      {aba === 'calculadora' && (
-        <>
-          {!parametros ? (
-            <div className="card">Carregando parâmetros…</div>
-          ) : (
-            <div className={estilos.gradeCalculadora}>
-              <div className="card">
-                <h2 className="card-title">Dados da mudança</h2>
-
-                <div className="form-row">
-                  <div className="field">
-                    <label htmlFor="volume">Volume estimado (m³)</label>
-                    <input
-                      id="volume"
-                      type="number"
-                      min="0"
-                      step="0.5"
-                      value={volume}
-                      onChange={(e) => setVolume(e.target.value)}
-                      placeholder="Ex.: 32"
-                    />
-                  </div>
-
-                  <div className="field">
-                    <label htmlFor="distancia">Distância (km)</label>
-                    <input
-                      id="distancia"
-                      type="number"
-                      min="0"
-                      value={distancia}
-                      onChange={(e) => setDistancia(e.target.value)}
-                      placeholder="Ex.: 98"
-                    />
-                  </div>
-                </div>
-
-                <h3 className={estilos.subtituloBloco}>Serviços adicionais</h3>
-                <div className={estilos.listaAdicionais}>
-                  {parametros.adicionais.map((a) => (
-                    <label key={a.id} className={estilos.adicional}>
-                      <input
-                        type="checkbox"
-                        checked={a.id in marcados}
-                        onChange={() => alternarAdicional(a.id)}
-                      />
-                      <span className={estilos.adicionalNome}>{a.nome}</span>
-                      {/* O valor do adicional é custo interno. */}
-                      {verCustos && (
-                        <span className={estilos.adicionalValor}>
-                          {a.tipo === 'fixo' ? formatarBRL(a.valor) : `+${a.valor}%`}
-                        </span>
-                      )}
-                    </label>
-                  ))}
-                </div>
-
-                {/* Controle de margem — some por completo para o Comercial. */}
-                {verCustos && (
-                  <>
-                    <h3 className={estilos.subtituloBloco}>Margem aplicada</h3>
-                    <div className={estilos.controleMargem}>
-                      <input
-                        type="range"
-                        min={0}
-                        max={10}
-                        value={escala}
-                        onChange={(e) => aoMudarEscala(Number(e.target.value))}
-                        className={estilos.slider}
-                        aria-label="Agressividade do preço"
-                      />
-                      <div className={estilos.escalaRotulos}>
-                        <span>Margem cheia</span>
-                        <strong className={estilos.margemAtual}>{margem}%</strong>
-                        <span>Preço agressivo</span>
-                      </div>
-                      <p className="field-hint">
-                        Margem sobre o preço — preço = custo ÷ (1 − margem). Faixa permitida:{' '}
-                        {parametros.margemMinima}% a {parametros.margemMaxima}%.
-                      </p>
-                    </div>
-                  </>
-                )}
-
-                <button
-                  type="button"
-                  className="btn btn-primary"
-                  onClick={calcular}
-                  style={{ marginTop: 20 }}
-                >
-                  Calcular orçamento
-                </button>
-              </div>
-
-              {/* ---------- Resultado ---------- */}
-              <div className="card">
-                <h2 className="card-title">Resultado</h2>
-
-                {!resultado ? (
-                  <div className="estado-vazio">
-                    <strong>Aguardando cálculo</strong>
-                    Informe o volume e clique em calcular.
-                  </div>
-                ) : (
-                  <>
-                    {/* Composição do custo: só para quem pode ver custos. */}
-                    {verCustos && (
-                      <div className={estilos.composicao}>
-                        {resultado.linhas.map((linha, i) => (
-                          <div key={i} className={estilos.linhaComposicao}>
-                            <span>{linha.rotulo}</span>
-                            <span>{formatarBRL(linha.valor)}</span>
-                          </div>
-                        ))}
-
-                        <div className={`${estilos.linhaComposicao} ${estilos.linhaSubtotal}`}>
-                          <span>Custo total estimado</span>
-                          <span>{formatarBRL(resultado.custoTotal)}</span>
-                        </div>
-
-                        <div className={`${estilos.linhaComposicao} ${estilos.linhaMargem}`}>
-                          <span>Margem aplicada ({resultado.margemPercentual}%)</span>
-                          <span>+ {formatarBRL(resultado.valorMargem)}</span>
-                        </div>
-                      </div>
-                    )}
-
-                    <div className={estilos.precoFinal}>
-                      <span className={estilos.precoRotulo}>Preço ao cliente</span>
-                      <strong className={estilos.precoValor}>
-                        {formatarBRL(resultado.precoRedondo)}
-                      </strong>
-                      {resultado.precoRedondo !== Math.round(resultado.precoFinal) && (
-                        <span className="texto-secundario">
-                          Calculado: {formatarBRL(resultado.precoFinal)} — arredondado para passar
-                          mais confiança ao cliente
-                        </span>
-                      )}
-                    </div>
-
-                    <h3 className={estilos.subtituloBloco}>Sugestão de parcelamento</h3>
-                    <p className="field-hint" style={{ marginBottom: 12 }}>
-                      Padrão da empresa: sinal de 10% (mínimo R$ 500), metade do saldo no
-                      carregamento, restante antes do descarregamento.
-                    </p>
-                    <div className={estilos.parcelas}>
-                      <Parcela
-                        rotulo="Sinal"
-                        valor={resultado.parcelamento.sinal}
-                        quando="Na assinatura"
-                      />
-                      <Parcela
-                        rotulo="1ª parcela"
-                        valor={resultado.parcelamento.primeiraParcela}
-                        quando="No carregamento"
-                      />
-                      <Parcela
-                        rotulo="2ª parcela"
-                        valor={resultado.parcelamento.segundaParcela}
-                        quando="Antes do descarregamento"
-                      />
-                    </div>
-                  </>
-                )}
-              </div>
-            </div>
-          )}
-
-          {/* Painel editável — só quem tem editar_parametros_precificacao. */}
-          {editarParametros && <PainelPrecificacao />}
-
-        </>
-      )}
-
-      {aba === 'lista' && (
-        <>
-          <BarraFiltros>
-            <CampoFiltro rotulo="Buscar cliente">
+          <div className="form-row">
+            <div className="field">
+              <label htmlFor="volume">Volume estimado (m³)</label>
               <input
-                type="search"
-                value={busca}
-                onChange={(e) => setBusca(e.target.value)}
-                placeholder="Nome do cliente"
+                id="volume"
+                type="number"
+                min="0"
+                step="0.5"
+                value={volume}
+                onChange={(e) => setVolume(e.target.value)}
+                placeholder="Ex.: 32"
               />
-            </CampoFiltro>
+            </div>
 
-            <CampoFiltro rotulo="Status">
-              <select value={filtroStatus} onChange={(e) => setFiltroStatus(e.target.value)}>
-                <option value="">Todos</option>
-                {Object.entries(ROTULO_STATUS).map(([valor, rotulo]) => (
-                  <option key={valor} value={valor}>
-                    {rotulo}
-                  </option>
-                ))}
-              </select>
-            </CampoFiltro>
+            <div className="field">
+              <label htmlFor="distancia">Distância (km)</label>
+              <input
+                id="distancia"
+                type="number"
+                min="0"
+                value={distancia}
+                onChange={(e) => setDistancia(e.target.value)}
+                placeholder="Ex.: 98"
+              />
+            </div>
+          </div>
 
-            <AcoesFiltro>
-              <button
-                type="button"
-                className="btn btn-ghost"
-                onClick={() => {
-                  setBusca('');
-                  setFiltroStatus('');
-                }}
-              >
-                Limpar
-              </button>
-            </AcoesFiltro>
-          </BarraFiltros>
+          <h3 className={estilos.subtituloBloco}>Serviços adicionais</h3>
+          <div className={estilos.listaAdicionais}>
+            {parametros.adicionais.map((a) => {
+              const marcado = a.id in quantidades;
+              const porUnidade = a.tipo === 'por_unidade';
 
-          {!verCustos && (
-            <p className={estilos.avisoRecorte}>
-              Seu nível de acesso não exibe custo interno nem margem. Os valores mostrados são os
-              preços finais apresentados ao cliente.
-            </p>
-          )}
+              return (
+                <div key={a.id} className={estilos.adicional}>
+                  <label className={estilos.adicionalRotulo}>
+                    <input
+                      type="checkbox"
+                      checked={marcado}
+                      onChange={() => alternarAdicional(a.id)}
+                    />
+                    <span className={estilos.adicionalNome}>{a.nome}</span>
+                  </label>
 
-          <Tabela
-            colunas={colunas}
-            registros={filtrados}
-            carregando={carregando}
-            mensagemVazio="Nenhuma proposta corresponde aos filtros."
-            porPagina={10}
-          />
+                  {marcado && porUnidade && (
+                    <div className={estilos.controleUnidade}>
+                      <input
+                        type="number"
+                        min="1"
+                        step="1"
+                        value={quantidades[a.id]}
+                        onChange={(e) => mudarQuantidade(a.id, Number(e.target.value))}
+                        aria-label={`Quantidade de ${a.nome}`}
+                      />
+                      <span>{a.unidade || 'un'}</span>
+                    </div>
+                  )}
 
-          {!podeMexer && orcamentos.length === 0 && !carregando && (
-            <EstadoVazio
-              titulo="Sem propostas"
-              descricao="Nenhum orçamento cadastrado até o momento."
+                  {verCustos && (
+                    <span className={estilos.adicionalValor}>
+                      {a.tipo === 'fixo' && formatarBRL(a.valor)}
+                      {a.tipo === 'percentual' && `+${a.valor}%`}
+                      {porUnidade && `${formatarBRL(a.valor)} / ${a.unidade || 'un'}`}
+                    </span>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+
+          {/* ---------------- Fator oportunidade ---------------- */}
+          <h3 className={estilos.subtituloBloco}>Fator oportunidade</h3>
+
+          <div className={estilos.controleFator}>
+            <div className={estilos.fatorTopo}>
+              <strong className={estilos.fatorValor}>{fator.toFixed(1).replace('.', ',')}</strong>
+              <span className={estilos.fatorDescricao}>{descreverFator(fator)}</span>
+            </div>
+
+            <input
+              type="range"
+              min={FATOR_MIN}
+              max={FATOR_MAX}
+              step={FATOR_PASSO}
+              value={fator}
+              onChange={(e) => setFator(Number(e.target.value))}
+              className={estilos.slider}
+              aria-label="Fator oportunidade"
             />
+
+            <div className={estilos.marcas}>
+              {marcasFator.map((m) => (
+                <span key={m}>{m}</span>
+              ))}
+            </div>
+
+            <div className={estilos.escalaRotulos}>
+              <span>0 — preço cheio</span>
+              <span>10 — máxima concessão</span>
+            </div>
+
+            {verCustos && (
+              <p className={estilos.margemResultante}>
+                Margem resultante:{' '}
+                <strong className={margem < 0 ? estilos.margemNegativa : undefined}>
+                  {margem.toFixed(1).replace('.', ',')}%
+                </strong>
+                {margem < 0 && ' — preço abaixo do custo'}
+              </p>
+            )}
+          </div>
+
+          <button
+            type="button"
+            className="btn btn-primary"
+            onClick={calcular}
+            style={{ marginTop: 20 }}
+          >
+            Calcular
+          </button>
+        </div>
+
+        {/* ---------------- Resultado ---------------- */}
+        <div className="card">
+          <h2 className="card-title">Resultado</h2>
+
+          {!resultado ? (
+            <div className="estado-vazio">
+              <strong>Aguardando cálculo</strong>
+              Informe o volume e clique em calcular.
+            </div>
+          ) : (
+            <>
+              {verCustos && (
+                <div className={estilos.composicao}>
+                  {resultado.linhas.map((linha, i) => (
+                    <div key={i} className={estilos.linhaComposicao}>
+                      <span>{linha.rotulo}</span>
+                      <span>{formatarBRL(linha.valor)}</span>
+                    </div>
+                  ))}
+
+                  <div className={`${estilos.linhaComposicao} ${estilos.linhaSubtotal}`}>
+                    <span>Custo total estimado</span>
+                    <span>{formatarBRL(resultado.custoTotal)}</span>
+                  </div>
+
+                  <div
+                    className={`${estilos.linhaComposicao} ${
+                      resultado.valorMargem >= 0 ? estilos.linhaMargem : estilos.linhaPrejuizo
+                    }`}
+                  >
+                    <span>
+                      {resultado.valorMargem >= 0 ? 'Margem aplicada' : 'Desconto aplicado'} (
+                      {resultado.margemPercentual.toFixed(1).replace('.', ',')}%)
+                    </span>
+                    <span>
+                      {resultado.valorMargem >= 0 ? '+ ' : '− '}
+                      {formatarBRL(Math.abs(resultado.valorMargem))}
+                    </span>
+                  </div>
+                </div>
+              )}
+
+              <div className={estilos.precoFinal}>
+                <span className={estilos.precoRotulo}>Preço ao cliente</span>
+                <strong className={estilos.precoValor}>
+                  {formatarBRL(resultado.precoRedondo)}
+                </strong>
+                {resultado.precoRedondo !== Math.round(resultado.precoFinal) && (
+                  <span>Calculado: {formatarBRL(resultado.precoFinal)}</span>
+                )}
+              </div>
+
+              <h3 className={estilos.subtituloBloco}>Parcelamento</h3>
+              <div className={estilos.parcelas}>
+                <Parcela
+                  rotulo="Sinal"
+                  valor={resultado.parcelamento.sinal}
+                  quando="Na assinatura"
+                />
+                <Parcela
+                  rotulo="1ª parcela"
+                  valor={resultado.parcelamento.primeiraParcela}
+                  quando="No carregamento"
+                />
+                <Parcela
+                  rotulo="2ª parcela"
+                  valor={resultado.parcelamento.segundaParcela}
+                  quando="Antes do descarregamento"
+                />
+              </div>
+            </>
           )}
-        </>
+        </div>
+      </div>
+
+      {editarParametros && (
+        <div style={{ marginTop: 20 }}>
+          <PainelPrecificacao />
+        </div>
       )}
     </>
   );

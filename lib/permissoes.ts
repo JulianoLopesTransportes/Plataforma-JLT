@@ -31,8 +31,7 @@ export type ModuloId =
   | 'frota'
   | 'financeiro'
   | 'relatorios'
-  | 'usuarios'
-  | 'guia-visual';
+  | 'usuarios';
 
 type MatrizModulo = Record<Nivel, Acesso>;
 
@@ -59,7 +58,6 @@ export const MATRIZ_PERMISSOES: Record<ModuloId, MatrizModulo> = {
   financeiro: { admin: 'crud', financeiro: 'crud', operacional: 'none', comercial: 'none' },
   relatorios: { admin: 'crud', financeiro: 'r', operacional: 'r', comercial: 'r' },
   usuarios: { admin: 'crud', financeiro: 'none', operacional: 'none', comercial: 'none' },
-  'guia-visual': { admin: 'r', financeiro: 'r', operacional: 'r', comercial: 'r' },
 };
 
 /**

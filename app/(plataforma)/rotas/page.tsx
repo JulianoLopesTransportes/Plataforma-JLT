@@ -37,7 +37,8 @@ import {
   type TomBadge,
 } from '@/components/ui';
 import Icone from '@/components/layout/Icone';
-import type { Rota, Veiculo, Motorista } from '@/lib/tipos';
+import FormularioRota from '@/components/modulos/FormularioRota';
+import type { Rota, Veiculo, Motorista, Cliente } from '@/lib/tipos';
 import estilos from './rotas.module.css';
 
 const TOM_STATUS: Record<Rota['status'], TomBadge> = {
@@ -71,6 +72,8 @@ function ConteudoRotas() {
   const [motoristas, setMotoristas] = useState<Motorista[]>([]);
   const [carregando, setCarregando] = useState(true);
   const [rotaAbertaId, setRotaAbertaId] = useState<string | null>(null);
+  const [clientes, setClientes] = useState<Cliente[]>([]);
+  const [formAberto, setFormAberto] = useState(false);
 
   const podeMexer = podeEditar(usuario.nivel, 'rotas');
 
@@ -83,10 +86,13 @@ function ConteudoRotas() {
   }, []);
 
   useEffect(() => {
-    Promise.all([api.veiculos.listar(), api.motoristas.listar()]).then(([v, m]) => {
-      setVeiculos(v);
-      setMotoristas(m);
-    });
+    Promise.all([api.veiculos.listar(), api.motoristas.listar(), api.clientes.listar()]).then(
+      ([v, m, c]) => {
+        setVeiculos(v);
+        setMotoristas(m);
+        setClientes(c);
+      },
+    );
     recarregar();
   }, [recarregar]);
 
@@ -142,12 +148,7 @@ function ConteudoRotas() {
             className="btn btn-primary"
             disabled={!podeMexer}
             title={podeMexer ? undefined : 'Seu nível não permite criar rotas'}
-            onClick={() =>
-              mostrar(
-                'A criação de rota entra na próxima etapa — ela envolve cadastrar cargas e paradas juntas.',
-                'aviso',
-              )
-            }
+            onClick={() => setFormAberto(true)}
           >
             Nova rota
           </button>
@@ -265,6 +266,18 @@ function ConteudoRotas() {
           })}
         </div>
       )}
+
+      <FormularioRota
+        aberto={formAberto}
+        aoFechar={() => setFormAberto(false)}
+        aoSalvar={async () => {
+          await recarregar();
+          setFormAberto(false);
+        }}
+        clientes={clientes}
+        veiculos={veiculos}
+        motoristas={motoristas}
+      />
 
       {/* ---------- Detalhe da rota ---------- */}
       <Modal

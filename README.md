@@ -173,18 +173,21 @@ a tela que o exibia foi retirada a pedido.
 controle de acessos pelo admin, parâmetros de precificação editáveis, camada de
 dados falando com o banco, API HTTP autenticada.
 
-Persistem no banco: clientes, frota (veículos e motoristas), agenda e
-lançamentos financeiros — cadastro, edição e exclusão. Rotas persistem a
-mudança de status.
+Persistem no banco: clientes, frota, agenda, lançamentos financeiros e rotas —
+cadastro, edição e exclusão.
+
+A criação de rota passa pela função `criar_rota_completa` no Postgres, e não
+por inserts sucessivos do navegador: rota, cargas, paradas e movimentos são
+quatro tabelas encadeadas, e sem transação uma falha no meio deixaria rota
+órfã. A função também mapeia os ids temporários que a tela usa para os ids
+reais das cargas.
 
 **Falta:**
 
-1. Criação de rota pela interface — é o formulário mais complexo, porque
-   cadastra cargas e paradas aninhadas na mesma operação
-2. Supabase Storage para os anexos (o tipo `Anexo` já está modelado)
-3. Revisar os **valores de precificação**, que são placeholder inventados na
+1. Supabase Storage para os anexos (o tipo `Anexo` já está modelado)
+2. Revisar os **valores de precificação**, que são placeholder inventados na
    Fase A e não dado real da empresa
-4. Verificação automática de paridade entre `lib/permissoes.ts` e
+3. Verificação automática de paridade entre `lib/permissoes.ts` e
    `permissoes_modulo`
 
 **As tabelas de negócio estão vazias por decisão:** os mocks são pessoas e cargas

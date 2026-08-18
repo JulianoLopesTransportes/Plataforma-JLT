@@ -575,6 +575,91 @@ const rotas = {
     return data ? paraRota(data) : null;
   },
 
+  /**
+   * Cria a rota inteira — cargas, paradas e movimentos — numa transação.
+   *
+   * Delega para a função criar_rota_completa no Postgres em vez de fazer
+   * quatro inserts daqui. Motivo: paradas referenciam cargas, que só ganham
+   * id depois de inseridas, e sem transação uma falha no meio deixaria rota
+   * órfã. As cargas viajam com um id temporário que o banco mapeia.
+   */
+  async criar(rota: {
+    nome: string;
+    origem: string;
+    destino: string;
+    dataSaida: string;
+    dataPrevistaRetorno: string;
+    veiculoId: string | null;
+    motoristaId: string | null;
+    mudancas: {
+      tempId: string;
+      clienteId: string | null;
+      clienteNome: string;
+      telefone: string;
+      documento: string;
+      volumeM3: number;
+      enderecoColeta: string;
+      enderecoEntrega: string;
+      observacao: string;
+    }[];
+    paradas: {
+      tipo: string;
+      cidade: string;
+      uf: string;
+      endereco: string;
+      data: string;
+      observacao: string;
+      embarcam: string[];
+      desembarcam: string[];
+    }[];
+  }): Promise<string> {
+    if (!usandoBanco()) throw new Error('Criar rota exige o banco de dados configurado.');
+
+    const { data, error } = await supabase().rpc('criar_rota_completa', {
+      p_rota: {
+        nome: rota.nome,
+        status: 'planejada',
+        veiculo_id: rota.veiculoId ?? '',
+        motorista_id: rota.motoristaId ?? '',
+        origem: rota.origem,
+        destino: rota.destino,
+        data_saida: rota.dataSaida,
+        data_prevista_retorno: rota.dataPrevistaRetorno,
+        mudancas: rota.mudancas.map((m) => ({
+          temp_id: m.tempId,
+          cliente_id: m.clienteId ?? '',
+          cliente_nome: m.clienteNome,
+          telefone: m.telefone,
+          documento: m.documento,
+          volume_m3: m.volumeM3,
+          endereco_coleta: m.enderecoColeta,
+          endereco_entrega: m.enderecoEntrega,
+          observacao: m.observacao,
+        })),
+        paradas: rota.paradas.map((p) => ({
+          tipo: p.tipo,
+          cidade: p.cidade,
+          uf: p.uf,
+          endereco: p.endereco,
+          data: p.data,
+          observacao: p.observacao,
+          embarcam: p.embarcam,
+          desembarcam: p.desembarcam,
+        })),
+      },
+    });
+
+    if (error) throw new Error(traduzir(error));
+    return data as string;
+  },
+
+  async excluir(id: string): Promise<void> {
+    if (!usandoBanco()) throw new Error('Exclusão exige o banco de dados configurado.');
+    // As cargas, paradas e movimentos caem junto por ON DELETE CASCADE.
+    const { error } = await supabase().from('rotas').delete().eq('id', id);
+    if (error) throw new Error(traduzir(error));
+  },
+
   async atualizarStatus(id: string, status: Rota['status']): Promise<void> {
     if (!usandoBanco()) throw new Error('Alteração exige o banco de dados configurado.');
     const { error } = await supabase().from('rotas').update({ status }).eq('id', id);

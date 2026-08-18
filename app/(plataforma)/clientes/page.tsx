@@ -7,13 +7,14 @@
  * pelo volume, funil de status Novo → Em andamento → Concluído, anexos e
  * histórico de alterações.
  *
- * Nesta fase as alterações vivem só no estado desta tela — não há
- * persistência. Quando o banco entrar, cada handler que hoje faz
- * setClientes(...) passa a chamar api.clientes.criar/atualizar/excluir.
+ * Persistência: quando o Supabase está configurado, criar, alterar status e
+ * excluir gravam no banco e o histórico vira registro em cliente_historico.
+ * Sem as variáveis de ambiente, a tela cai no modo da Fase A — alterações
+ * vivem só em memória e somem no refresh. Ver usandoBanco() em lib/api.
  */
 
-import { useEffect, useState, useMemo } from 'react';
-import { api } from '@/lib/api';
+import { useEffect, useState, useMemo, useCallback } from 'react';
+import { api, usandoBanco } from '@/lib/api';
 import { useUsuario } from '@/components/layout/SessaoProvider';
 import { podeEditar, podeFazer } from '@/lib/permissoes';
 import {
@@ -77,16 +78,26 @@ export default function PaginaClientes() {
   const [abaDetalhe, setAbaDetalhe] = useState('dados');
   const [formAberto, setFormAberto] = useState(false);
   const [formulario, setFormulario] = useState(CLIENTE_VAZIO);
+  const [salvando, setSalvando] = useState(false);
+  const [erroCarga, setErroCarga] = useState('');
 
   const podeMexer = podeEditar(usuario.nivel, 'clientes');
   const podeExcluir = podeFazer(usuario.nivel, 'excluir');
 
-  useEffect(() => {
-    api.clientes.listar().then((lista) => {
-      setClientes(lista);
+  const recarregar = useCallback(async () => {
+    try {
+      setClientes(await api.clientes.listar());
+      setErroCarga('');
+    } catch (e) {
+      setErroCarga(e instanceof Error ? e.message : 'Falha ao carregar clientes.');
+    } finally {
       setCarregando(false);
-    });
+    }
   }, []);
+
+  useEffect(() => {
+    recarregar();
+  }, [recarregar]);
 
   /* --- Filtro em memória ------------------------------------------------ */
   const filtrados = useMemo(() => {
@@ -123,26 +134,47 @@ export default function PaginaClientes() {
     };
   }
 
-  function avancarStatus(cliente: Cliente) {
+  async function avancarStatus(cliente: Cliente) {
     const novo = proximoStatus(cliente.status);
-    const atualizado = registrarHistorico(
-      { ...cliente, status: novo },
-      `Status alterado de ${cliente.status} para ${novo}.`,
-    );
+    const descricao = `Status alterado de ${cliente.status} para ${novo}.`;
 
-    setClientes((lista) => lista.map((c) => (c.id === cliente.id ? atualizado : c)));
-    if (detalhe?.id === cliente.id) setDetalhe(atualizado);
-    mostrar(`${cliente.nome} agora está em "${novo}".`, 'sucesso');
+    try {
+      if (usandoBanco()) {
+        await api.clientes.atualizar(cliente.id, { status: novo });
+        await api.clientes.registrarHistorico(cliente.id, usuario.nome, descricao);
+        await recarregar();
+      } else {
+        // Sem banco, a mudança vive só nesta tela e some no refresh.
+        const atualizado = registrarHistorico({ ...cliente, status: novo }, descricao);
+        setClientes((lista) => lista.map((c) => (c.id === cliente.id ? atualizado : c)));
+      }
+
+      setDetalhe(null);
+      mostrar(`${cliente.nome} agora está em "${novo}".`, 'sucesso');
+    } catch (e) {
+      mostrar(e instanceof Error ? e.message : 'Falha ao alterar o status.', 'erro');
+    }
   }
 
-  function excluirCliente(cliente: Cliente) {
+  async function excluirCliente(cliente: Cliente) {
     if (!confirm(`Excluir o cliente ${cliente.nome}? Esta ação não pode ser desfeita.`)) return;
-    setClientes((lista) => lista.filter((c) => c.id !== cliente.id));
-    setDetalhe(null);
-    mostrar(`${cliente.nome} foi excluído.`, 'sucesso');
+
+    try {
+      if (usandoBanco()) {
+        await api.clientes.excluir(cliente.id);
+        await recarregar();
+      } else {
+        setClientes((lista) => lista.filter((c) => c.id !== cliente.id));
+      }
+
+      setDetalhe(null);
+      mostrar(`${cliente.nome} foi excluído.`, 'sucesso');
+    } catch (e) {
+      mostrar(e instanceof Error ? e.message : 'Falha ao excluir.', 'erro');
+    }
   }
 
-  function salvarNovo(evento: React.FormEvent) {
+  async function salvarNovo(evento: React.FormEvent) {
     evento.preventDefault();
 
     if (!formulario.nome.trim()) {
@@ -150,25 +182,39 @@ export default function PaginaClientes() {
       return;
     }
 
-    const cliente: Cliente = {
-      ...formulario,
-      id: novoId('cli'),
-      criadoEm: new Date().toISOString(),
-      anexos: [],
-      historico: [
-        {
-          id: novoId('hist'),
-          em: new Date().toISOString(),
-          autor: usuario.nome,
-          descricao: 'Cliente cadastrado.',
-        },
-      ],
-    };
+    setSalvando(true);
 
-    setClientes((lista) => [cliente, ...lista]);
-    setFormAberto(false);
-    setFormulario(CLIENTE_VAZIO);
-    mostrar(`${cliente.nome} cadastrado com sucesso.`, 'sucesso');
+    try {
+      if (usandoBanco()) {
+        const criado = await api.clientes.criar(formulario);
+        await api.clientes.registrarHistorico(criado.id, usuario.nome, 'Cliente cadastrado.');
+        await recarregar();
+      } else {
+        const cliente: Cliente = {
+          ...formulario,
+          id: novoId('cli'),
+          criadoEm: new Date().toISOString(),
+          anexos: [],
+          historico: [
+            {
+              id: novoId('hist'),
+              em: new Date().toISOString(),
+              autor: usuario.nome,
+              descricao: 'Cliente cadastrado.',
+            },
+          ],
+        };
+        setClientes((lista) => [cliente, ...lista]);
+      }
+
+      setFormAberto(false);
+      setFormulario(CLIENTE_VAZIO);
+      mostrar(`${formulario.nome} cadastrado com sucesso.`, 'sucesso');
+    } catch (e) {
+      mostrar(e instanceof Error ? e.message : 'Falha ao cadastrar.', 'erro');
+    } finally {
+      setSalvando(false);
+    }
   }
 
   /* --- Colunas ---------------------------------------------------------- */
@@ -241,6 +287,8 @@ export default function PaginaClientes() {
           </button>
         }
       />
+
+      {erroCarga && <div className={estilos.erroCarga}>{erroCarga}</div>}
 
       <GradeMetricas>
         <CardMetrica rotulo="Total de clientes" valor={String(clientes.length)} icone="clientes" />
@@ -440,8 +488,8 @@ export default function PaginaClientes() {
             <button type="button" className="btn btn-ghost" onClick={() => setFormAberto(false)}>
               Cancelar
             </button>
-            <button type="submit" form="form-cliente" className="btn btn-primary">
-              Salvar cliente
+            <button type="submit" form="form-cliente" className="btn btn-primary" disabled={salvando}>
+              {salvando ? 'Salvando…' : 'Salvar cliente'}
             </button>
           </>
         }

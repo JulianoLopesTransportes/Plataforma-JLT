@@ -174,7 +174,8 @@ controle de acessos pelo admin, parâmetros de precificação editáveis, camada
 dados falando com o banco, API HTTP autenticada.
 
 Persistem no banco: clientes, frota, agenda, lançamentos financeiros e rotas —
-cadastro, edição e exclusão.
+cadastro, edição e exclusão. Clientes, veículos e motoristas aceitam anexos,
+guardados em bucket privado com URL assinada de curta duração.
 
 A criação de rota passa pela função `criar_rota_completa` no Postgres, e não
 por inserts sucessivos do navegador: rota, cargas, paradas e movimentos são
@@ -184,10 +185,9 @@ reais das cargas.
 
 **Falta:**
 
-1. Supabase Storage para os anexos (o tipo `Anexo` já está modelado)
-2. Revisar os **valores de precificação**, que são placeholder inventados na
+1. Revisar os **valores de precificação**, que são placeholder inventados na
    Fase A e não dado real da empresa
-3. Verificação automática de paridade entre `lib/permissoes.ts` e
+2. Verificação automática de paridade entre `lib/permissoes.ts` e
    `permissoes_modulo`
 
 **As tabelas de negócio estão vazias por decisão:** os mocks são pessoas e cargas

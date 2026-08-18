@@ -75,21 +75,18 @@ entrega a plataforma a quem não devia.
 
 `admin@julianoltransportes.com.br` já está pré-atribuído como `admin`.
 
-## Storage de anexos — PENDENTE DE APLICAÇÃO
+## Storage de anexos
 
-O arquivo `migrations/13_storage_anexos.sql` **ainda não foi aplicado**. Ele cria
-um bucket privado `anexos` e as policies que espelham a matriz: quem edita o
-módulo envia arquivo, quem vê o módulo baixa, e só o admin apaga.
-
-Para aplicar, cole o conteúdo dele no SQL Editor:
-
-    https://supabase.com/dashboard/project/lmiddrwpbgczosnrmjas/sql
-
-Enquanto não for aplicado, a interface de anexos aparece normalmente mas o envio
-falha com "O armazenamento de arquivos ainda não foi criado".
+`migrations/13_storage_anexos.sql` cria o bucket privado `anexos` e as policies
+que espelham a matriz: quem edita o módulo envia arquivo, quem vê o módulo
+baixa, e só o admin apaga. Aplicada em 18/08/2026.
 
 O bucket é **privado**: não há URL pública. Abrir um anexo gera uma URL assinada
 que expira em 10 minutos — tempo de clicar e abrir, não de compartilhar.
+
+Os caminhos seguem `<modulo>/<registro_id>/<arquivo>`, e é a primeira pasta que
+a função `modulo_do_anexo` traduz em módulo para as policies decidirem o acesso.
+Um arquivo em `veiculos/` obedece à permissão de `frota`, e assim por diante.
 
 ## O que ainda falta
 

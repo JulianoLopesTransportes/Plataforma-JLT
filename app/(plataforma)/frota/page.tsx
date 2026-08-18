@@ -37,6 +37,7 @@ import {
   type TomBadge,
 } from '@/components/ui';
 import type { Veiculo, Motorista } from '@/lib/tipos';
+import PainelAnexos from '@/components/modulos/PainelAnexos';
 import estilos from './frota.module.css';
 
 /** Quantos dias antes do vencimento a CNH já entra em alerta. */
@@ -101,6 +102,8 @@ export default function PaginaFrota() {
   const [editandoId, setEditandoId] = useState<string | null>(null);
   const [salvando, setSalvando] = useState(false);
   const [erroCarga, setErroCarga] = useState('');
+  const [abaVeiculo, setAbaVeiculo] = useState('dados');
+  const [abaMotorista, setAbaMotorista] = useState('dados');
 
   const podeMexer = podeEditar(usuario.nivel, 'frota');
   const podeExcluir = podeFazer(usuario.nivel, 'excluir');
@@ -479,7 +482,10 @@ export default function PaginaFrota() {
           colunas={colunasVeiculo}
           registros={veiculosFiltrados}
           carregando={carregando}
-          aoClicarLinha={setVeiculoDetalhe}
+          aoClicarLinha={(v) => {
+            setVeiculoDetalhe(v);
+            setAbaVeiculo('dados');
+          }}
           mensagemVazio="Nenhum veículo corresponde aos filtros."
           porPagina={8}
         />
@@ -488,7 +494,10 @@ export default function PaginaFrota() {
           colunas={colunasMotorista}
           registros={motoristasFiltrados}
           carregando={carregando}
-          aoClicarLinha={setMotoristaDetalhe}
+          aoClicarLinha={(m) => {
+            setMotoristaDetalhe(m);
+            setAbaMotorista('dados');
+          }}
           mensagemVazio="Nenhum motorista corresponde aos filtros."
           porPagina={8}
         />
@@ -532,6 +541,37 @@ export default function PaginaFrota() {
         }
       >
         {veiculoDetalhe && (
+          <>
+            <Abas
+              abas={[
+                { chave: 'dados', rotulo: 'Dados' },
+                { chave: 'anexos', rotulo: `Anexos (${veiculoDetalhe.anexos.length})` },
+              ]}
+              ativa={abaVeiculo}
+              aoTrocar={setAbaVeiculo}
+            />
+
+            {abaVeiculo === 'anexos' ? (
+              <PainelAnexos
+                dono="veiculos"
+                donoId={veiculoDetalhe.id}
+                anexos={veiculoDetalhe.anexos.map((a) => ({
+                  id: a.id,
+                  nome: a.nome,
+                  caminho: a.caminho ?? '',
+                  tipo: a.tipo,
+                  tamanho: a.tamanho,
+                  enviadoEm: a.enviadoEm,
+                }))}
+                podeEnviar={podeMexer}
+                podeExcluir={podeExcluir}
+                aoMudar={async () => {
+                  await recarregar();
+                  const atualizado = await api.veiculos.obter(veiculoDetalhe.id);
+                  if (atualizado) setVeiculoDetalhe(atualizado);
+                }}
+              />
+            ) : (
           <dl className={estilos.listaDados}>
             <Dado rotulo="Placa">{veiculoDetalhe.placa}</Dado>
             <Dado rotulo="Status">
@@ -557,6 +597,8 @@ export default function PaginaFrota() {
               {veiculoDetalhe.observacoes || '—'}
             </Dado>
           </dl>
+            )}
+          </>
         )}
       </Modal>
 
@@ -598,6 +640,37 @@ export default function PaginaFrota() {
         }
       >
         {motoristaDetalhe && (
+          <>
+            <Abas
+              abas={[
+                { chave: 'dados', rotulo: 'Dados' },
+                { chave: 'anexos', rotulo: `Anexos (${motoristaDetalhe.anexos.length})` },
+              ]}
+              ativa={abaMotorista}
+              aoTrocar={setAbaMotorista}
+            />
+
+            {abaMotorista === 'anexos' ? (
+              <PainelAnexos
+                dono="motoristas"
+                donoId={motoristaDetalhe.id}
+                anexos={motoristaDetalhe.anexos.map((a) => ({
+                  id: a.id,
+                  nome: a.nome,
+                  caminho: a.caminho ?? '',
+                  tipo: a.tipo,
+                  tamanho: a.tamanho,
+                  enviadoEm: a.enviadoEm,
+                }))}
+                podeEnviar={podeMexer}
+                podeExcluir={podeExcluir}
+                aoMudar={async () => {
+                  await recarregar();
+                  const atualizado = await api.motoristas.obter(motoristaDetalhe.id);
+                  if (atualizado) setMotoristaDetalhe(atualizado);
+                }}
+              />
+            ) : (
           <dl className={estilos.listaDados}>
             <Dado rotulo="CPF">{motoristaDetalhe.cpf}</Dado>
             <Dado rotulo="Status">
@@ -621,6 +694,8 @@ export default function PaginaFrota() {
               {motoristaDetalhe.observacoes || '—'}
             </Dado>
           </dl>
+            )}
+          </>
         )}
       </Modal>
 

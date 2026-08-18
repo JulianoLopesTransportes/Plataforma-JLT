@@ -8,11 +8,19 @@
  * status de disponibilidade e alerta de vencimento de CNH.
  */
 
-import { useEffect, useState, useMemo } from 'react';
-import { api } from '@/lib/api';
+import { useEffect, useState, useMemo, useCallback } from 'react';
+import { api, usandoBanco } from '@/lib/api';
 import { useUsuario } from '@/components/layout/SessaoProvider';
 import { podeEditar, podeFazer } from '@/lib/permissoes';
-import { formatarData, diasEntre, hojeISO, mascararPlaca } from '@/lib/utils/formato';
+import {
+  formatarData,
+  diasEntre,
+  hojeISO,
+  mascararPlaca,
+  mascararCPF,
+  mascararTelefone,
+  placaValida,
+} from '@/lib/utils/formato';
 import {
   TituloPagina,
   Tabela,
@@ -48,6 +56,31 @@ const TOM_MOTORISTA: Record<Motorista['status'], TomBadge> = {
   Inativo: 'neutro',
 };
 
+const VEICULO_VAZIO: Omit<Veiculo, 'id' | 'anexos'> = {
+  placa: '',
+  modelo: '',
+  marca: '',
+  ano: new Date().getFullYear(),
+  capacidadeM3: 0,
+  capacidadeKg: 0,
+  status: 'Disponível',
+  proximaManutencao: '',
+  observacoes: '',
+};
+
+const MOTORISTA_VAZIO: Omit<Motorista, 'id' | 'anexos'> = {
+  nome: '',
+  cpf: '',
+  telefone: '',
+  cnh: '',
+  categoriaCnh: 'D',
+  validadeCnh: '',
+  status: 'Ativo',
+  veiculoId: null,
+  admissao: '',
+  observacoes: '',
+};
+
 export default function PaginaFrota() {
   const usuario = useUsuario();
   const { mostrar } = useToast();
@@ -63,16 +96,31 @@ export default function PaginaFrota() {
   const [veiculoDetalhe, setVeiculoDetalhe] = useState<Veiculo | null>(null);
   const [motoristaDetalhe, setMotoristaDetalhe] = useState<Motorista | null>(null);
 
+  const [formVeiculo, setFormVeiculo] = useState<Omit<Veiculo, 'id' | 'anexos'> | null>(null);
+  const [formMotorista, setFormMotorista] = useState<Omit<Motorista, 'id' | 'anexos'> | null>(null);
+  const [editandoId, setEditandoId] = useState<string | null>(null);
+  const [salvando, setSalvando] = useState(false);
+  const [erroCarga, setErroCarga] = useState('');
+
   const podeMexer = podeEditar(usuario.nivel, 'frota');
   const podeExcluir = podeFazer(usuario.nivel, 'excluir');
 
-  useEffect(() => {
-    Promise.all([api.veiculos.listar(), api.motoristas.listar()]).then(([v, m]) => {
+  const recarregar = useCallback(async () => {
+    try {
+      const [v, m] = await Promise.all([api.veiculos.listar(), api.motoristas.listar()]);
       setVeiculos(v);
       setMotoristas(m);
+      setErroCarga('');
+    } catch (e) {
+      setErroCarga(e instanceof Error ? e.message : 'Falha ao carregar a frota.');
+    } finally {
       setCarregando(false);
-    });
+    }
   }, []);
+
+  useEffect(() => {
+    recarregar();
+  }, [recarregar]);
 
   // Trocar de aba com filtros da outra aplicados só confunde.
   useEffect(() => {
@@ -115,18 +163,108 @@ export default function PaginaFrota() {
     );
   }, [motoristas, busca, filtroStatus]);
 
-  function excluirVeiculo(v: Veiculo) {
+  async function excluirVeiculo(v: Veiculo) {
     if (!confirm(`Excluir o veículo ${v.placa}?`)) return;
-    setVeiculos((lista) => lista.filter((x) => x.id !== v.id));
-    setVeiculoDetalhe(null);
-    mostrar(`Veículo ${v.placa} excluído.`, 'sucesso');
+    try {
+      if (usandoBanco()) {
+        await api.veiculos.excluir(v.id);
+        await recarregar();
+      } else {
+        setVeiculos((lista) => lista.filter((x) => x.id !== v.id));
+      }
+      setVeiculoDetalhe(null);
+      mostrar(`Veículo ${v.placa} excluído.`, 'sucesso');
+    } catch (e) {
+      mostrar(e instanceof Error ? e.message : 'Falha ao excluir.', 'erro');
+    }
   }
 
-  function excluirMotorista(m: Motorista) {
+  async function excluirMotorista(m: Motorista) {
     if (!confirm(`Excluir o motorista ${m.nome}?`)) return;
-    setMotoristas((lista) => lista.filter((x) => x.id !== m.id));
+    try {
+      if (usandoBanco()) {
+        await api.motoristas.excluir(m.id);
+        await recarregar();
+      } else {
+        setMotoristas((lista) => lista.filter((x) => x.id !== m.id));
+      }
+      setMotoristaDetalhe(null);
+      mostrar(`${m.nome} excluído.`, 'sucesso');
+    } catch (e) {
+      mostrar(e instanceof Error ? e.message : 'Falha ao excluir.', 'erro');
+    }
+  }
+
+  /* --- Abrir formulários --- */
+  function novoRegistro() {
+    setEditandoId(null);
+    if (aba === 'veiculos') setFormVeiculo(VEICULO_VAZIO);
+    else setFormMotorista(MOTORISTA_VAZIO);
+  }
+
+  function editarVeiculo(v: Veiculo) {
+    setEditandoId(v.id);
+    setFormVeiculo({ ...v });
+    setVeiculoDetalhe(null);
+  }
+
+  function editarMotorista(m: Motorista) {
+    setEditandoId(m.id);
+    setFormMotorista({ ...m });
     setMotoristaDetalhe(null);
-    mostrar(`${m.nome} excluído.`, 'sucesso');
+  }
+
+  /* --- Salvar --- */
+  async function salvarVeiculo(evento: React.FormEvent) {
+    evento.preventDefault();
+    if (!formVeiculo) return;
+
+    if (!placaValida(formVeiculo.placa)) {
+      mostrar('Placa inválida. Use o padrão Mercosul (ABC1D23) ou o antigo (ABC1234).', 'erro');
+      return;
+    }
+    if (!formVeiculo.modelo.trim()) {
+      mostrar('Informe o modelo do veículo.', 'erro');
+      return;
+    }
+
+    setSalvando(true);
+    try {
+      if (editandoId) await api.veiculos.atualizar(editandoId, formVeiculo);
+      else await api.veiculos.criar(formVeiculo);
+      await recarregar();
+      setFormVeiculo(null);
+      setEditandoId(null);
+      mostrar(`Veículo ${formVeiculo.placa} salvo.`, 'sucesso');
+    } catch (e) {
+      mostrar(e instanceof Error ? e.message : 'Falha ao salvar.', 'erro');
+    } finally {
+      setSalvando(false);
+    }
+  }
+
+  async function salvarMotorista(evento: React.FormEvent) {
+    evento.preventDefault();
+    if (!formMotorista) return;
+
+    if (!formMotorista.nome.trim()) {
+      mostrar('Informe o nome do motorista.', 'erro');
+      return;
+    }
+
+    setSalvando(true);
+    try {
+      if (editandoId) await api.motoristas.atualizar(editandoId, formMotorista);
+      else await api.motoristas.criar(formMotorista);
+      await recarregar();
+      setFormMotorista(null);
+      setEditandoId(null);
+      mostrar(`${formMotorista.nome} salvo.`, 'sucesso');
+    } catch (e) {
+      mostrar(e instanceof Error ? e.message : 'Falha ao salvar.', 'erro');
+    } finally {
+      setSalvando(false);
+    }
   }
 
   /* --- Colunas ---------------------------------------------------------- */
@@ -256,17 +394,14 @@ export default function PaginaFrota() {
             className="btn btn-primary"
             disabled={!podeMexer}
             title={podeMexer ? undefined : 'Seu nível não permite alterar a frota'}
-            onClick={() =>
-              mostrar(
-                'O cadastro grava no banco de dados — disponível quando a persistência entrar.',
-                'aviso',
-              )
-            }
+            onClick={novoRegistro}
           >
             {aba === 'veiculos' ? 'Novo veículo' : 'Novo motorista'}
           </button>
         }
       />
+
+      {erroCarga && <div className={estilos.erroCarga}>{erroCarga}</div>}
 
       <GradeMetricas>
         <CardMetrica
@@ -376,6 +511,15 @@ export default function PaginaFrota() {
                   Excluir
                 </button>
               )}
+              {podeMexer && (
+                <button
+                  type="button"
+                  className="btn btn-primary"
+                  onClick={() => editarVeiculo(veiculoDetalhe)}
+                >
+                  Editar
+                </button>
+              )}
               <button
                 type="button"
                 className="btn btn-outline"
@@ -433,6 +577,15 @@ export default function PaginaFrota() {
                   Excluir
                 </button>
               )}
+              {podeMexer && (
+                <button
+                  type="button"
+                  className="btn btn-primary"
+                  onClick={() => editarMotorista(motoristaDetalhe)}
+                >
+                  Editar
+                </button>
+              )}
               <button
                 type="button"
                 className="btn btn-outline"
@@ -468,6 +621,322 @@ export default function PaginaFrota() {
               {motoristaDetalhe.observacoes || '—'}
             </Dado>
           </dl>
+        )}
+      </Modal>
+
+      {/* ---------- Formulário de veículo ---------- */}
+      <Modal
+        titulo={editandoId ? 'Editar veículo' : 'Novo veículo'}
+        aberto={formVeiculo !== null}
+        aoFechar={() => setFormVeiculo(null)}
+        largo
+        rodape={
+          <>
+            <button type="button" className="btn btn-ghost" onClick={() => setFormVeiculo(null)}>
+              Cancelar
+            </button>
+            <button
+              type="submit"
+              form="form-veiculo"
+              className="btn btn-primary"
+              disabled={salvando}
+            >
+              {salvando ? 'Salvando…' : 'Salvar veículo'}
+            </button>
+          </>
+        }
+      >
+        {formVeiculo && (
+          <form id="form-veiculo" onSubmit={salvarVeiculo}>
+            <div className="form-row-3">
+              <div className="field">
+                <label htmlFor="placa">Placa</label>
+                <input
+                  id="placa"
+                  value={formVeiculo.placa}
+                  onChange={(e) =>
+                    setFormVeiculo({ ...formVeiculo, placa: mascararPlaca(e.target.value) })
+                  }
+                  placeholder="ABC1D23"
+                  required
+                />
+                <p className="field-hint">Mercosul ou padrão antigo.</p>
+              </div>
+
+              <div className="field">
+                <label htmlFor="marca">Marca</label>
+                <input
+                  id="marca"
+                  value={formVeiculo.marca}
+                  onChange={(e) => setFormVeiculo({ ...formVeiculo, marca: e.target.value })}
+                  placeholder="Mercedes-Benz"
+                />
+              </div>
+
+              <div className="field">
+                <label htmlFor="modelo">Modelo</label>
+                <input
+                  id="modelo"
+                  value={formVeiculo.modelo}
+                  onChange={(e) => setFormVeiculo({ ...formVeiculo, modelo: e.target.value })}
+                  placeholder="Accelo 1016"
+                  required
+                />
+              </div>
+            </div>
+
+            <div className="form-row-3">
+              <div className="field">
+                <label htmlFor="ano">Ano</label>
+                <input
+                  id="ano"
+                  type="number"
+                  min="1970"
+                  max={new Date().getFullYear() + 1}
+                  value={formVeiculo.ano || ''}
+                  onChange={(e) => setFormVeiculo({ ...formVeiculo, ano: Number(e.target.value) })}
+                />
+              </div>
+
+              <div className="field">
+                <label htmlFor="capM3">Capacidade (m³)</label>
+                <input
+                  id="capM3"
+                  type="number"
+                  min="0"
+                  step="0.5"
+                  value={formVeiculo.capacidadeM3 || ''}
+                  onChange={(e) =>
+                    setFormVeiculo({ ...formVeiculo, capacidadeM3: Number(e.target.value) })
+                  }
+                />
+                <p className="field-hint">Usada no cálculo de ocupação das rotas.</p>
+              </div>
+
+              <div className="field">
+                <label htmlFor="capKg">Capacidade (kg)</label>
+                <input
+                  id="capKg"
+                  type="number"
+                  min="0"
+                  value={formVeiculo.capacidadeKg || ''}
+                  onChange={(e) =>
+                    setFormVeiculo({ ...formVeiculo, capacidadeKg: Number(e.target.value) })
+                  }
+                />
+              </div>
+            </div>
+
+            <div className="form-row">
+              <div className="field">
+                <label htmlFor="statusV">Status</label>
+                <select
+                  id="statusV"
+                  value={formVeiculo.status}
+                  onChange={(e) =>
+                    setFormVeiculo({ ...formVeiculo, status: e.target.value as Veiculo['status'] })
+                  }
+                >
+                  {(['Disponível', 'Em rota', 'Manutenção', 'Inativo'] as const).map((s) => (
+                    <option key={s} value={s}>
+                      {s}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="field">
+                <label htmlFor="manut">Próxima manutenção</label>
+                <input
+                  id="manut"
+                  type="date"
+                  value={formVeiculo.proximaManutencao}
+                  onChange={(e) =>
+                    setFormVeiculo({ ...formVeiculo, proximaManutencao: e.target.value })
+                  }
+                />
+              </div>
+            </div>
+
+            <div className="field">
+              <label htmlFor="obsV">Observações</label>
+              <textarea
+                id="obsV"
+                value={formVeiculo.observacoes}
+                onChange={(e) => setFormVeiculo({ ...formVeiculo, observacoes: e.target.value })}
+              />
+            </div>
+          </form>
+        )}
+      </Modal>
+
+      {/* ---------- Formulário de motorista ---------- */}
+      <Modal
+        titulo={editandoId ? 'Editar motorista' : 'Novo motorista'}
+        aberto={formMotorista !== null}
+        aoFechar={() => setFormMotorista(null)}
+        largo
+        rodape={
+          <>
+            <button type="button" className="btn btn-ghost" onClick={() => setFormMotorista(null)}>
+              Cancelar
+            </button>
+            <button
+              type="submit"
+              form="form-motorista"
+              className="btn btn-primary"
+              disabled={salvando}
+            >
+              {salvando ? 'Salvando…' : 'Salvar motorista'}
+            </button>
+          </>
+        }
+      >
+        {formMotorista && (
+          <form id="form-motorista" onSubmit={salvarMotorista}>
+            <div className="form-row">
+              <div className="field">
+                <label htmlFor="nomeM">Nome completo</label>
+                <input
+                  id="nomeM"
+                  value={formMotorista.nome}
+                  onChange={(e) => setFormMotorista({ ...formMotorista, nome: e.target.value })}
+                  required
+                />
+              </div>
+
+              <div className="field">
+                <label htmlFor="cpfM">CPF</label>
+                <input
+                  id="cpfM"
+                  value={formMotorista.cpf}
+                  onChange={(e) =>
+                    setFormMotorista({ ...formMotorista, cpf: mascararCPF(e.target.value) })
+                  }
+                  inputMode="numeric"
+                />
+              </div>
+            </div>
+
+            <div className="form-row">
+              <div className="field">
+                <label htmlFor="telM">Telefone</label>
+                <input
+                  id="telM"
+                  value={formMotorista.telefone}
+                  onChange={(e) =>
+                    setFormMotorista({ ...formMotorista, telefone: mascararTelefone(e.target.value) })
+                  }
+                  inputMode="tel"
+                />
+              </div>
+
+              <div className="field">
+                <label htmlFor="admM">Admissão</label>
+                <input
+                  id="admM"
+                  type="date"
+                  value={formMotorista.admissao}
+                  onChange={(e) => setFormMotorista({ ...formMotorista, admissao: e.target.value })}
+                />
+              </div>
+            </div>
+
+            <div className="form-row-3">
+              <div className="field">
+                <label htmlFor="cnhM">Número da CNH</label>
+                <input
+                  id="cnhM"
+                  value={formMotorista.cnh}
+                  onChange={(e) => setFormMotorista({ ...formMotorista, cnh: e.target.value })}
+                  inputMode="numeric"
+                />
+              </div>
+
+              <div className="field">
+                <label htmlFor="catM">Categoria</label>
+                <select
+                  id="catM"
+                  value={formMotorista.categoriaCnh ?? 'D'}
+                  onChange={(e) =>
+                    setFormMotorista({
+                      ...formMotorista,
+                      categoriaCnh: e.target.value as Motorista['categoriaCnh'],
+                    })
+                  }
+                >
+                  {(['B', 'C', 'D', 'E'] as const).map((c) => (
+                    <option key={c} value={c}>
+                      {c}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="field">
+                <label htmlFor="valM">Validade da CNH</label>
+                <input
+                  id="valM"
+                  type="date"
+                  value={formMotorista.validadeCnh}
+                  onChange={(e) =>
+                    setFormMotorista({ ...formMotorista, validadeCnh: e.target.value })
+                  }
+                />
+              </div>
+            </div>
+
+            <div className="form-row">
+              <div className="field">
+                <label htmlFor="statusM">Status</label>
+                <select
+                  id="statusM"
+                  value={formMotorista.status}
+                  onChange={(e) =>
+                    setFormMotorista({
+                      ...formMotorista,
+                      status: e.target.value as Motorista['status'],
+                    })
+                  }
+                >
+                  {(['Ativo', 'Em rota', 'Férias', 'Inativo'] as const).map((s) => (
+                    <option key={s} value={s}>
+                      {s}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="field">
+                <label htmlFor="veicM">Veículo vinculado</label>
+                <select
+                  id="veicM"
+                  value={formMotorista.veiculoId ?? ''}
+                  onChange={(e) =>
+                    setFormMotorista({ ...formMotorista, veiculoId: e.target.value || null })
+                  }
+                >
+                  <option value="">Sem veículo fixo</option>
+                  {veiculos.map((v) => (
+                    <option key={v.id} value={v.id}>
+                      {v.placa} — {v.modelo}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            <div className="field">
+              <label htmlFor="obsM">Observações</label>
+              <textarea
+                id="obsM"
+                value={formMotorista.observacoes}
+                onChange={(e) =>
+                  setFormMotorista({ ...formMotorista, observacoes: e.target.value })
+                }
+              />
+            </div>
+          </form>
         )}
       </Modal>
     </>

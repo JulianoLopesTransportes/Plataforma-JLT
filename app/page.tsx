@@ -133,7 +133,7 @@ function Formulario() {
             src="/logo-jlt.png"
             alt="Juliano Lopes Transportes"
             width={420}
-            height={280}
+            height={193}
             priority
             style={{ width: '100%', height: 'auto' }}
           />

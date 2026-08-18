@@ -12,9 +12,9 @@
  * mais sentido com módulos.
  */
 
-import { useEffect, useState, useMemo, Suspense } from 'react';
+import { useEffect, useState, useMemo, useCallback, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { api } from '@/lib/api';
+import { api, usandoBanco } from '@/lib/api';
 import { useUsuario } from '@/components/layout/SessaoProvider';
 import { podeEditar } from '@/lib/permissoes';
 import { formatarData, diasEntre } from '@/lib/utils/formato';
@@ -74,16 +74,21 @@ function ConteudoRotas() {
 
   const podeMexer = podeEditar(usuario.nivel, 'rotas');
 
-  useEffect(() => {
-    Promise.all([api.rotas.listar(), api.veiculos.listar(), api.motoristas.listar()]).then(
-      ([r, v, m]) => {
-        setRotas(r);
-        setVeiculos(v);
-        setMotoristas(m);
-        setCarregando(false);
-      },
-    );
+  const recarregar = useCallback(async () => {
+    try {
+      setRotas(await api.rotas.listar());
+    } finally {
+      setCarregando(false);
+    }
   }, []);
+
+  useEffect(() => {
+    Promise.all([api.veiculos.listar(), api.motoristas.listar()]).then(([v, m]) => {
+      setVeiculos(v);
+      setMotoristas(m);
+    });
+    recarregar();
+  }, [recarregar]);
 
   // Abre direto a rota indicada na URL — é assim que o dashboard e a agenda
   // apontam para uma rota específica.
@@ -112,9 +117,18 @@ function ConteudoRotas() {
     [rotas, veiculos],
   );
 
-  function moverRota(rota: Rota, novoStatus: Rota['status']) {
-    setRotas((lista) => lista.map((r) => (r.id === rota.id ? { ...r, status: novoStatus } : r)));
-    mostrar(`${rota.nome} movida para "${ROTULO_STATUS_ROTA[novoStatus]}".`, 'sucesso');
+  async function moverRota(rota: Rota, novoStatus: Rota['status']) {
+    try {
+      if (usandoBanco()) {
+        await api.rotas.atualizarStatus(rota.id, novoStatus);
+        await recarregar();
+      } else {
+        setRotas((lista) => lista.map((r) => (r.id === rota.id ? { ...r, status: novoStatus } : r)));
+      }
+      mostrar(`${rota.nome} movida para "${ROTULO_STATUS_ROTA[novoStatus]}".`, 'sucesso');
+    } catch (e) {
+      mostrar(e instanceof Error ? e.message : 'Falha ao mover a rota.', 'erro');
+    }
   }
 
   return (
@@ -130,7 +144,7 @@ function ConteudoRotas() {
             title={podeMexer ? undefined : 'Seu nível não permite criar rotas'}
             onClick={() =>
               mostrar(
-                'A criação de rota grava no banco de dados — disponível quando a persistência entrar.',
+                'A criação de rota entra na próxima etapa — ela envolve cadastrar cargas e paradas juntas.',
                 'aviso',
               )
             }

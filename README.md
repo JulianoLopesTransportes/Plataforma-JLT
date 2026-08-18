@@ -172,10 +172,14 @@ Os arquivos originais estão preservados em `referencia/`. Nada foi descartado.
 controle de acessos pelo admin, parâmetros de precificação editáveis, camada de
 dados falando com o banco, API HTTP autenticada.
 
+Persistem no banco: clientes, frota (veículos e motoristas), agenda e
+lançamentos financeiros — cadastro, edição e exclusão. Rotas persistem a
+mudança de status.
+
 **Falta:**
 
-1. Escrita nos módulos de frota, agenda, rotas e financeiro — Clientes serviu de
-   piloto e o padrão está pronto para repetir
+1. Criação de rota pela interface — é o formulário mais complexo, porque
+   cadastra cargas e paradas aninhadas na mesma operação
 2. Supabase Storage para os anexos (o tipo `Anexo` já está modelado)
 3. Revisar os **valores de precificação**, que são placeholder inventados na
    Fase A e não dado real da empresa

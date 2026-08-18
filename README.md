@@ -3,8 +3,8 @@
 Plataforma web interna para gestão de clientes, agenda, rotas, frota, orçamentos,
 documentos e financeiro.
 
-> **Fase atual: A — interface completa com dados fictícios.**
-> Não há banco de dados nem autenticação real. Ver [O que falta](#o-que-falta-quando-o-banco-entrar).
+**No ar:** [julianoltransportes.com.br](https://julianoltransportes.com.br)
+· **Banco:** Supabase `lmiddrwpbgczosnrmjas` (São Paulo)
 
 ---
 
@@ -16,48 +16,51 @@ Requer Node.js 20 ou superior.
 npm install
 ```
 
+Crie `.env.local` a partir de `.env.example` com as credenciais do Supabase, e:
+
 ```bash
 npm run dev
 ```
 
-A plataforma sobe em `http://localhost:3000`. A tela de login aparece primeiro;
-escolha um dos perfis de teste listados nela.
+A plataforma sobe em `http://localhost:3000`.
 
-Outros comandos:
-
-```bash
-npm run build
-```
-
-```bash
-npm start
-```
+**Sem as variáveis de ambiente**, a plataforma continua funcionando com os dados
+fictícios de `mock/` — útil para desenvolver interface sem tocar no banco. A
+escolha é automática, em tempo de execução; ver `usandoBanco()` em `lib/api`.
 
 ---
 
-## Usuários de teste
+## Acesso
 
-Um por nível de acesso. **Qualquer senha é aceita** — a autenticação é simulada
-(ver `lib/auth.ts`). Na tela de login basta clicar no perfil desejado.
+A autenticação é real (Supabase Auth) e o **cadastro é uma lista de convidados**:
+o banco recusa qualquer e-mail que um administrador não tenha autorizado antes.
 
-| Nível | E-mail | Nome |
-|---|---|---|
-| Administrador | `admin@julianoltransportes.com.br` | Juliano Lopes |
-| Financeiro | `financeiro@julianoltransportes.com.br` | Renata Prado |
-| Operacional | `operacional@julianoltransportes.com.br` | Marcos Vieira |
-| Comercial | `comercial@julianoltransportes.com.br` | Aline Duarte |
+**Para dar acesso a alguém:**
 
-Troque de perfil para conferir como cada nível enxerga a plataforma: a sidebar
-lista só os módulos permitidos, as ações restritas aparecem desabilitadas e os
-relatórios escondem colunas conforme o nível.
+1. Um admin entra em **Usuários → Autorizar acesso** e cadastra e-mail, nome,
+   cargo e nível
+2. A pessoa vai à tela de entrada, escolhe **"Primeiro acesso — definir senha"**
+   e cria a própria senha
+3. Ao criar, um gatilho no banco monta o perfil já com o nível certo
+
+A senha nunca passa pela nossa aplicação — quem a guarda é o Supabase Auth.
+
+Alterar o nível de alguém vale **imediatamente**, inclusive para quem já está
+logado. Revogar o acesso desativa o perfil sem apagar o registro, preservando a
+autoria em históricos e lançamentos.
 
 ---
 
 ## Permissões
 
-A regra de acesso vive **inteira** em `lib/permissoes.ts`, num único objeto.
-Não há verificação de permissão espalhada pelo código: sidebar, guarda de rota,
-botões desabilitados e colunas de relatório consultam as funções desse arquivo.
+A regra de acesso existe em **dois lugares que precisam concordar**:
+
+- `lib/permissoes.ts` — governa a interface (sidebar, guardas, botões)
+- tabela `permissoes_modulo` no Postgres — governa o RLS
+
+A duplicação é proposital: uma policy do banco não consegue ler um objeto
+TypeScript. O ganho é que a regra vale mesmo contra acesso direto à API REST,
+não só na tela. **Ao mudar a matriz, mude nos dois lugares.**
 
 | Módulo | Admin | Financeiro | Operacional | Comercial |
 |---|---|---|---|---|
@@ -74,63 +77,63 @@ botões desabilitados e colunas de relatório consultam as funções desse arqui
 | Guia visual | Leitura | Leitura | Leitura | Leitura |
 
 Dois recortes não cabem numa matriz por módulo e existem como **capacidades
-transversais** (também em `lib/permissoes.ts`):
+transversais**. Como RLS filtra linhas e estes requisitos são sobre colunas,
+cada um exigiu um mecanismo próprio no banco:
 
-1. **Comercial usa a calculadora de orçamento e vê o preço final, mas não vê
-   custo, margem nem os parâmetros de precificação.** Controlado por
-   `ver_custos` e `editar_parametros_precificacao`.
-2. **Nos relatórios, Comercial não vê custo e Operacional não vê faturamento.**
-   Controlado por `ver_custos` e `ver_faturamento` — e o mesmo recorte se aplica
-   ao CSV exportado, não só à tela.
+1. **Comercial não vê custo.** A view `orcamentos_visao` devolve `custo_base` e
+   `margem_percentual` como `NULL` para quem não tem `ver_custos`. Como o
+   Comercial ainda precisa do *preço*, a função `calcular_preco()` roda dentro
+   do banco e devolve só o valor final — a composição nunca sai.
+2. **Operacional não vê faturamento.** `relatorio_operacoes()` anula a coluna
+   conforme a capacidade. Devolve `NULL`, não zero: zero seria falso. O mesmo
+   recorte se aplica ao CSV exportado.
 
-Outras capacidades: `exportar`, `aprovar`, `excluir`.
+Outras capacidades: `exportar`, `aprovar`, `excluir` (só admin).
 
-A matriz também pode ser consultada na própria plataforma, em **Usuários →
-Matriz de permissões**, renderizada a partir do mesmo objeto.
+A matriz pode ser consultada na plataforma em **Usuários → Matriz de permissões**,
+renderizada do mesmo objeto que governa o sistema.
 
 ---
 
-## Estrutura de pastas
+## Estrutura
 
 ```
 app/
-  page.tsx                 tela de login
+  page.tsx                 entrada: login, criar acesso, recuperar senha
   (plataforma)/            tudo que exige sessão
     layout.tsx             a moldura: sidebar + header, injetada uma vez
     dashboard/ clientes/ documentos/ agenda/ rotas/
     frota/ orcamentos/ financeiro/ relatorios/ usuarios/ guia-visual/
-  api/[entidade]/          endpoints stub (substituem o Express)
+  api/[entidade]/          API HTTP autenticada (RLS aplica)
+middleware.ts              guarda de sessão NO SERVIDOR
 
 components/
   layout/                  Sidebar, Header, Icone, SessaoProvider
   ui/                      Tabela, Modal, Toast, CardMetrica, Abas, Grafico…
+  modulos/                 PainelPrecificacao
 
 lib/
-  permissoes.ts            MATRIZ DE PERMISSÕES — fonte única de acesso
-  auth.ts                  sessão simulada (leia o aviso no topo)
-  navegacao.ts             itens da sidebar
-  tipos.ts                 schema das entidades
+  permissoes.ts            matriz de acesso — fonte única no front
+  auth.ts                  Supabase Auth
+  supabase/                clientes de navegador e de servidor
   api/                     ÚNICA porta de saída para dados
-  negocio/                 regras portadas dos módulos originais, sem DOM
-  utils/                   formatadores, máscaras, exportação CSV
+  negocio/                 regras de negócio, sem React nem DOM
+  utils/                   formatadores, máscaras, CSV
 
-styles/
-  tokens.css               design tokens — nenhuma cor fora daqui
-  globals.css              reset e classes de componente do guia visual
-
-mock/                      dados fictícios, um arquivo por entidade
+styles/tokens.css          design tokens — nenhuma cor fora daqui
+supabase/README.md         schema, RLS e migrations
+mock/                      dados fictícios (fallback sem banco)
 referencia/                os 8 HTMLs originais, preservados intactos
 ```
 
 ### Regras que a estrutura carrega
 
 - **`styles/tokens.css` é a única fonte de cor, fonte, espaçamento e raio.**
-  Nenhum hex fora dele. Se falta um tom, crie o token.
-- **`lib/api` é a única porta de saída para dados.** Nenhum componente lê JSON
-  nem faz `fetch` direto. É essa camada que torna a troca para o Supabase uma
-  mudança local.
+- **`lib/api` é a única porta de saída para dados.** Nenhum componente faz
+  consulta direta. Foi essa camada que permitiu trocar mocks por Supabase sem
+  tocar em um único módulo.
 - **`lib/negocio` não conhece React nem DOM.** Precificação, ocupação de rota e
-  motor de alertas são funções puras, testáveis isoladamente.
+  motor de alertas são funções puras.
 - **A moldura existe uma vez.** Nenhuma página redeclara sidebar ou header.
 
 ---
@@ -141,88 +144,43 @@ Os arquivos originais estão preservados em `referencia/`. Nada foi descartado.
 
 | Módulo | Origem | O que foi preservado |
 |---|---|---|
-| Clientes | `01-cadastro-clientes_5.html` | Máscaras CPF/CNPJ/telefone, classificação de porte por volume (6 faixas), funil de status, histórico |
-| Documentos | `02-documentos_10.html` | Os 6 geradores com o texto jurídico integral — 13 cláusulas no contrato de mudança, 13 + Anexo I no guarda-móveis — e o catálogo de 153 itens em 6 ambientes |
-| Agenda | `03-agenda_8.html` | Calendário mensal, 6 tipos de compromisso, vínculos com cliente/veículo/rota |
-| Frota | `04-veiculos-motoristas_3.html` | Cadastro duplo em abas, vínculo motorista↔veículo, alerta de vencimento de CNH |
-| Gastos e Ganhos | `05-gastos-ganhos_5.html` | Lançamentos com categoria livre, vínculos, gráficos de composição |
-| Orçamentos | `06-orcamentos-calculadora_6.html` | Faixas de volume, adicionais, margem por divisão, arredondamento comercial, parcelamento padrão |
-| Rotas | `07-rotas_1.html` | Kanban, linha do tempo, ocupação parada a parada, motor de alertas |
-| Guia visual | `00-guia-visual_1.html` | Tokens, tipografia, componentes — agora lidos do CSS real, não copiados |
-| Relatórios | — | Módulo novo |
-| Usuários | — | Módulo novo |
+| Clientes | `01-cadastro-clientes_5.html` | Máscaras CPF/CNPJ/telefone, 6 faixas de porte por volume, funil de status, histórico |
+| Documentos | `02-documentos_10.html` | 6 geradores com o texto jurídico integral — 13 cláusulas no contrato, 13 + Anexo I no guarda-móveis — e o catálogo de 153 itens |
+| Agenda | `03-agenda_8.html` | Calendário mensal, 6 tipos de compromisso, vínculos |
+| Frota | `04-veiculos-motoristas_3.html` | Abas, vínculo motorista↔veículo, alerta de CNH |
+| Gastos e Ganhos | `05-gastos-ganhos_5.html` | Lançamentos, categoria livre, gráficos |
+| Orçamentos | `06-orcamentos-calculadora_6.html` | Faixas, adicionais, margem por divisão, arredondamento comercial, parcelamento |
+| Rotas | `07-rotas_1.html` | Kanban, linha do tempo, ocupação parada a parada, alertas |
+| Guia visual | `00-guia-visual_1.html` | Tokens lidos do CSS real, não copiados |
+| Relatórios · Usuários | — | Módulos novos |
 
 ### Inconsistências que a consolidação resolveu
 
-- A sidebar e o bloco `:root` de tokens estavam **duplicados nos 8 arquivos**.
-  Agora existem uma vez cada.
-- O mesmo cliente tinha **três schemas diferentes** (em documentos, agenda e
-  financeiro). Agora há uma definição só, em `lib/tipos.ts`.
-- `formatBRL`, `maskPhone`, `dataFormatada` e afins estavam reescritos em até
-  cinco arquivos, com comportamentos ligeiramente distintos. Agora vivem em
-  `lib/utils/formato.ts`.
-- O prefixo `rot_` do módulo de rotas foi removido: existia para evitar colisão
-  num arquivo único e perdeu a função com módulos.
-- A logo tinha **2,04 MB**; agora tem **30,4 KB** (`public/logo-jlt.png`).
+- Sidebar e tokens `:root` estavam **duplicados nos 8 arquivos**; agora existem
+  uma vez cada
+- O mesmo cliente tinha **três schemas diferentes**; agora há um só
+- `formatBRL`, `maskPhone`, `dataFormatada` estavam reescritos em até cinco
+  arquivos, com comportamentos distintos
+- O prefixo `rot_` do módulo de rotas perdeu a função com módulos
+- A logo tinha **2,04 MB**; agora tem **30,4 KB**
 
 ---
 
-## Dados nesta fase
+## Estado atual
 
-Todo dado vem de `lib/api`, que lê os JSON de `mock/` com um atraso artificial
-de 220 ms para simular rede. Cada função carrega o comentário do endpoint real
-que vai substituí-la (`// TODO: substituir por GET /api/...`).
+**Pronto:** interface completa, autenticação real, RLS aplicando a matriz,
+controle de acessos pelo admin, parâmetros de precificação editáveis, camada de
+dados falando com o banco, API HTTP autenticada.
 
-Onde um número ainda não tem origem definida, a interface mostra
-**"Sem dados — aguardando integração"** em vez de inventar um valor.
+**Falta:**
 
-O módulo Relatórios explica na própria tela como apura receita e custo, e diz
-abertamente que a atribuição é direta, não um rateio contábil.
+1. Escrita nos módulos de frota, agenda, rotas e financeiro — Clientes serviu de
+   piloto e o padrão está pronto para repetir
+2. Supabase Storage para os anexos (o tipo `Anexo` já está modelado)
+3. Revisar os **valores de precificação**, que são placeholder inventados na
+   Fase A e não dado real da empresa
+4. Verificação automática de paridade entre `lib/permissoes.ts` e
+   `permissoes_modulo`
 
----
-
-## O que falta quando o banco entrar
-
-A Fase B troca os mocks pelo Supabase. A ordem sugerida:
-
-1. **Schema no Postgres.** Modelar as tabelas a partir de `lib/tipos.ts` — os
-   nomes de campo já foram escolhidos pensando nisso. Depois gerar os tipos com
-   `supabase gen types typescript` e transformar `lib/tipos.ts` num re-export.
-
-2. **Row Level Security.** Traduzir `MATRIZ_PERMISSOES` em policies. A matriz é
-   a especificação: cada linha vira uma policy por tabela. As capacidades
-   transversais (`ver_custos`, `ver_faturamento`) viram policies de coluna ou
-   views específicas por papel.
-
-3. **Autenticação real.** Substituir `lib/auth.ts` por Supabase Auth. Junto com
-   isso, criar `middleware.ts` para validar a sessão **no servidor**, antes de
-   renderizar — hoje a guarda é client-side, porque a sessão mock vive em
-   `sessionStorage`. Ver o aviso completo no topo de `lib/auth.ts`.
-
-4. **Camada de dados.** Em `lib/api/index.ts`, trocar `lerMock(...)` por consulta
-   ao Supabase em cada função. **A assinatura pública de cada função não muda**,
-   e por isso nenhum componente precisa ser tocado — é esse o motivo de a camada
-   existir.
-
-5. **Escrita.** Hoje as telas alteram apenas o estado local: criar um cliente ou
-   excluir um lançamento não persiste, e some no refresh. Cada handler que hoje
-   chama `setEstado(...)` passa a chamar a função de escrita correspondente.
-
-6. **Upload de arquivos.** Os anexos de cliente, veículo e motorista estão
-   modelados (`tipo Anexo`) mas não têm onde ser guardados. Entram com o
-   Supabase Storage.
-
-7. **Proteger os endpoints.** `app/api/[entidade]/route.ts` hoje não tem
-   autenticação — aceitável com dado fictício, inaceitável com dado real.
-
----
-
-## Stack
-
-- **Next.js 16** (App Router) + **React 19** + **TypeScript**
-- **CSS Modules** sobre design tokens — escolhido em vez de Tailwind para que o
-  guia visual da empresa entrasse intacto e a regra "nenhuma cor fora de
-  tokens.css" fosse verificável
-- **Chart.js** para os gráficos, usado direto, sem wrapper de terceiros
-
-Dependências de produção: `next`, `react`, `react-dom`, `chart.js`. Só isso.
+**As tabelas de negócio estão vazias por decisão:** os mocks são pessoas e cargas
+fictícias e não devem virar registro real. O cadastro começa do zero.

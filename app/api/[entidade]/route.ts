@@ -1,48 +1,48 @@
 /**
- * ROTAS DE API — STUB
+ * API HTTP — endpoints autenticados.
  *
- * Ocupa o lugar que o briefing reservava ao servidor Express: expor
- * endpoints HTTP que devolvem dados fictícios. Com Next.js, Route Handlers
- * fazem isso sem servidor separado, sem porta extra e sem mais uma
- * dependência.
+ * Substituiu o stub que servia os JSON de /mock sem autenticação nenhuma.
+ * Aquilo era aceitável enquanto o conteúdo era fictício; com dado real no
+ * banco, virou um vazamento à espera de acontecer.
  *
- * Estes endpoints AINDA NÃO SÃO CONSUMIDOS pela interface — hoje lib/api
- * lê os mocks direto, o que é mais rápido e funciona no build estático.
- * Eles existem para dois fins:
+ * Agora cada requisição usa a sessão do próprio usuário (cookie), e a
+ * consulta passa pelo RLS como qualquer outra: o Postgres devolve apenas o
+ * que o nível daquela pessoa pode ver. Não há chave de serviço aqui, e
+ * nenhuma verificação de permissão é reimplementada — seria uma segunda
+ * fonte de verdade fadada a divergir da matriz.
  *
- *   1. dar um contrato HTTP concreto para conferir agora
- *      (ex.: /api/clientes, /api/rotas?status=planejada);
- *   2. marcar exatamente onde o Supabase entra na Fase B — cada handler
- *      troca a leitura do JSON por uma consulta ao Postgres, e lib/api
- *      passa a chamar `buscar()` em vez de `lerMock()`.
- *
- * NÃO HÁ AUTENTICAÇÃO NEM AUTORIZAÇÃO AQUI. Qualquer um que alcance a URL
- * lê os dados. Isso é aceitável enquanto o conteúdo é fictício e precisa
- * ser resolvido antes de qualquer dado real entrar: a mesma matriz de
- * lib/permissoes.ts deve virar policies de RLS no banco.
+ * Estes endpoints existem para integração externa e conferência. A
+ * interface não os usa: ela fala com o Supabase direto por lib/api.
  */
 
 import { NextResponse } from 'next/server';
+import { criarClienteServidor } from '@/lib/supabase/servidor';
 
-import clientes from '@/mock/clientes.json';
-import veiculos from '@/mock/veiculos.json';
-import motoristas from '@/mock/motoristas.json';
-import lancamentos from '@/mock/lancamentos.json';
-import compromissos from '@/mock/compromissos.json';
-import rotas from '@/mock/rotas.json';
-import orcamentos from '@/mock/orcamentos.json';
-import parametros from '@/mock/parametros-precificacao.json';
-
-/** Entidades expostas. A chave é o segmento da URL. */
-const ENTIDADES: Record<string, unknown> = {
-  clientes,
-  veiculos,
-  motoristas,
-  lancamentos,
-  compromissos,
-  rotas,
-  orcamentos,
-  'parametros-precificacao': parametros,
+/**
+ * Entidades expostas e o que cada uma seleciona.
+ *
+ * `orcamentos` aponta para a VIEW, nunca para a tabela: é ela que mascara
+ * custo e margem para quem não tem a capacidade ver_custos.
+ */
+const ENTIDADES: Record<string, { tabela: string; select: string; ordem?: string }> = {
+  clientes: {
+    tabela: 'clientes',
+    select: '*, cliente_anexos(*), cliente_historico(*)',
+    ordem: 'criado_em',
+  },
+  veiculos: { tabela: 'veiculos', select: '*, veiculo_anexos(*)', ordem: 'placa' },
+  motoristas: { tabela: 'motoristas', select: '*, motorista_anexos(*)', ordem: 'nome' },
+  lancamentos: { tabela: 'lancamentos', select: '*', ordem: 'data' },
+  compromissos: { tabela: 'compromissos', select: '*', ordem: 'data' },
+  rotas: {
+    tabela: 'rotas',
+    select: '*, mudancas(*), paradas(*, parada_movimentos(*))',
+    ordem: 'data_saida',
+  },
+  orcamentos: { tabela: 'orcamentos_visao', select: '*', ordem: 'data' },
+  'faixas-volume': { tabela: 'faixas_volume', select: '*', ordem: 'ate' },
+  adicionais: { tabela: 'adicionais', select: '*', ordem: 'nome' },
+  'parametros-precificacao': { tabela: 'parametros_precificacao', select: '*' },
 };
 
 export async function GET(
@@ -50,50 +50,78 @@ export async function GET(
   { params }: { params: Promise<{ entidade: string }> },
 ) {
   const { entidade } = await params;
-  const dados = ENTIDADES[entidade];
+  const config = ENTIDADES[entidade];
 
-  if (dados === undefined) {
+  if (!config) {
     return NextResponse.json(
-      {
-        erro: 'Entidade não encontrada',
-        disponiveis: Object.keys(ENTIDADES),
-      },
+      { erro: 'Entidade não encontrada', disponiveis: Object.keys(ENTIDADES) },
       { status: 404 },
     );
   }
 
-  // Filtros simples por querystring, para o contrato ficar realista.
-  // TODO: substituir por WHERE no Postgres quando o Supabase entrar.
-  const { searchParams } = new URL(requisicao.url);
-  const status = searchParams.get('status');
-  const id = searchParams.get('id');
+  const cliente = await criarClienteServidor();
 
-  if (!Array.isArray(dados)) {
-    return NextResponse.json(dados);
+  // getUser() revalida o token no servidor do Supabase; getSession() apenas
+  // lê o cookie, o que um cookie forjado passaria.
+  const {
+    data: { user },
+  } = await cliente.auth.getUser();
+
+  if (!user) {
+    return NextResponse.json(
+      { erro: 'Não autenticado', detalhe: 'Esta API exige sessão ativa na plataforma.' },
+      { status: 401 },
+    );
   }
 
-  let resultado = dados as Record<string, unknown>[];
+  const { searchParams } = new URL(requisicao.url);
+  const id = searchParams.get('id');
+  const status = searchParams.get('status');
+  const de = searchParams.get('de');
+  const ate = searchParams.get('ate');
+  const limite = Math.min(Number(searchParams.get('limite')) || 100, 500);
 
-  if (id) resultado = resultado.filter((r) => r.id === id);
-  if (status) resultado = resultado.filter((r) => r.status === status);
+  let consulta = cliente.from(config.tabela).select(config.select).limit(limite);
 
-  return NextResponse.json({
-    total: resultado.length,
-    dados: resultado,
-  });
+  if (id) consulta = consulta.eq('id', id);
+  if (status) consulta = consulta.eq('status', status);
+  if (de && config.ordem) consulta = consulta.gte(config.ordem, de);
+  if (ate && config.ordem) consulta = consulta.lte(config.ordem, ate);
+  if (config.ordem) consulta = consulta.order(config.ordem, { ascending: false });
+
+  const { data, error } = await consulta;
+
+  if (error) {
+    // 42501 é recusa do RLS: a pessoa está autenticada, mas o nível dela
+    // não alcança esta entidade.
+    const proibido = error.code === '42501';
+    return NextResponse.json(
+      {
+        erro: proibido ? 'Sem permissão para esta entidade' : 'Falha na consulta',
+        detalhe: error.message,
+      },
+      { status: proibido ? 403 : 500 },
+    );
+  }
+
+  return NextResponse.json({ total: data?.length ?? 0, dados: data ?? [] });
 }
 
 /**
- * Escrita ainda não existe: sem banco, não há onde gravar.
- * Responder 501 é mais honesto que aceitar e descartar em silêncio.
+ * Escrita não é exposta por aqui.
+ *
+ * Criar registro exige regras que a interface aplica (histórico do cliente,
+ * vínculos de rota, recálculo de orçamento). Um POST genérico contornaria
+ * isso e gravaria dado incompleto. Quando houver necessidade real de
+ * integração, cada entidade ganha seu endpoint com as regras próprias.
  */
 export async function POST() {
   return NextResponse.json(
     {
-      erro: 'Escrita não implementada nesta fase',
+      erro: 'Escrita não disponível nesta API',
       detalhe:
-        'A plataforma ainda não tem persistência. Este endpoint passa a gravar quando o Supabase entrar (Fase B).',
+        'Use a plataforma para criar registros. Endpoints de escrita serão criados por entidade, com as regras de negócio de cada uma.',
     },
-    { status: 501 },
+    { status: 405 },
   );
 }

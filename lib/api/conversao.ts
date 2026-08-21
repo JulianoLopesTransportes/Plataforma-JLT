@@ -174,12 +174,13 @@ export function paraRota(linha: any): Rota {
       uf: txt(p.uf),
       endereco: txt(p.endereco),
       data: txt(p.data),
+      ordem: p.ordem ?? 0,
       coletam: movimentos
         .filter((m: any) => m.tipo === 'coleta')
-        .map((m: any) => m.mudanca_id),
+        .map((m: any) => ({ mudancaId: m.mudanca_id, endereco: txt(m.endereco) })),
       entregam: movimentos
         .filter((m: any) => m.tipo === 'entrega')
-        .map((m: any) => m.mudanca_id),
+        .map((m: any) => ({ mudancaId: m.mudanca_id, endereco: txt(m.endereco) })),
       observacao: txt(p.observacao),
     };
   });
@@ -204,7 +205,10 @@ export function paraRota(linha: any): Rota {
       enderecoEntrega: txt(m.endereco_entrega),
       observacao: txt(m.observacao),
     })),
-    paradas: paradas.sort((a: any, b: any) => a.data.localeCompare(b.data)),
+    // Mesma regra de paradasOrdenadas(): a posição manda, a data desempata.
+    paradas: paradas.sort(
+      (a: any, b: any) => a.ordem - b.ordem || a.data.localeCompare(b.data),
+    ),
   };
 }
 

@@ -19,6 +19,9 @@ O schema está **aplicado no projeto remoto**. As migrations abaixo já rodaram:
 | 14 | `14_itens_do_cliente` | Coluna `itens` em `clientes` — a relação de bens que sai na Ordem de Serviço |
 | 15 | `15_coleta_e_entrega_no_lugar_de_embarque` | Renomeia os valores do enum `tipo_movimento` para `coleta` e `entrega` |
 | 16 | `16_criar_rota_completa_fala_coleta_e_entrega` | Acompanha a 15 dentro da função, que inseria os literais antigos |
+| 17 | `17_endereco_por_movimento_e_ordem_das_paradas` | Coluna `endereco` em `parada_movimentos` — dois clientes na mesma cidade, ruas diferentes |
+| 18 | `18_criar_rota_completa_com_endereco_e_ordem` | Movimentos viram `{ temp_id, endereco }`, e a parada passa a gravar `ordem` |
+| 19 | `19_preenche_ordem_das_paradas_antigas` | Preenche `ordem` das paradas gravadas antes da 17, que estava nula |
 
 ## Baixar os arquivos de migration para cá
 

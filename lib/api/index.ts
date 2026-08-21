@@ -611,8 +611,9 @@ const rotas = {
       endereco: string;
       data: string;
       observacao: string;
-      coletam: string[];
-      entregam: string[];
+      /** Cada movimento leva o id temporário da carga e o seu endereço. */
+      coletam: { tempId: string; endereco: string }[];
+      entregam: { tempId: string; endereco: string }[];
     }[];
   }): Promise<string> {
     if (!usandoBanco()) throw new Error('Criar rota exige o banco de dados configurado.');
@@ -645,8 +646,8 @@ const rotas = {
           endereco: p.endereco,
           data: p.data,
           observacao: p.observacao,
-          coletam: p.coletam,
-          entregam: p.entregam,
+          coletam: p.coletam.map((m) => ({ temp_id: m.tempId, endereco: m.endereco })),
+          entregam: p.entregam.map((m) => ({ temp_id: m.tempId, endereco: m.endereco })),
         })),
       },
     });

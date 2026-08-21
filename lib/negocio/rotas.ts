@@ -39,7 +39,10 @@ export type OcupacaoParada = {
 
 /** Paradas em ordem cronológica. */
 export function paradasOrdenadas(rota: Rota): Parada[] {
-  return [...rota.paradas].sort((a, b) => a.data.localeCompare(b.data));
+  // A ordem que o usuário montou manda; a data só desempata quando duas
+  // cidades ficaram com a mesma posição. Antes isto ordenava só por data,
+  // o que embaralhava duas cidades visitadas no mesmo dia.
+  return [...rota.paradas].sort((a, b) => a.ordem - b.ordem || a.data.localeCompare(b.data));
 }
 
 /**
@@ -55,13 +58,13 @@ export function calcularOcupacao(rota: Rota, capacidadeM3: number | null): Ocupa
   const aBordo = new Set<string>();
 
   return ordenadas.map((parada) => {
-    for (const id of parada.coletam) {
-      acumulado += volumeDe(id);
-      aBordo.add(id);
+    for (const { mudancaId } of parada.coletam) {
+      acumulado += volumeDe(mudancaId);
+      aBordo.add(mudancaId);
     }
-    for (const id of parada.entregam) {
-      acumulado -= volumeDe(id);
-      aBordo.delete(id);
+    for (const { mudancaId } of parada.entregam) {
+      acumulado -= volumeDe(mudancaId);
+      aBordo.delete(mudancaId);
     }
 
     // Nunca negativo: uma entrega sem coleta correspondente é erro de
@@ -176,8 +179,8 @@ export function detectarAlertas(rota: Rota, veiculo: Veiculo | null): Alerta[] {
   }
 
   // --- Consistência do cadastro ---
-  const coletadas = new Set(ordenadas.flatMap((p) => p.coletam));
-  const entregues = new Set(ordenadas.flatMap((p) => p.entregam));
+  const coletadas = new Set(ordenadas.flatMap((p) => p.coletam.map((m) => m.mudancaId)));
+  const entregues = new Set(ordenadas.flatMap((p) => p.entregam.map((m) => m.mudancaId)));
 
   for (const mudanca of rota.mudancas) {
     if (!coletadas.has(mudanca.id)) {

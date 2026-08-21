@@ -199,6 +199,18 @@ export type Mudanca = {
 
 export type TipoParada = 'coleta' | 'entrega' | 'mista';
 
+/**
+ * Uma coleta ou uma entrega acontecendo numa cidade.
+ *
+ * Carrega o próprio endereço porque numa mesma cidade se coleta de dois
+ * clientes em ruas diferentes — caso comum em rota compartilhada. Vazio
+ * cai no endereço da parada, que é como as rotas antigas foram gravadas.
+ */
+export type Movimento = {
+  mudancaId: string;
+  endereco: string;
+};
+
 export type Parada = {
   id: string;
   tipo: TipoParada;
@@ -207,10 +219,17 @@ export type Parada = {
   endereco: string;
   /** ISO 8601 (data). */
   data: string;
-  /** Ids de mudanças COLETADAS nesta parada — entram no caminhão. */
-  coletam: string[];
-  /** Ids de mudanças ENTREGUES nesta parada — saem do caminhão. */
-  entregam: string[];
+  /**
+   * Posição na sequência da rota, a partir de 0.
+   *
+   * Existe porque duas cidades podem cair na mesma data, e aí a data
+   * sozinha não decide qual vem antes. É a ordem em que o usuário montou.
+   */
+  ordem: number;
+  /** Mudanças COLETADAS nesta parada — entram no caminhão. */
+  coletam: Movimento[];
+  /** Mudanças ENTREGUES nesta parada — saem do caminhão. */
+  entregam: Movimento[];
   observacao: string;
 };
 

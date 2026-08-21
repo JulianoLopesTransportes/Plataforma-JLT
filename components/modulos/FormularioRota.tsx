@@ -1,19 +1,29 @@
 'use client';
 
 /**
- * FORMULÁRIO DE ROTA
+ * FORMULÁRIO DE ROTA — montada cidade a cidade
  *
- * O mais complexo da plataforma, porque uma rota não é um registro só:
- * é a rota, as cargas que ela transporta e as paradas onde cada carga
- * entra e sai do caminhão.
+ * O formulário anterior pedia as coisas na ordem errada: primeiro você
+ * cadastrava TODAS as cargas, depois criava as paradas e voltava para
+ * marcar quem embarcava e desembarcava em cada uma. Era preciso conhecer
+ * a lista inteira antes de saber onde cada carga entrava.
  *
- * As cargas ganham um id temporário aqui na tela. As paradas referenciam
- * esse id, e o banco troca por id real ao gravar — ver criar_rota_completa
- * na migration 12.
+ * Aqui a rota é uma sequência de cidades, montada na ordem em que o
+ * caminhão as visita. Em cada cidade você diz o que acontece: coletar a
+ * mudança de um cliente, ou entregar uma que já está a bordo. A carga
+ * NASCE da coleta — não existe mais uma lista de cargas separada.
  *
- * A ocupação é calculada em tempo real enquanto o usuário monta a rota,
- * com o mesmo motor que a tela de detalhe usa. É o ponto do formulário
- * que mais evita erro: dá para ver o caminhão estourar antes de salvar.
+ * A consequência que mais importa: "Entregar" só oferece cargas coletadas
+ * em cidades ANTERIORES e ainda não entregues. Fica impossível, pela
+ * própria interface, entregar o que ainda não foi coletado.
+ *
+ * As cargas ganham um id temporário aqui na tela. Os movimentos
+ * referenciam esse id, e o banco troca por id real ao gravar — ver
+ * criar_rota_completa, migration 18.
+ *
+ * A ocupação é calculada em tempo real enquanto se monta, com o mesmo
+ * motor da tela de detalhe. É o que evita descobrir só depois de salvar
+ * que o caminhão estoura no meio do caminho.
  */
 
 import { useState, useMemo } from 'react';
@@ -37,22 +47,34 @@ type CargaForm = {
   observacao: string;
 };
 
-type ParadaForm = {
+/** Uma coleta ou entrega dentro de uma cidade. */
+type MovimentoForm = {
+  cargaTempId: string;
+  /** Endereço deste movimento — puxado do cadastro, editável. */
+  endereco: string;
+};
+
+type CidadeForm = {
   tempId: string;
-  tipo: TipoParada;
   cidade: string;
   uf: string;
-  endereco: string;
   data: string;
   observacao: string;
-  coletam: string[];
-  entregam: string[];
+  coletam: MovimentoForm[];
+  entregam: MovimentoForm[];
 };
 
 const UFS = [
   'AC','AL','AP','AM','BA','CE','DF','ES','GO','MA','MT','MS','MG','PA','PB',
   'PR','PE','PI','RJ','RN','RS','RO','RR','SC','SP','SE','TO',
 ];
+
+/** O tipo da parada não é escolhido: sai do que acontece nela. */
+function tipoDaCidade(c: CidadeForm): TipoParada {
+  if (c.coletam.length > 0 && c.entregam.length > 0) return 'mista';
+  if (c.entregam.length > 0) return 'entrega';
+  return 'coleta';
+}
 
 export default function FormularioRota({
   aberto,
@@ -72,17 +94,28 @@ export default function FormularioRota({
   const { mostrar } = useToast();
 
   const [nome, setNome] = useState('');
-  const [origem, setOrigem] = useState('');
-  const [destino, setDestino] = useState('');
   const [dataSaida, setDataSaida] = useState(hojeISO());
   const [dataRetorno, setDataRetorno] = useState('');
   const [veiculoId, setVeiculoId] = useState('');
   const [motoristaId, setMotoristaId] = useState('');
   const [cargas, setCargas] = useState<CargaForm[]>([]);
-  const [paradas, setParadas] = useState<ParadaForm[]>([]);
+  const [cidades, setCidades] = useState<CidadeForm[]>([]);
   const [salvando, setSalvando] = useState(false);
 
   const veiculo = veiculos.find((v) => v.id === veiculoId) ?? null;
+
+  /*
+   * Origem e destino deixam de ser digitados: são a primeira e a última
+   * cidade da sequência. Dois campos livres ao lado de uma lista ordenada
+   * de cidades seriam duas versões da mesma verdade, livres para discordar.
+   */
+  const origem = cidades[0] ? `${cidades[0].cidade} - ${cidades[0].uf}` : '';
+  const destino =
+    cidades.length > 1
+      ? `${cidades[cidades.length - 1].cidade} - ${cidades[cidades.length - 1].uf}`
+      : '';
+
+  const cargaPor = (tempId: string) => cargas.find((c) => c.tempId === tempId);
 
   /* ======================================================================
      Prévia da ocupação — mesmo motor da tela de detalhe
@@ -108,16 +141,19 @@ export default function FormularioRota({
         enderecoEntrega: c.enderecoEntrega,
         observacao: c.observacao,
       })),
-      paradas: paradas.map((p) => ({
-        id: p.tempId,
-        tipo: p.tipo,
-        cidade: p.cidade,
-        uf: p.uf,
-        endereco: p.endereco,
-        data: p.data,
-        coletam: p.coletam,
-        entregam: p.entregam,
-        observacao: p.observacao,
+      paradas: cidades.map((c, i) => ({
+        id: c.tempId,
+        tipo: tipoDaCidade(c),
+        cidade: c.cidade,
+        uf: c.uf,
+        // O endereço da parada some do formulário: agora ele vive em cada
+        // movimento. Fica vazio, e a linha do tempo cai nos movimentos.
+        endereco: '',
+        data: c.data,
+        ordem: i,
+        coletam: c.coletam.map((m) => ({ mudancaId: m.cargaTempId, endereco: m.endereco })),
+        entregam: c.entregam.map((m) => ({ mudancaId: m.cargaTempId, endereco: m.endereco })),
+        observacao: c.observacao,
       })),
     };
 
@@ -125,77 +161,22 @@ export default function FormularioRota({
       ocupacoes: calcularOcupacao(rotaSimulada, veiculo?.capacidadeM3 ?? null),
       alertas: detectarAlertas(rotaSimulada, veiculo),
     };
-  }, [nome, origem, destino, dataSaida, dataRetorno, veiculoId, motoristaId, cargas, paradas, veiculo]);
+  }, [nome, origem, destino, dataSaida, dataRetorno, veiculoId, motoristaId, cargas, cidades, veiculo]);
 
   /* ======================================================================
-     Cargas
+     Cidades
      ====================================================================== */
 
-  function adicionarCarga() {
-    setCargas((lista) => [
+  function adicionarCidade() {
+    setCidades((lista) => [
       ...lista,
       {
-        tempId: novoId('carga'),
-        clienteId: null,
-        clienteNome: '',
-        telefone: '',
-        documento: '',
-        volumeM3: 0,
-        enderecoColeta: '',
-        enderecoEntrega: '',
-        observacao: '',
-      },
-    ]);
-  }
-
-  function mudarCarga(tempId: string, campos: Partial<CargaForm>) {
-    setCargas((lista) => lista.map((c) => (c.tempId === tempId ? { ...c, ...campos } : c)));
-  }
-
-  /** Escolher um cliente cadastrado preenche o resto sozinho. */
-  function vincularCliente(tempId: string, clienteId: string) {
-    const c = clientes.find((x) => x.id === clienteId);
-    if (!c) {
-      mudarCarga(tempId, { clienteId: null });
-      return;
-    }
-    mudarCarga(tempId, {
-      clienteId: c.id,
-      clienteNome: c.nome,
-      telefone: c.telefone,
-      documento: c.documento,
-      volumeM3: c.volumeM3 ?? 0,
-      enderecoColeta: c.enderecoColeta,
-      enderecoEntrega: c.enderecoEntrega,
-    });
-  }
-
-  function removerCarga(tempId: string) {
-    setCargas((lista) => lista.filter((c) => c.tempId !== tempId));
-    // A carga some também das paradas que a movimentavam.
-    setParadas((lista) =>
-      lista.map((p) => ({
-        ...p,
-        coletam: p.coletam.filter((id) => id !== tempId),
-        entregam: p.entregam.filter((id) => id !== tempId),
-      })),
-    );
-  }
-
-  /* ======================================================================
-     Paradas
-     ====================================================================== */
-
-  function adicionarParada() {
-    setParadas((lista) => [
-      ...lista,
-      {
-        tempId: novoId('parada'),
-        tipo: 'coleta',
+        tempId: novoId('cidade'),
         cidade: '',
-        uf: 'MG',
-        endereco: '',
-        data: dataSaida,
+        uf: lista.length > 0 ? lista[lista.length - 1].uf : 'MG',
+        // Herda a data da cidade anterior: o caminhão chega nela depois,
+        // nunca antes. Corrigir para a frente é mais rápido do que digitar.
+        data: lista.length > 0 ? lista[lista.length - 1].data : dataSaida,
         observacao: '',
         coletam: [],
         entregam: [],
@@ -203,30 +184,187 @@ export default function FormularioRota({
     ]);
   }
 
-  function mudarParada(tempId: string, campos: Partial<ParadaForm>) {
-    setParadas((lista) => lista.map((p) => (p.tempId === tempId ? { ...p, ...campos } : p)));
+  function mudarCidade(tempId: string, campos: Partial<CidadeForm>) {
+    setCidades((lista) => lista.map((c) => (c.tempId === tempId ? { ...c, ...campos } : c)));
   }
 
-  function removerParada(tempId: string) {
-    setParadas((lista) => lista.filter((p) => p.tempId !== tempId));
+  /**
+   * Remove a cidade e tudo que dependia dela.
+   *
+   * Uma carga nasce da sua coleta: se a cidade que a coletava sai, a carga
+   * perde a razão de existir e sai junto, arrastando a entrega dela em
+   * outra cidade. Deixá-la para trás produziria carga fantasma, que o
+   * motor de alertas acusaria como "não é coletada em nenhuma cidade".
+   */
+  function removerCidade(tempId: string) {
+    const cidade = cidades.find((c) => c.tempId === tempId);
+    if (!cidade) return;
+
+    const orfas = new Set(cidade.coletam.map((m) => m.cargaTempId));
+
+    setCidades((lista) =>
+      lista
+        .filter((c) => c.tempId !== tempId)
+        .map((c) => ({
+          ...c,
+          coletam: c.coletam.filter((m) => !orfas.has(m.cargaTempId)),
+          entregam: c.entregam.filter((m) => !orfas.has(m.cargaTempId)),
+        })),
+    );
+    setCargas((lista) => lista.filter((c) => !orfas.has(c.tempId)));
   }
 
-  /** Alterna o movimento de uma carga numa parada. */
-  function alternarMovimento(paradaId: string, cargaId: string, tipo: 'coletam' | 'entregam') {
-    setParadas((lista) =>
-      lista.map((p) => {
-        if (p.tempId !== paradaId) return p;
+  /**
+   * Sobe ou desce a cidade na sequência.
+   *
+   * Reordenar pode deixar uma entrega antes da sua coleta. Não bloqueamos:
+   * o motor de alertas acusa, e travar o movimento impediria a reordenação
+   * em dois passos que às vezes é o caminho natural.
+   */
+  function moverCidade(indice: number, direcao: -1 | 1) {
+    const destino = indice + direcao;
+    if (destino < 0 || destino >= cidades.length) return;
 
-        const jaTem = p[tipo].includes(cargaId);
-        const oposto = tipo === 'coletam' ? 'entregam' : 'coletam';
+    setCidades((lista) => {
+      const copia = [...lista];
+      [copia[indice], copia[destino]] = [copia[destino], copia[indice]];
+      return copia;
+    });
+  }
 
-        return {
-          ...p,
-          [tipo]: jaTem ? p[tipo].filter((id) => id !== cargaId) : [...p[tipo], cargaId],
-          // Uma carga não é coletada e entregue na mesma parada.
-          [oposto]: p[oposto].filter((id) => id !== cargaId),
+  /* ======================================================================
+     Movimentos — o que acontece em cada cidade
+     ====================================================================== */
+
+  /**
+   * Coletar aqui a mudança de um cliente.
+   *
+   * A carga nasce neste momento, já preenchida pelo cadastro. Um id que
+   * não corresponde a cliente algum — o "avulso" do seletor — cria a carga
+   * em branco, para quem ainda não tem cadastro.
+   */
+  function coletar(cidadeTempId: string, clienteId: string) {
+    const cliente = clientes.find((c) => c.id === clienteId);
+    const tempId = novoId('carga');
+
+    const carga: CargaForm = cliente
+      ? {
+          tempId,
+          clienteId: cliente.id,
+          clienteNome: cliente.nome,
+          telefone: cliente.telefone,
+          documento: cliente.documento,
+          volumeM3: cliente.volumeM3 ?? 0,
+          enderecoColeta: cliente.enderecoColeta,
+          enderecoEntrega: cliente.enderecoEntrega,
+          observacao: '',
+        }
+      : {
+          tempId,
+          clienteId: null,
+          clienteNome: '',
+          telefone: '',
+          documento: '',
+          volumeM3: 0,
+          enderecoColeta: '',
+          enderecoEntrega: '',
+          observacao: '',
         };
-      }),
+
+    setCargas((lista) => [...lista, carga]);
+    setCidades((lista) =>
+      lista.map((c) =>
+        c.tempId === cidadeTempId
+          ? { ...c, coletam: [...c.coletam, { cargaTempId: tempId, endereco: carga.enderecoColeta }] }
+          : c,
+      ),
+    );
+  }
+
+  /** Entregar aqui uma carga que já está a bordo. */
+  function entregar(cidadeTempId: string, cargaTempId: string) {
+    const carga = cargaPor(cargaTempId);
+    if (!carga) return;
+
+    setCidades((lista) =>
+      lista.map((c) =>
+        c.tempId === cidadeTempId
+          ? {
+              ...c,
+              entregam: [...c.entregam, { cargaTempId, endereco: carga.enderecoEntrega }],
+            }
+          : c,
+      ),
+    );
+  }
+
+  /**
+   * Tira um movimento da cidade.
+   *
+   * Tirar a COLETA apaga a carga inteira, pelo mesmo motivo de
+   * removerCidade: sem coleta ela não existe. Tirar a ENTREGA só desfaz a
+   * entrega — a carga continua a bordo, esperando outra cidade.
+   */
+  function removerMovimento(cidadeTempId: string, cargaTempId: string, tipo: 'coleta' | 'entrega') {
+    if (tipo === 'entrega') {
+      setCidades((lista) =>
+        lista.map((c) =>
+          c.tempId === cidadeTempId
+            ? { ...c, entregam: c.entregam.filter((m) => m.cargaTempId !== cargaTempId) }
+            : c,
+        ),
+      );
+      return;
+    }
+
+    setCidades((lista) =>
+      lista.map((c) => ({
+        ...c,
+        coletam: c.coletam.filter((m) => m.cargaTempId !== cargaTempId),
+        entregam: c.entregam.filter((m) => m.cargaTempId !== cargaTempId),
+      })),
+    );
+    setCargas((lista) => lista.filter((c) => c.tempId !== cargaTempId));
+  }
+
+  function mudarEnderecoMovimento(
+    cidadeTempId: string,
+    cargaTempId: string,
+    tipo: 'coleta' | 'entrega',
+    endereco: string,
+  ) {
+    const campo = tipo === 'coleta' ? 'coletam' : 'entregam';
+    setCidades((lista) =>
+      lista.map((c) =>
+        c.tempId === cidadeTempId
+          ? {
+              ...c,
+              [campo]: c[campo].map((m) =>
+                m.cargaTempId === cargaTempId ? { ...m, endereco } : m,
+              ),
+            }
+          : c,
+      ),
+    );
+  }
+
+  function mudarCarga(tempId: string, campos: Partial<CargaForm>) {
+    setCargas((lista) => lista.map((c) => (c.tempId === tempId ? { ...c, ...campos } : c)));
+  }
+
+  /**
+   * Cargas que podem ser entregues nesta cidade: coletadas numa cidade
+   * ANTERIOR e ainda sem entrega em lugar nenhum. É esta lista que torna
+   * impossível entregar o que não foi coletado.
+   */
+  function entregaveisEm(indice: number): CargaForm[] {
+    const coletadasAntes = new Set(
+      cidades.slice(0, indice).flatMap((c) => c.coletam.map((m) => m.cargaTempId)),
+    );
+    const jaEntregues = new Set(cidades.flatMap((c) => c.entregam.map((m) => m.cargaTempId)));
+
+    return cargas.filter(
+      (c) => coletadasAntes.has(c.tempId) && !jaEntregues.has(c.tempId),
     );
   }
 
@@ -239,13 +377,15 @@ export default function FormularioRota({
 
     if (!nome.trim()) return mostrar('Dê um nome à rota.', 'erro');
     if (!dataSaida) return mostrar('Informe a data de saída.', 'erro');
-    if (cargas.length === 0) return mostrar('Acrescente ao menos uma carga.', 'erro');
-    if (cargas.some((c) => !c.clienteNome.trim())) {
-      return mostrar('Toda carga precisa de um cliente.', 'erro');
+    if (cidades.length === 0) return mostrar('Acrescente ao menos uma cidade.', 'erro');
+    if (cidades.some((c) => !c.cidade.trim() || !c.data)) {
+      return mostrar('Toda cidade precisa de nome e data.', 'erro');
     }
-    if (paradas.length === 0) return mostrar('Acrescente ao menos uma parada.', 'erro');
-    if (paradas.some((p) => !p.cidade.trim() || !p.data)) {
-      return mostrar('Toda parada precisa de cidade e data.', 'erro');
+    if (cargas.length === 0) {
+      return mostrar('Nenhuma mudança na rota — colete ao menos uma em alguma cidade.', 'erro');
+    }
+    if (cargas.some((c) => !c.clienteNome.trim())) {
+      return mostrar('Toda mudança precisa do nome do cliente.', 'erro');
     }
 
     // Erro grave de montagem barra o salvamento; aviso apenas alerta.
@@ -261,22 +401,22 @@ export default function FormularioRota({
     try {
       await api.rotas.criar({
         nome: nome.trim(),
-        origem: origem.trim(),
-        destino: destino.trim(),
+        origem,
+        destino,
         dataSaida,
         dataPrevistaRetorno: dataRetorno,
         veiculoId: veiculoId || null,
         motoristaId: motoristaId || null,
         mudancas: cargas,
-        paradas: paradas.map((p) => ({
-          tipo: p.tipo,
-          cidade: p.cidade,
-          uf: p.uf,
-          endereco: p.endereco,
-          data: p.data,
-          observacao: p.observacao,
-          coletam: p.coletam,
-          entregam: p.entregam,
+        paradas: cidades.map((c) => ({
+          tipo: tipoDaCidade(c),
+          cidade: c.cidade,
+          uf: c.uf,
+          endereco: '',
+          data: c.data,
+          observacao: c.observacao,
+          coletam: c.coletam.map((m) => ({ tempId: m.cargaTempId, endereco: m.endereco })),
+          entregam: c.entregam.map((m) => ({ tempId: m.cargaTempId, endereco: m.endereco })),
         })),
       });
 
@@ -292,14 +432,12 @@ export default function FormularioRota({
 
   function limpar() {
     setNome('');
-    setOrigem('');
-    setDestino('');
     setDataSaida(hojeISO());
     setDataRetorno('');
     setVeiculoId('');
     setMotoristaId('');
     setCargas([]);
-    setParadas([]);
+    setCidades([]);
   }
 
   const volumeTotal = cargas.reduce((s, c) => s + c.volumeM3, 0);
@@ -349,28 +487,6 @@ export default function FormularioRota({
           </div>
         </div>
 
-        <div className="form-row">
-          <div className="field">
-            <label htmlFor="origR">Origem</label>
-            <input
-              id="origR"
-              value={origem}
-              onChange={(e) => setOrigem(e.target.value)}
-              placeholder="Belo Horizonte - MG"
-            />
-          </div>
-
-          <div className="field">
-            <label htmlFor="destR">Destino</label>
-            <input
-              id="destR"
-              value={destino}
-              onChange={(e) => setDestino(e.target.value)}
-              placeholder="Uberlândia - MG"
-            />
-          </div>
-        </div>
-
         <div className="form-row-3">
           <div className="field">
             <label htmlFor="saidaR">Saída</label>
@@ -406,245 +522,314 @@ export default function FormularioRota({
           </div>
         </div>
 
-        {/* ---------------- Cargas ---------------- */}
+        {/* Origem e destino são leitura: saem da primeira e da última cidade. */}
+        {cidades.length > 0 && (
+          <p className={estilos.trajeto}>
+            <strong>{origem || 'Primeira cidade'}</strong>
+            {destino && (
+              <>
+                {' → '}
+                <strong>{destino}</strong>
+              </>
+            )}
+            <small>
+              {cidades.length === 1
+                ? 'uma cidade'
+                : `${cidades.length} cidades`}
+              {cargas.length > 0 &&
+                ` · ${cargas.length} ${cargas.length === 1 ? 'mudança' : 'mudanças'} · ${volumeTotal} m³`}
+            </small>
+          </p>
+        )}
+
+        {/* ---------------- Cidades ---------------- */}
         <div className={estilos.secao}>
           <div className="entre">
-            <h3 className={estilos.tituloSecao}>
-              Cargas
-              {cargas.length > 0 && (
-                <span className={estilos.contador}>
-                  {cargas.length} · {volumeTotal} m³
-                </span>
-              )}
-            </h3>
-            <button type="button" className="btn btn-outline btn-sm" onClick={adicionarCarga}>
-              Acrescentar carga
+            <h3 className={estilos.tituloSecao}>Cidades</h3>
+            <button type="button" className="btn btn-outline btn-sm" onClick={adicionarCidade}>
+              Acrescentar cidade
             </button>
           </div>
 
-          {cargas.length === 0 ? (
+          {cidades.length === 0 ? (
             <p className={estilos.vazio}>
-              Nenhuma carga. Uma rota transporta ao menos uma.
+              Nenhuma cidade. Comece pela primeira parada do caminhão — é lá que
+              você coleta a primeira mudança.
             </p>
           ) : (
-            cargas.map((c, i) => (
-              <div key={c.tempId} className={estilos.cartaoItem}>
-                <div className={estilos.cabecalhoItem}>
-                  <strong>Carga {i + 1}</strong>
-                  <button
-                    type="button"
-                    className={estilos.remover}
-                    onClick={() => removerCarga(c.tempId)}
-                    aria-label={`Remover carga ${i + 1}`}
-                  >
-                    <Icone nome="fechar" tamanho={15} />
-                  </button>
-                </div>
+            cidades.map((cidade, indice) => {
+              const entregaveis = entregaveisEm(indice);
 
-                <div className="form-row">
-                  <div className="field">
-                    <label>Cliente cadastrado</label>
-                    <select
-                      value={c.clienteId ?? ''}
-                      onChange={(e) => vincularCliente(c.tempId, e.target.value)}
-                    >
-                      <option value="">Avulso — digitar abaixo</option>
-                      {clientes.map((cl) => (
-                        <option key={cl.id} value={cl.id}>
-                          {cl.nome}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
+              return (
+                <div key={cidade.tempId} className={estilos.cartaoItem}>
+                  <div className={estilos.cabecalhoItem}>
+                    <strong>
+                      {indice + 1}ª parada
+                      {indice === 0 && cidades.length > 1 && ' · origem'}
+                      {indice === cidades.length - 1 && cidades.length > 1 && ' · destino'}
+                    </strong>
 
-                  <div className="field">
-                    <label>Nome do cliente</label>
-                    <input
-                      value={c.clienteNome}
-                      onChange={(e) => mudarCarga(c.tempId, { clienteNome: e.target.value })}
-                      required
-                    />
-                  </div>
-                </div>
-
-                <div className="form-row-3">
-                  <div className="field">
-                    <label>Telefone</label>
-                    <input
-                      value={c.telefone}
-                      onChange={(e) =>
-                        mudarCarga(c.tempId, { telefone: mascararTelefone(e.target.value) })
-                      }
-                    />
-                  </div>
-
-                  <div className="field">
-                    <label>Documento</label>
-                    <input
-                      value={c.documento}
-                      onChange={(e) =>
-                        mudarCarga(c.tempId, { documento: mascararDocumento(e.target.value) })
-                      }
-                    />
-                  </div>
-
-                  <div className="field">
-                    <label>Volume (m³)</label>
-                    <input
-                      type="number"
-                      min="0"
-                      step="0.5"
-                      value={c.volumeM3 || ''}
-                      onChange={(e) =>
-                        mudarCarga(c.tempId, { volumeM3: Number(e.target.value) })
-                      }
-                    />
-                  </div>
-                </div>
-
-                <div className="form-row">
-                  <div className="field">
-                    <label>Endereço de coleta</label>
-                    <input
-                      value={c.enderecoColeta}
-                      onChange={(e) => mudarCarga(c.tempId, { enderecoColeta: e.target.value })}
-                    />
-                  </div>
-
-                  <div className="field">
-                    <label>Endereço de entrega</label>
-                    <input
-                      value={c.enderecoEntrega}
-                      onChange={(e) => mudarCarga(c.tempId, { enderecoEntrega: e.target.value })}
-                    />
-                  </div>
-                </div>
-              </div>
-            ))
-          )}
-        </div>
-
-        {/* ---------------- Paradas ---------------- */}
-        <div className={estilos.secao}>
-          <div className="entre">
-            <h3 className={estilos.tituloSecao}>
-              Paradas
-              {paradas.length > 0 && <span className={estilos.contador}>{paradas.length}</span>}
-            </h3>
-            <button
-              type="button"
-              className="btn btn-outline btn-sm"
-              onClick={adicionarParada}
-              disabled={cargas.length === 0}
-              title={cargas.length === 0 ? 'Acrescente uma carga primeiro' : undefined}
-            >
-              Acrescentar parada
-            </button>
-          </div>
-
-          {paradas.length === 0 ? (
-            <p className={estilos.vazio}>
-              Nenhuma parada. É nelas que cada carga entra e sai do caminhão.
-            </p>
-          ) : (
-            paradas.map((p, i) => (
-              <div key={p.tempId} className={estilos.cartaoItem}>
-                <div className={estilos.cabecalhoItem}>
-                  <strong>Parada {i + 1}</strong>
-                  <button
-                    type="button"
-                    className={estilos.remover}
-                    onClick={() => removerParada(p.tempId)}
-                    aria-label={`Remover parada ${i + 1}`}
-                  >
-                    <Icone nome="fechar" tamanho={15} />
-                  </button>
-                </div>
-
-                <div className="form-row-3">
-                  <div className="field">
-                    <label>Cidade</label>
-                    <input
-                      value={p.cidade}
-                      onChange={(e) => mudarParada(p.tempId, { cidade: e.target.value })}
-                      required
-                    />
-                  </div>
-
-                  <div className="field">
-                    <label>UF</label>
-                    <select
-                      value={p.uf}
-                      onChange={(e) => mudarParada(p.tempId, { uf: e.target.value })}
-                    >
-                      {UFS.map((uf) => (
-                        <option key={uf} value={uf}>
-                          {uf}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-
-                  <div className="field">
-                    <label>Data</label>
-                    <input
-                      type="date"
-                      value={p.data}
-                      onChange={(e) => mudarParada(p.tempId, { data: e.target.value })}
-                      required
-                    />
-                  </div>
-                </div>
-
-                <div className="field" style={{ marginBottom: 16 }}>
-                  <label>Endereço</label>
-                  <input
-                    value={p.endereco}
-                    onChange={(e) => mudarParada(p.tempId, { endereco: e.target.value })}
-                  />
-                </div>
-
-                {/* Movimentos: o coração do formulário. */}
-                <div className={estilos.movimentos}>
-                  <span className={estilos.rotuloMovimentos}>O que acontece nesta parada</span>
-
-                  {cargas.map((c, indice) => (
-                    <div key={c.tempId} className={estilos.linhaMovimento}>
-                      <span className={estilos.nomeCarga}>
-                        {c.clienteNome || `Carga ${indice + 1}`}
-                        <small>{c.volumeM3} m³</small>
-                      </span>
-
-                      <div className={estilos.botoesMovimento}>
-                        <button
-                          type="button"
-                          className={`${estilos.botaoMov} ${
-                            p.coletam.includes(c.tempId) ? estilos.movColeta : ''
-                          }`}
-                          onClick={() => alternarMovimento(p.tempId, c.tempId, 'coletam')}
-                        >
-                          Coleta
-                        </button>
-                        <button
-                          type="button"
-                          className={`${estilos.botaoMov} ${
-                            p.entregam.includes(c.tempId) ? estilos.movEntrega : ''
-                          }`}
-                          onClick={() => alternarMovimento(p.tempId, c.tempId, 'entregam')}
-                        >
-                          Entrega
-                        </button>
-                      </div>
+                    <div className={estilos.acoesCidade}>
+                      <button
+                        type="button"
+                        className={estilos.mover}
+                        onClick={() => moverCidade(indice, -1)}
+                        disabled={indice === 0}
+                        aria-label={`Subir a ${indice + 1}ª parada`}
+                        title="Subir"
+                      >
+                        ↑
+                      </button>
+                      <button
+                        type="button"
+                        className={estilos.mover}
+                        onClick={() => moverCidade(indice, 1)}
+                        disabled={indice === cidades.length - 1}
+                        aria-label={`Descer a ${indice + 1}ª parada`}
+                        title="Descer"
+                      >
+                        ↓
+                      </button>
+                      <button
+                        type="button"
+                        className={estilos.remover}
+                        onClick={() => removerCidade(cidade.tempId)}
+                        aria-label={`Remover a ${indice + 1}ª parada`}
+                      >
+                        <Icone nome="fechar" tamanho={15} />
+                      </button>
                     </div>
-                  ))}
+                  </div>
+
+                  <div className="form-row-3">
+                    <div className="field">
+                      <label>Cidade</label>
+                      <input
+                        value={cidade.cidade}
+                        onChange={(e) => mudarCidade(cidade.tempId, { cidade: e.target.value })}
+                        placeholder="Belo Horizonte"
+                        required
+                      />
+                    </div>
+
+                    <div className="field">
+                      <label>UF</label>
+                      <select
+                        value={cidade.uf}
+                        onChange={(e) => mudarCidade(cidade.tempId, { uf: e.target.value })}
+                      >
+                        {UFS.map((uf) => (
+                          <option key={uf} value={uf}>
+                            {uf}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div className="field">
+                      <label>Data</label>
+                      <input
+                        type="date"
+                        value={cidade.data}
+                        onChange={(e) => mudarCidade(cidade.tempId, { data: e.target.value })}
+                        required
+                      />
+                    </div>
+                  </div>
+
+                  {/* O coração do formulário. */}
+                  <div className={estilos.movimentos}>
+                    <span className={estilos.rotuloMovimentos}>O que acontece aqui</span>
+
+                    {cidade.coletam.length === 0 && cidade.entregam.length === 0 && (
+                      <p className={estilos.vazio}>
+                        Nada ainda — colete uma mudança ou entregue uma que já está
+                        a bordo.
+                      </p>
+                    )}
+
+                    {cidade.coletam.map((mov) => {
+                      const carga = cargaPor(mov.cargaTempId);
+                      if (!carga) return null;
+
+                      return (
+                        <div key={mov.cargaTempId} className={estilos.movimento}>
+                          <div className={estilos.tituloMovimento}>
+                            <span className={estilos.selo_coleta}>Coleta</span>
+                            <input
+                              className={estilos.nomeEditavel}
+                              value={carga.clienteNome}
+                              onChange={(e) =>
+                                mudarCarga(carga.tempId, { clienteNome: e.target.value })
+                              }
+                              placeholder="Nome do cliente"
+                              required
+                            />
+                            <button
+                              type="button"
+                              className={estilos.remover}
+                              onClick={() =>
+                                removerMovimento(cidade.tempId, mov.cargaTempId, 'coleta')
+                              }
+                              aria-label={`Remover a coleta de ${carga.clienteNome || 'cliente'}`}
+                              title="Remover — apaga a mudança da rota"
+                            >
+                              <Icone nome="fechar" tamanho={14} />
+                            </button>
+                          </div>
+
+                          <div className="form-row-3">
+                            <div className="field">
+                              <label>Telefone</label>
+                              <input
+                                value={carga.telefone}
+                                onChange={(e) =>
+                                  mudarCarga(carga.tempId, {
+                                    telefone: mascararTelefone(e.target.value),
+                                  })
+                                }
+                              />
+                            </div>
+                            <div className="field">
+                              <label>Documento</label>
+                              <input
+                                value={carga.documento}
+                                onChange={(e) =>
+                                  mudarCarga(carga.tempId, {
+                                    documento: mascararDocumento(e.target.value),
+                                  })
+                                }
+                              />
+                            </div>
+                            <div className="field">
+                              <label>Volume (m³)</label>
+                              <input
+                                type="number"
+                                min="0"
+                                step="0.5"
+                                value={carga.volumeM3 || ''}
+                                onChange={(e) =>
+                                  mudarCarga(carga.tempId, { volumeM3: Number(e.target.value) })
+                                }
+                              />
+                            </div>
+                          </div>
+
+                          <div className="field">
+                            <label>Endereço da coleta</label>
+                            <input
+                              value={mov.endereco}
+                              onChange={(e) =>
+                                mudarEnderecoMovimento(
+                                  cidade.tempId,
+                                  mov.cargaTempId,
+                                  'coleta',
+                                  e.target.value,
+                                )
+                              }
+                              placeholder="Puxado do cadastro do cliente"
+                            />
+                          </div>
+                        </div>
+                      );
+                    })}
+
+                    {cidade.entregam.map((mov) => {
+                      const carga = cargaPor(mov.cargaTempId);
+                      if (!carga) return null;
+
+                      return (
+                        <div key={mov.cargaTempId} className={estilos.movimento}>
+                          <div className={estilos.tituloMovimento}>
+                            <span className={estilos.selo_entrega}>Entrega</span>
+                            <span className={estilos.nomeCargaFixo}>
+                              {carga.clienteNome || 'Cliente sem nome'}
+                              <small>{carga.volumeM3} m³</small>
+                            </span>
+                            <button
+                              type="button"
+                              className={estilos.remover}
+                              onClick={() =>
+                                removerMovimento(cidade.tempId, mov.cargaTempId, 'entrega')
+                              }
+                              aria-label={`Remover a entrega de ${carga.clienteNome || 'cliente'}`}
+                              title="Remover — a mudança continua a bordo"
+                            >
+                              <Icone nome="fechar" tamanho={14} />
+                            </button>
+                          </div>
+
+                          <div className="field">
+                            <label>Endereço da entrega</label>
+                            <input
+                              value={mov.endereco}
+                              onChange={(e) =>
+                                mudarEnderecoMovimento(
+                                  cidade.tempId,
+                                  mov.cargaTempId,
+                                  'entrega',
+                                  e.target.value,
+                                )
+                              }
+                              placeholder="Puxado do cadastro do cliente"
+                            />
+                          </div>
+                        </div>
+                      );
+                    })}
+
+                    {/* Os dois seletores que fazem a rota crescer. */}
+                    <div className={estilos.adicionarMovimento}>
+                      <select
+                        value=""
+                        onChange={(e) => {
+                          if (e.target.value) coletar(cidade.tempId, e.target.value);
+                          e.target.value = '';
+                        }}
+                      >
+                        <option value="">+ Coletar mudança…</option>
+                        {clientes.map((cl) => (
+                          <option key={cl.id} value={cl.id}>
+                            {cl.nome}
+                          </option>
+                        ))}
+                        <option value="avulso">— Cliente avulso —</option>
+                      </select>
+
+                      <select
+                        value=""
+                        disabled={entregaveis.length === 0}
+                        title={
+                          entregaveis.length === 0
+                            ? 'Nada a bordo — colete algo numa cidade anterior'
+                            : undefined
+                        }
+                        onChange={(e) => {
+                          if (e.target.value) entregar(cidade.tempId, e.target.value);
+                          e.target.value = '';
+                        }}
+                      >
+                        <option value="">
+                          {entregaveis.length === 0
+                            ? 'Nada a bordo para entregar'
+                            : '+ Entregar mudança…'}
+                        </option>
+                        {entregaveis.map((c) => (
+                          <option key={c.tempId} value={c.tempId}>
+                            {c.clienteNome || 'Cliente sem nome'} — {c.volumeM3} m³
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
                 </div>
-              </div>
-            ))
+              );
+            })
           )}
         </div>
 
         {/* ---------------- Prévia ---------------- */}
-        {paradas.length > 0 && (
+        {cidades.length > 0 && (
           <div className={estilos.secao}>
             <h3 className={estilos.tituloSecao}>
               Prévia da ocupação

@@ -89,66 +89,6 @@
   margin-bottom: var(--space-2);
 }
 
-.linhaMovimento {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--space-2);
-  padding: 5px 0;
-  border-bottom: 1px solid var(--color-border);
-}
-
-.linhaMovimento:last-child {
-  border-bottom: none;
-}
-
-.nomeCarga {
-  font-size: 13.5px;
-  display: flex;
-  flex-direction: column;
-  min-width: 0;
-}
-
-.nomeCarga small {
-  color: var(--color-gray-600);
-  font-size: 11.5px;
-}
-
-.botoesMovimento {
-  display: flex;
-  gap: 4px;
-  flex-shrink: 0;
-}
-
-.botaoMov {
-  background: var(--color-surface);
-  border: 1.5px solid var(--color-border);
-  border-radius: var(--radius-sm);
-  padding: 4px 11px;
-  cursor: pointer;
-  font-family: var(--font-body);
-  font-size: 12px;
-  font-weight: 600;
-  color: var(--color-gray-600);
-  transition: all var(--transition-fast);
-}
-
-.botaoMov:hover {
-  border-color: var(--color-primary);
-}
-
-.movColeta {
-  background: var(--color-info-bg);
-  border-color: var(--color-info);
-  color: var(--color-info);
-}
-
-.movEntrega {
-  background: var(--color-success-bg);
-  border-color: var(--color-success);
-  color: var(--color-success);
-}
-
 /* --- Prévia da ocupação --- */
 .previa {
   list-style: none;
@@ -222,10 +162,186 @@
   border-left-color: var(--color-info);
 }
 
+
+/* ==========================================================================
+   Trajeto — origem e destino, derivados das cidades
+   ========================================================================== */
+
+.trajeto {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+  margin: var(--space-3) 0 0;
+  padding: var(--space-2) var(--space-3);
+  background: var(--color-bg);
+  border-radius: var(--radius-md);
+  font-size: 14px;
+}
+
+.trajeto small {
+  color: var(--color-gray-600);
+  font-size: 12px;
+  margin-left: auto;
+}
+
+/* ==========================================================================
+   Cidade — cabeçalho e reordenação
+   ========================================================================== */
+
+.acoesCidade {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+/* Subir e descer a cidade na sequência. Setas em vez de arrastar: o
+   formulário vive dentro de um modal que já rola, e arrastar ali briga
+   com a rolagem. */
+.mover {
+  background: transparent;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  color: var(--color-gray-600);
+  cursor: pointer;
+  font-size: 13px;
+  line-height: 1;
+  padding: 3px 7px;
+}
+
+.mover:hover:not(:disabled) {
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+}
+
+.mover:disabled {
+  opacity: 0.3;
+  cursor: default;
+}
+
+/* ==========================================================================
+   Movimento — uma coleta ou uma entrega dentro da cidade
+   ========================================================================== */
+
+.movimento {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  padding: var(--space-2);
+  margin-bottom: var(--space-2);
+}
+
+.tituloMovimento {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin-bottom: var(--space-2);
+}
+
+/* Coleta e entrega herdam as cores que a linha do tempo já usa, para o
+   mesmo conceito ter a mesma cor nas duas telas. */
+.selo_coleta,
+.selo_entrega {
+  border-radius: 20px;
+  padding: 2px 10px;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  flex-shrink: 0;
+}
+
+.selo_coleta {
+  background: var(--color-info-bg);
+  color: var(--color-info);
+}
+
+.selo_entrega {
+  background: var(--color-success-bg);
+  color: var(--color-success);
+}
+
+/* O nome do cliente é editável direto no cabeçalho do movimento: numa
+   carga avulsa é o primeiro campo a preencher, e num cliente cadastrado
+   às vezes precisa de um complemento ("Maria — apto 302"). */
+.nomeEditavel {
+  flex: 1;
+  min-width: 0;
+  font-weight: 600;
+  font-size: 13.5px;
+  padding: 4px 8px;
+  border: 1px solid transparent;
+  background: transparent;
+  border-radius: var(--radius-sm);
+  font-family: var(--font-body);
+  color: var(--color-text);
+}
+
+.nomeEditavel:hover {
+  border-color: var(--color-border);
+}
+
+.nomeEditavel:focus {
+  border-color: var(--color-primary);
+  background: var(--color-surface);
+  outline: none;
+}
+
+/* Na entrega o nome não se edita: a carga é a mesma da coleta, e dois
+   lugares para o mesmo nome só criariam divergência. */
+.nomeCargaFixo {
+  flex: 1;
+  min-width: 0;
+  font-size: 13.5px;
+  font-weight: 600;
+  display: flex;
+  flex-direction: column;
+}
+
+.nomeCargaFixo small {
+  color: var(--color-gray-600);
+  font-size: 11.5px;
+  font-weight: 400;
+}
+
+/* Os dois seletores que fazem a rota crescer. */
+.adicionarMovimento {
+  display: flex;
+  gap: var(--space-2);
+  margin-top: var(--space-2);
+}
+
+.adicionarMovimento select {
+  flex: 1;
+  min-width: 0;
+  font-size: 12.5px;
+  padding: 7px 10px;
+  border: 1.5px dashed var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface);
+  color: var(--color-gray-600);
+  font-family: var(--font-body);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.adicionarMovimento select:hover:not(:disabled) {
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+}
+
+.adicionarMovimento select:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
 @media (max-width: 640px) {
-  .linhaMovimento {
+  .adicionarMovimento {
     flex-direction: column;
-    align-items: stretch;
-    gap: 6px;
+  }
+
+  .trajeto small {
+    margin-left: 0;
+    width: 100%;
   }
 }

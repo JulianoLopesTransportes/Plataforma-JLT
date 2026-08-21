@@ -51,11 +51,21 @@
         "data": "2026-08-16",
         "observacao": "Coleta consolidada das três cargas.",
         "coletam": [
-          "mud_001",
-          "mud_002",
-          "mud_003"
+          {
+            "mudancaId": "mud_001",
+            "endereco": "Av. Amazonas, 5600, Gameleira"
+          },
+          {
+            "mudancaId": "mud_002",
+            "endereco": "Av. Amazonas, 5600, Gameleira"
+          },
+          {
+            "mudancaId": "mud_003",
+            "endereco": "Av. Amazonas, 5600, Gameleira"
+          }
         ],
-        "entregam": []
+        "entregam": [],
+        "ordem": 0
       },
       {
         "id": "par_002",
@@ -67,9 +77,16 @@
         "observacao": "Duas entregas na mesma cidade.",
         "coletam": [],
         "entregam": [
-          "mud_002",
-          "mud_003"
-        ]
+          {
+            "mudancaId": "mud_002",
+            "endereco": "Rua Goiás, 300, Centro"
+          },
+          {
+            "mudancaId": "mud_003",
+            "endereco": "Rua Goiás, 300, Centro"
+          }
+        ],
+        "ordem": 1
       },
       {
         "id": "par_003",
@@ -81,8 +98,12 @@
         "observacao": "Descarga com ajudante contratado no local.",
         "coletam": [],
         "entregam": [
-          "mud_001"
-        ]
+          {
+            "mudancaId": "mud_001",
+            "endereco": "Av. Afonso Pena, 1200, Centro"
+          }
+        ],
+        "ordem": 2
       }
     ]
   },
@@ -118,9 +139,13 @@
         "data": "2026-08-18",
         "observacao": "Janela de carregamento das 7h às 11h.",
         "coletam": [
-          "mud_004"
+          {
+            "mudancaId": "mud_004",
+            "endereco": "Rod. Fernão Dias, km 12, Galpão 4"
+          }
         ],
-        "entregam": []
+        "entregam": [],
+        "ordem": 0
       },
       {
         "id": "par_005",
@@ -132,8 +157,12 @@
         "observacao": "",
         "coletam": [],
         "entregam": [
-          "mud_004"
-        ]
+          {
+            "mudancaId": "mud_004",
+            "endereco": "Av. Getúlio Vargas, 2100, Centro"
+          }
+        ],
+        "ordem": 1
       }
     ]
   },
@@ -169,9 +198,13 @@
         "data": "2026-08-29",
         "observacao": "",
         "coletam": [
-          "mud_005"
+          {
+            "mudancaId": "mud_005",
+            "endereco": "Rua Piauí, 1420, Funcionários"
+          }
         ],
-        "entregam": []
+        "entregam": [],
+        "ordem": 0
       },
       {
         "id": "par_007",
@@ -183,8 +216,12 @@
         "observacao": "Possível necessidade de transbordo para veículo menor.",
         "coletam": [],
         "entregam": [
-          "mud_005"
-        ]
+          {
+            "mudancaId": "mud_005",
+            "endereco": "Rua Coronel Pedro Jorge, 90, Centro"
+          }
+        ],
+        "ordem": 1
       }
     ]
   },
@@ -220,9 +257,13 @@
         "data": "2026-09-12",
         "observacao": "",
         "coletam": [
-          "mud_006"
+          {
+            "mudancaId": "mud_006",
+            "endereco": "Rua Rio de Janeiro, 2200, Lourdes"
+          }
         ],
-        "entregam": []
+        "entregam": [],
+        "ordem": 0
       },
       {
         "id": "par_009",
@@ -234,8 +275,12 @@
         "observacao": "",
         "coletam": [],
         "entregam": [
-          "mud_006"
-        ]
+          {
+            "mudancaId": "mud_006",
+            "endereco": "Rua Sete de Setembro, 45, Centro"
+          }
+        ],
+        "ordem": 1
       }
     ]
   },
@@ -271,9 +316,13 @@
         "data": "2026-08-06",
         "observacao": "Coleta e entrega no mesmo dia.",
         "coletam": [
-          "mud_007"
+          {
+            "mudancaId": "mud_007",
+            "endereco": "Rua Grão Mogol, 780, Sion"
+          }
         ],
-        "entregam": []
+        "entregam": [],
+        "ordem": 0
       },
       {
         "id": "par_011",
@@ -285,8 +334,12 @@
         "observacao": "",
         "coletam": [],
         "entregam": [
-          "mud_007"
-        ]
+          {
+            "mudancaId": "mud_007",
+            "endereco": "Rua Ouro Preto, 155, Barro Preto"
+          }
+        ],
+        "ordem": 1
       }
     ]
   }

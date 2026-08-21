@@ -175,13 +175,23 @@ dados falando com o banco, API HTTP autenticada.
 
 Persistem no banco: clientes, frota, agenda, lançamentos financeiros e rotas —
 cadastro, edição e exclusão. Clientes, veículos e motoristas aceitam anexos,
-guardados em bucket privado com URL assinada de curta duração.
+guardados em bucket privado com URL assinada de curta duração. O cadastro do
+cliente tem um campo **Itens** — a relação de bens da mudança, digitada ou
+importada de um `.txt` — que sai impressa na Ordem de Serviço.
 
 A criação de rota passa pela função `criar_rota_completa` no Postgres, e não
 por inserts sucessivos do navegador: rota, cargas, paradas e movimentos são
 quatro tabelas encadeadas, e sem transação uma falha no meio deixaria rota
 órfã. A função também mapeia os ids temporários que a tela usa para os ids
 reais das cargas.
+
+**A rota é montada cidade a cidade**, na ordem em que o caminhão as visita.
+Em cada cidade se declara o que acontece: coletar a mudança de um cliente —
+e a carga nasce ali, já preenchida pelo cadastro — ou entregar uma que está
+a bordo. O seletor de entrega só oferece cargas coletadas em cidades
+anteriores e ainda não entregues, o que torna impossível, pela interface,
+entregar o que não foi coletado. Origem e destino não são digitados: são a
+primeira e a última cidade.
 
 **Falta:**
 

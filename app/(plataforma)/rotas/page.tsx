@@ -16,7 +16,7 @@ import { useEffect, useState, useMemo, useCallback, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { api, usandoBanco } from '@/lib/api';
 import { useUsuario } from '@/components/layout/SessaoProvider';
-import { podeEditar } from '@/lib/permissoes';
+import { podeEditar, podeFazer } from '@/lib/permissoes';
 import { formatarData, diasEntre } from '@/lib/utils/formato';
 import {
   calcularOcupacao,
@@ -76,6 +76,9 @@ function ConteudoRotas() {
   const [formAberto, setFormAberto] = useState(false);
 
   const podeMexer = podeEditar(usuario.nivel, 'rotas');
+  // A capacidade 'excluir' é transversal e hoje só o admin a tem — quem
+  // edita rota não necessariamente pode apagá-la.
+  const podeExcluir = podeFazer(usuario.nivel, 'excluir');
 
   const recarregar = useCallback(async () => {
     try {
@@ -134,6 +137,40 @@ function ConteudoRotas() {
       mostrar(`${rota.nome} movida para "${ROTULO_STATUS_ROTA[novoStatus]}".`, 'sucesso');
     } catch (e) {
       mostrar(e instanceof Error ? e.message : 'Falha ao mover a rota.', 'erro');
+    }
+  }
+
+  /**
+   * Apaga a rota inteira.
+   *
+   * O banco derruba cargas, paradas e movimentos por ON DELETE CASCADE —
+   * por isso a confirmação diz o que vai junto, em vez do genérico "não
+   * pode ser desfeita". Disponível em qualquer status: rota cancelada
+   * antes de sair também precisa sumir.
+   */
+  async function excluirRota(rota: Rota) {
+    const cargas = rota.mudancas.length;
+    const paradas = rota.paradas.length;
+
+    const confirmou = confirm(
+      `Excluir a rota "${rota.nome}"?\n\n` +
+        `Vão junto ${cargas} ${cargas === 1 ? 'mudança' : 'mudanças'} e ` +
+        `${paradas} ${paradas === 1 ? 'cidade' : 'cidades'}.\n\n` +
+        'Esta ação não pode ser desfeita.',
+    );
+    if (!confirmou) return;
+
+    try {
+      if (usandoBanco()) {
+        await api.rotas.excluir(rota.id);
+        await recarregar();
+      } else {
+        setRotas((lista) => lista.filter((r) => r.id !== rota.id));
+      }
+      setRotaAbertaId(null);
+      mostrar(`Rota "${rota.nome}" excluída.`, 'sucesso');
+    } catch (e) {
+      mostrar(e instanceof Error ? e.message : 'Falha ao excluir a rota.', 'erro');
     }
   }
 
@@ -321,6 +358,15 @@ function ConteudoRotas() {
                   </select>
                 </label>
               )}
+              {podeExcluir && (
+                <button
+                  type="button"
+                  className="btn btn-danger"
+                  onClick={() => excluirRota(rotaAberta)}
+                >
+                  Excluir rota
+                </button>
+              )}
               <button
                 type="button"
                 className="btn btn-outline"
@@ -418,12 +464,19 @@ function DetalheRota({
       <h3 className={estilos.subtitulo}>Linha do tempo</h3>
       <ol className={estilos.timeline}>
         {ocupacoes.map(({ parada, ocupacaoApos, percentual, aBordo }) => {
-          const coletam = parada.coletam
-            .map((id) => rota.mudancas.find((m) => m.id === id))
-            .filter(Boolean);
-          const entregam = parada.entregam
-            .map((id) => rota.mudancas.find((m) => m.id === id))
-            .filter(Boolean);
+          // Cada movimento traz o próprio endereço. Rotas montadas antes
+          // da migration 17 têm o endereço só na parada, então ele entra
+          // como reserva — o que preserva a linha do tempo das antigas.
+          const juntar = (movs: typeof parada.coletam) =>
+            movs
+              .map((mov) => {
+                const mudanca = rota.mudancas.find((m) => m.id === mov.mudancaId);
+                return mudanca ? { mudanca, endereco: mov.endereco || parada.endereco } : null;
+              })
+              .filter((x) => x !== null);
+
+          const coletam = juntar(parada.coletam);
+          const entregam = juntar(parada.entregam);
 
           return (
             <li key={parada.id} className={estilos.parada}>
@@ -437,29 +490,25 @@ function DetalheRota({
                   <span className="texto-secundario">{formatarData(parada.data)}</span>
                 </div>
 
-                <span className="texto-secundario">{parada.endereco}</span>
-
-                {coletam.length > 0 && (
-                  <div className={estilos.movimento}>
+                {coletam.map(({ mudanca, endereco }) => (
+                  <div key={`c-${mudanca.id}`} className={estilos.movimento}>
                     <span className={estilos.rotuloColeta}>Coleta</span>
-                    {coletam.map((m) => (
-                      <span key={m!.id} className={estilos.carga}>
-                        {m!.clienteNome} ({m!.volumeM3} m³)
-                      </span>
-                    ))}
+                    <span className={estilos.carga}>
+                      {mudanca.clienteNome} ({mudanca.volumeM3} m³)
+                      {endereco && <small> — {endereco}</small>}
+                    </span>
                   </div>
-                )}
+                ))}
 
-                {entregam.length > 0 && (
-                  <div className={estilos.movimento}>
+                {entregam.map(({ mudanca, endereco }) => (
+                  <div key={`e-${mudanca.id}`} className={estilos.movimento}>
                     <span className={estilos.rotuloEntrega}>Entrega</span>
-                    {entregam.map((m) => (
-                      <span key={m!.id} className={estilos.carga}>
-                        {m!.clienteNome} ({m!.volumeM3} m³)
-                      </span>
-                    ))}
+                    <span className={estilos.carga}>
+                      {mudanca.clienteNome} ({mudanca.volumeM3} m³)
+                      {endereco && <small> — {endereco}</small>}
+                    </span>
                   </div>
-                )}
+                ))}
 
                 <div className={estilos.ocupacaoParada}>
                   A bordo depois desta parada: <strong>{ocupacaoApos} m³</strong>

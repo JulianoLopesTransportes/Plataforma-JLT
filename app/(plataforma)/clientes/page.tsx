@@ -15,6 +15,8 @@
 
 import { useEffect, useState, useMemo, useCallback } from 'react';
 import { api, usandoBanco } from '@/lib/api';
+import { anexos as apiAnexos } from '@/lib/api/anexos';
+import { linhasDeItens } from '@/lib/negocio/documentos';
 import { useUsuario } from '@/components/layout/SessaoProvider';
 import { podeEditar, podeFazer } from '@/lib/permissoes';
 import {
@@ -62,6 +64,7 @@ const CLIENTE_VAZIO: Omit<Cliente, 'id' | 'criadoEm' | 'anexos' | 'historico'> =
   volumeM3: null,
   dataPrevista: '',
   observacoes: '',
+  itens: '',
 };
 
 export default function PaginaClientes() {
@@ -74,6 +77,15 @@ export default function PaginaClientes() {
   const [busca, setBusca] = useState('');
   const [filtroStatus, setFiltroStatus] = useState('');
   const [filtroOrigem, setFiltroOrigem] = useState('');
+
+  /**
+   * O .txt escolhido no formulário, à espera de um id para onde subir.
+   *
+   * Num cliente novo o caminho no Storage é clientes/<id>/…, e o id só
+   * existe depois do insert. Por isso o arquivo espera aqui e sobe logo
+   * em seguida, em vez de subir no momento em que foi escolhido.
+   */
+  const [arquivoItens, setArquivoItens] = useState<File | null>(null);
 
   const [detalhe, setDetalhe] = useState<Cliente | null>(null);
   const [abaDetalhe, setAbaDetalhe] = useState('dados');
@@ -178,6 +190,7 @@ export default function PaginaClientes() {
 
   function abrirEdicao(cliente: Cliente) {
     setEditandoId(cliente.id);
+    setArquivoItens(null);
     const { id: _i, criadoEm: _c, anexos: _a, historico: _h, ...campos } = cliente;
     setFormulario(campos);
     setDetalhe(null);
@@ -186,8 +199,54 @@ export default function PaginaClientes() {
 
   function abrirNovo() {
     setEditandoId(null);
+    setArquivoItens(null);
     setFormulario(CLIENTE_VAZIO);
     setFormAberto(true);
+  }
+
+  /**
+   * Lê o .txt escolhido: o conteúdo vai para o campo, e o arquivo fica
+   * guardado para subir aos anexos quando houver um id.
+   */
+  /** Conta pelo mesmo critério que a Ordem de Serviço usa para imprimir. */
+  const quantosItens = linhasDeItens(formulario.itens).length;
+
+  async function importarItens(evento: React.ChangeEvent<HTMLInputElement>) {
+    const arquivo = evento.target.files?.[0];
+    // Permite reescolher o mesmo arquivo depois de trocar de ideia.
+    evento.target.value = '';
+    if (!arquivo) return;
+
+    try {
+      const conteudo = await arquivo.text();
+      setFormulario((atual) => ({ ...atual, itens: conteudo }));
+      setArquivoItens(arquivo);
+      mostrar(`${arquivo.name} carregado — confira antes de salvar.`, 'sucesso');
+    } catch {
+      mostrar('Não consegui ler o arquivo. Ele precisa ser um .txt.', 'erro');
+    }
+  }
+
+  /**
+   * Sobe o .txt para os anexos do cliente.
+   *
+   * Falha aqui NÃO desfaz o cadastro: o texto dos itens já foi gravado na
+   * coluna, que é o que a Ordem de Serviço imprime. O arquivo é a cópia de
+   * conveniência, então avisa e segue.
+   */
+  async function subirArquivoItens(clienteId: string) {
+    if (!arquivoItens || !usandoBanco()) return;
+
+    try {
+      await apiAnexos.enviar('clientes', clienteId, arquivoItens);
+    } catch (e) {
+      mostrar(
+        `Itens salvos, mas o arquivo não foi anexado: ${
+          e instanceof Error ? e.message : 'falha no envio'
+        }`,
+        'erro',
+      );
+    }
   }
 
   async function salvarNovo(evento: React.FormEvent) {
@@ -204,10 +263,12 @@ export default function PaginaClientes() {
       if (editandoId) {
         await api.clientes.atualizar(editandoId, formulario);
         await api.clientes.registrarHistorico(editandoId, usuario.nome, 'Cadastro atualizado.');
+        await subirArquivoItens(editandoId);
         await recarregar();
       } else if (usandoBanco()) {
         const criado = await api.clientes.criar(formulario);
         await api.clientes.registrarHistorico(criado.id, usuario.nome, 'Cliente cadastrado.');
+        await subirArquivoItens(criado.id);
         await recarregar();
       } else {
         const cliente: Cliente = {
@@ -230,6 +291,7 @@ export default function PaginaClientes() {
       setFormAberto(false);
       setFormulario(CLIENTE_VAZIO);
       setEditandoId(null);
+      setArquivoItens(null);
       mostrar(`${formulario.nome} ${editandoId ? 'atualizado' : 'cadastrado'} com sucesso.`, 'sucesso');
     } catch (e) {
       mostrar(e instanceof Error ? e.message : 'Falha ao salvar.', 'erro');
@@ -512,6 +574,24 @@ export default function PaginaClientes() {
                 <Dado rotulo="Observações" largo>
                   {detalhe.observacoes || '—'}
                 </Dado>
+                <Dado
+                  rotulo={`Itens${
+                    linhasDeItens(detalhe.itens).length > 0
+                      ? ` (${linhasDeItens(detalhe.itens).length})`
+                      : ''
+                  }`}
+                  largo
+                >
+                  {linhasDeItens(detalhe.itens).length > 0 ? (
+                    <ul className={estilos.listaItens}>
+                      {linhasDeItens(detalhe.itens).map((item, i) => (
+                        <li key={i}>{item}</li>
+                      ))}
+                    </ul>
+                  ) : (
+                    '—'
+                  )}
+                </Dado>
               </dl>
             )}
 
@@ -716,7 +796,7 @@ export default function PaginaClientes() {
             />
           </div>
 
-          <div className="field">
+          <div className="field" style={{ marginBottom: 20 }}>
             <label htmlFor="observacoes">Observações</label>
             <textarea
               id="observacoes"
@@ -724,6 +804,43 @@ export default function PaginaClientes() {
               onChange={(e) => setFormulario({ ...formulario, observacoes: e.target.value })}
               placeholder="Andar, elevador, itens frágeis, restrições de acesso…"
             />
+          </div>
+
+          <div className="field">
+            <div className={estilos.cabecalhoItens}>
+              <label htmlFor="itens">
+                Itens
+                {quantosItens > 0 && (
+                  <span className={estilos.contadorItens}>
+                    {quantosItens} {quantosItens === 1 ? 'item' : 'itens'}
+                  </span>
+                )}
+              </label>
+
+              <label className="btn btn-outline btn-sm" htmlFor="importarItens">
+                Importar .txt
+              </label>
+              <input
+                id="importarItens"
+                type="file"
+                accept=".txt,text/plain"
+                onChange={importarItens}
+                className={estilos.arquivoEscondido}
+              />
+            </div>
+
+            <textarea
+              id="itens"
+              rows={8}
+              value={formulario.itens}
+              onChange={(e) => setFormulario({ ...formulario, itens: e.target.value })}
+              placeholder={'Um item por linha:\nSofá de 3 lugares\nGeladeira duplex\n12 caixas de livros'}
+            />
+
+            <small className={estilos.ajudaItens}>
+              Um item por linha. Sai impresso na Ordem de Serviço.
+              {arquivoItens && ` O arquivo ${arquivoItens.name} será anexado ao salvar.`}
+            </small>
           </div>
         </form>
       </Modal>

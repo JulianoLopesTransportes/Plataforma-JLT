@@ -72,6 +72,12 @@ export type Cliente = {
   /** ISO 8601 (só a data, sem hora). Vazio quando ainda não há data definida. */
   dataPrevista: string;
   observacoes: string;
+  /**
+   * Relação de itens da mudança, um por linha. Escrita à mão ou importada
+   * de um .txt. É o que a Ordem de Serviço imprime — diferente do
+   * inventário do módulo Documentos, que tem valor declarado e ambiente.
+   */
+  itens: string;
   criadoEm: string;
   anexos: Anexo[];
   historico: EventoHistorico[];

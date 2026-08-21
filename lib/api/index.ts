@@ -137,6 +137,7 @@ const clientes = {
         volume_m3: cliente.volumeM3,
         data_prevista: cliente.dataPrevista || null,
         observacoes: cliente.observacoes,
+        itens: cliente.itens,
       })
       .select('*, cliente_anexos(*), cliente_historico(*)')
       .single();
@@ -159,6 +160,7 @@ const clientes = {
     if (mudancas.enderecoColeta !== undefined) campos.endereco_coleta = mudancas.enderecoColeta;
     if (mudancas.enderecoEntrega !== undefined) campos.endereco_entrega = mudancas.enderecoEntrega;
     if (mudancas.observacoes !== undefined) campos.observacoes = mudancas.observacoes;
+    if (mudancas.itens !== undefined) campos.itens = mudancas.itens;
 
     const { error } = await supabase().from('clientes').update(campos).eq('id', id);
     if (error) throw new Error(traduzir(error));

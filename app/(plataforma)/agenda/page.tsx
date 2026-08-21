@@ -276,6 +276,9 @@ export default function PaginaAgenda() {
         volumeM3: clienteDaOrdem?.volumeM3 ?? null,
         caracteristicas: ordemServico.caracteristicas,
         observacoes: ordemServico.observacoes,
+        // A relação de itens mora no cadastro do cliente, não no
+        // compromisso: é a mesma lista para toda mudança dele.
+        itens: clienteDaOrdem?.itens ?? '',
       })
     : [];
 

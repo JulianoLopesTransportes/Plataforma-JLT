@@ -17,9 +17,20 @@
     "criadoEm": "2026-07-28T09:14:00",
     "anexos": [],
     "historico": [
-      { "id": "h1", "em": "2026-07-28T09:14:00", "autor": "Aline Duarte", "descricao": "Cliente cadastrado a partir de lead do MudaMuda." },
-      { "id": "h2", "em": "2026-08-04T15:02:00", "autor": "Aline Duarte", "descricao": "Status alterado de Novo para Em andamento." }
-    ]
+      {
+        "id": "h1",
+        "em": "2026-07-28T09:14:00",
+        "autor": "Aline Duarte",
+        "descricao": "Cliente cadastrado a partir de lead do MudaMuda."
+      },
+      {
+        "id": "h2",
+        "em": "2026-08-04T15:02:00",
+        "autor": "Aline Duarte",
+        "descricao": "Status alterado de Novo para Em andamento."
+      }
+    ],
+    "itens": "Piano de cauda\nSofá de 3 lugares\nRack da sala com TV 55\"\nMesa de jantar com 6 cadeiras\nGeladeira duplex\nCama box casal\n12 caixas de livros"
   },
   {
     "id": "cli_002",
@@ -39,9 +50,20 @@
     "criadoEm": "2026-06-11T11:30:00",
     "anexos": [],
     "historico": [
-      { "id": "h1", "em": "2026-06-11T11:30:00", "autor": "Aline Duarte", "descricao": "Cliente cadastrado." },
-      { "id": "h2", "em": "2026-07-16T18:20:00", "autor": "Marcos Vieira", "descricao": "Status alterado de Em andamento para Concluído." }
-    ]
+      {
+        "id": "h1",
+        "em": "2026-06-11T11:30:00",
+        "autor": "Aline Duarte",
+        "descricao": "Cliente cadastrado."
+      },
+      {
+        "id": "h2",
+        "em": "2026-07-16T18:20:00",
+        "autor": "Marcos Vieira",
+        "descricao": "Status alterado de Em andamento para Concluído."
+      }
+    ],
+    "itens": "18 estações de trabalho\n4 armários de aço\n2 servidores de rack\nMesa de reunião para 10\n30 cadeiras de escritório"
   },
   {
     "id": "cli_003",
@@ -61,8 +83,14 @@
     "criadoEm": "2026-08-12T14:45:00",
     "anexos": [],
     "historico": [
-      { "id": "h1", "em": "2026-08-12T14:45:00", "autor": "Aline Duarte", "descricao": "Cliente cadastrado via WhatsApp." }
-    ]
+      {
+        "id": "h1",
+        "em": "2026-08-12T14:45:00",
+        "autor": "Aline Duarte",
+        "descricao": "Cliente cadastrado via WhatsApp."
+      }
+    ],
+    "itens": ""
   },
   {
     "id": "cli_004",
@@ -82,8 +110,14 @@
     "criadoEm": "2026-08-01T08:05:00",
     "anexos": [],
     "historico": [
-      { "id": "h1", "em": "2026-08-01T08:05:00", "autor": "Aline Duarte", "descricao": "Cliente cadastrado por repasse." }
-    ]
+      {
+        "id": "h1",
+        "em": "2026-08-01T08:05:00",
+        "autor": "Aline Duarte",
+        "descricao": "Cliente cadastrado por repasse."
+      }
+    ],
+    "itens": ""
   },
   {
     "id": "cli_005",
@@ -103,9 +137,20 @@
     "criadoEm": "2026-06-05T16:22:00",
     "anexos": [],
     "historico": [
-      { "id": "h1", "em": "2026-06-05T16:22:00", "autor": "Aline Duarte", "descricao": "Cliente cadastrado." },
-      { "id": "h2", "em": "2026-07-01T10:00:00", "autor": "Marcos Vieira", "descricao": "Status alterado de Em andamento para Concluído." }
-    ]
+      {
+        "id": "h1",
+        "em": "2026-06-05T16:22:00",
+        "autor": "Aline Duarte",
+        "descricao": "Cliente cadastrado."
+      },
+      {
+        "id": "h2",
+        "em": "2026-07-01T10:00:00",
+        "autor": "Marcos Vieira",
+        "descricao": "Status alterado de Em andamento para Concluído."
+      }
+    ],
+    "itens": ""
   },
   {
     "id": "cli_006",
@@ -125,8 +170,14 @@
     "criadoEm": "2026-08-14T10:35:00",
     "anexos": [],
     "historico": [
-      { "id": "h1", "em": "2026-08-14T10:35:00", "autor": "Aline Duarte", "descricao": "Cliente cadastrado." }
-    ]
+      {
+        "id": "h1",
+        "em": "2026-08-14T10:35:00",
+        "autor": "Aline Duarte",
+        "descricao": "Cliente cadastrado."
+      }
+    ],
+    "itens": ""
   },
   {
     "id": "cli_007",
@@ -146,8 +197,14 @@
     "criadoEm": "2026-08-06T13:10:00",
     "anexos": [],
     "historico": [
-      { "id": "h1", "em": "2026-08-06T13:10:00", "autor": "Aline Duarte", "descricao": "Cliente cadastrado por indicação." }
-    ]
+      {
+        "id": "h1",
+        "em": "2026-08-06T13:10:00",
+        "autor": "Aline Duarte",
+        "descricao": "Cliente cadastrado por indicação."
+      }
+    ],
+    "itens": ""
   },
   {
     "id": "cli_008",
@@ -167,8 +224,14 @@
     "criadoEm": "2026-07-19T09:50:00",
     "anexos": [],
     "historico": [
-      { "id": "h1", "em": "2026-07-19T09:50:00", "autor": "Aline Duarte", "descricao": "Cliente cadastrado." }
-    ]
+      {
+        "id": "h1",
+        "em": "2026-07-19T09:50:00",
+        "autor": "Aline Duarte",
+        "descricao": "Cliente cadastrado."
+      }
+    ],
+    "itens": ""
   },
   {
     "id": "cli_009",
@@ -188,8 +251,14 @@
     "criadoEm": "2026-08-15T17:05:00",
     "anexos": [],
     "historico": [
-      { "id": "h1", "em": "2026-08-15T17:05:00", "autor": "Aline Duarte", "descricao": "Cliente cadastrado a partir de lead do MudaMuda." }
-    ]
+      {
+        "id": "h1",
+        "em": "2026-08-15T17:05:00",
+        "autor": "Aline Duarte",
+        "descricao": "Cliente cadastrado a partir de lead do MudaMuda."
+      }
+    ],
+    "itens": ""
   },
   {
     "id": "cli_010",
@@ -209,9 +278,20 @@
     "criadoEm": "2026-04-30T07:40:00",
     "anexos": [],
     "historico": [
-      { "id": "h1", "em": "2026-04-30T07:40:00", "autor": "Aline Duarte", "descricao": "Cliente cadastrado." },
-      { "id": "h2", "em": "2026-05-21T16:30:00", "autor": "Marcos Vieira", "descricao": "Status alterado de Em andamento para Concluído." }
-    ]
+      {
+        "id": "h1",
+        "em": "2026-04-30T07:40:00",
+        "autor": "Aline Duarte",
+        "descricao": "Cliente cadastrado."
+      },
+      {
+        "id": "h2",
+        "em": "2026-05-21T16:30:00",
+        "autor": "Marcos Vieira",
+        "descricao": "Status alterado de Em andamento para Concluído."
+      }
+    ],
+    "itens": ""
   },
   {
     "id": "cli_011",
@@ -231,8 +311,14 @@
     "criadoEm": "2026-08-08T12:00:00",
     "anexos": [],
     "historico": [
-      { "id": "h1", "em": "2026-08-08T12:00:00", "autor": "Aline Duarte", "descricao": "Cliente cadastrado via WhatsApp." }
-    ]
+      {
+        "id": "h1",
+        "em": "2026-08-08T12:00:00",
+        "autor": "Aline Duarte",
+        "descricao": "Cliente cadastrado via WhatsApp."
+      }
+    ],
+    "itens": ""
   },
   {
     "id": "cli_012",
@@ -252,7 +338,13 @@
     "criadoEm": "2026-08-16T09:25:00",
     "anexos": [],
     "historico": [
-      { "id": "h1", "em": "2026-08-16T09:25:00", "autor": "Aline Duarte", "descricao": "Cliente cadastrado." }
-    ]
+      {
+        "id": "h1",
+        "em": "2026-08-16T09:25:00",
+        "autor": "Aline Duarte",
+        "descricao": "Cliente cadastrado."
+      }
+    ],
+    "itens": ""
   }
 ]

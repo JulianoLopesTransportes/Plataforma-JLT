@@ -1088,6 +1088,20 @@ export const TITULO_DOCUMENTO: Record<TipoDocumento, string> = {
    serviços contratados e espaço para anotar o que aconteceu.
    ========================================================================== */
 
+/**
+ * Quebra a relação de itens do cliente em linhas aproveitáveis.
+ *
+ * Exportada porque a tela de cadastro usa a mesma contagem para dizer
+ * quantos itens o cliente tem — se ela contasse por conta própria, as duas
+ * discordariam no dia em que alguém deixasse uma linha em branco no meio.
+ */
+export function linhasDeItens(texto: string): string[] {
+  return texto
+    .split('\n')
+    .map((linha) => linha.replace(/^\s*[-•*–]\s*/, '').trim())
+    .filter((linha) => linha.length > 0);
+}
+
 export type EntradaOrdemServico = {
   cliente: DadosCliente;
   titulo: string;
@@ -1099,6 +1113,8 @@ export type EntradaOrdemServico = {
   volumeM3: number | null;
   caracteristicas: string[];
   observacoes: string;
+  /** Relação de itens do cadastro do cliente, um por linha. */
+  itens: string;
 };
 
 export function gerarOrdemServico(e: EntradaOrdemServico): BlocoDocumento[] {
@@ -1164,6 +1180,14 @@ export function gerarOrdemServico(e: EntradaOrdemServico): BlocoDocumento[] {
       { tipo: 'secao', titulo: 'Serviços contratados' },
       { tipo: 'lista', itens: e.caracteristicas },
     );
+  }
+
+  // A relação vem do cadastro do cliente como texto livre. Uma linha vira
+  // um item; linhas vazias e marcadores digitados à mão ("- sofá", "• sofá")
+  // são descartados, porque a lista já desenha o seu próprio marcador.
+  const itens = linhasDeItens(e.itens);
+  if (itens.length > 0) {
+    blocos.push({ tipo: 'secao', titulo: 'Itens declarados' }, { tipo: 'lista', itens });
   }
 
   if (e.observacoes.trim()) {

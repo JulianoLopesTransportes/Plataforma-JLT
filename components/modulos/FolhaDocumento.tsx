@@ -3,8 +3,8 @@
 /**
  * FOLHA DE DOCUMENTO — a apresentação impressa, compartilhada.
  *
- * Extraída do módulo Documentos para que a Agenda gere a ficha de
- * atendimento no mesmo padrão visual. Sem isso, a ficha teria uma cópia do
+ * Extraída do módulo Documentos para que a Agenda gere a ordem de
+ * serviço no mesmo padrão visual. Sem isso, ela teria uma cópia do
  * cabeçalho, do rodapé e das réguas — e as duas divergiriam no primeiro
  * ajuste de identidade.
  *

@@ -56,7 +56,7 @@ export type TipoDocumento =
   | 'guarda'
   | 'imagem'
   | 'comprovante'
-  | 'ficha';
+  | 'ordemServico';
 
 export const TIPOS_DOCUMENTO: { id: TipoDocumento; rotulo: string; descricao: string }[] = [
   {
@@ -99,7 +99,7 @@ export const NOME_ARQUIVO: Record<TipoDocumento, string> = {
   guarda: 'ContratoGuardaMoveis',
   imagem: 'AutorizacaoImagem',
   comprovante: 'ComprovanteEntrega',
-  ficha: 'FichaAtendimento',
+  ordemServico: 'Ordem_de_Servico',
 };
 
 /** Trecho de texto: string simples ou trecho em negrito. */
@@ -1076,11 +1076,11 @@ export const TITULO_DOCUMENTO: Record<TipoDocumento, string> = {
   guarda: 'Contrato de Guarda de Móveis',
   imagem: 'Autorização de Uso de Imagem',
   comprovante: 'Comprovante de Entrega',
-  ficha: 'Ficha de Atendimento',
+  ordemServico: 'Ordem de Serviço',
 };
 
 /* ==========================================================================
-   7. FICHA DE ATENDIMENTO
+   7. ORDEM DE SERVIÇO
    ==========================================================================
    Documento operacional, não jurídico: é o papel que a equipe leva para a
    rua. Reúne num lugar só o que o motorista e os ajudantes precisam saber
@@ -1088,7 +1088,7 @@ export const TITULO_DOCUMENTO: Record<TipoDocumento, string> = {
    serviços contratados e espaço para anotar o que aconteceu.
    ========================================================================== */
 
-export type EntradaFicha = {
+export type EntradaOrdemServico = {
   cliente: DadosCliente;
   titulo: string;
   data: string;
@@ -1101,7 +1101,7 @@ export type EntradaFicha = {
   observacoes: string;
 };
 
-export function gerarFicha(e: EntradaFicha): BlocoDocumento[] {
+export function gerarOrdemServico(e: EntradaOrdemServico): BlocoDocumento[] {
   const c = e.cliente;
 
   const blocos: BlocoDocumento[] = [

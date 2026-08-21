@@ -306,7 +306,7 @@
 
 
 
-/* Linhas em branco para a equipe preencher à mão, na ficha de atendimento. */
+/* Linhas em branco para a equipe preencher à mão, na ordem de serviço. */
 .linhasEmBranco {
   display: flex;
   flex-direction: column;

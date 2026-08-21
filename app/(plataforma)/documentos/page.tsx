@@ -48,8 +48,8 @@ const SUBTITULO_DOCUMENTO: Record<TipoDocumento, string> = {
   guarda: 'Contrato de prestação de serviços de guarda-móveis',
   imagem: 'Autorização de uso de imagem',
   comprovante: 'Recibo de conclusão de serviço',
-  // A ficha não é oferecida aqui: nasce de um compromisso, na Agenda.
-  ficha: 'Ficha de atendimento da equipe',
+  // A ordem de serviço não é oferecida aqui: nasce de um compromisso, na Agenda.
+  ordemServico: 'Ordem de serviço da equipe',
 };
 
 const CATALOGO = catalogoItens as Record<string, string[]>;
@@ -206,7 +206,7 @@ export default function PaginaDocumentos() {
         });
 
       default:
-        // 'ficha' existe no tipo mas é gerada pela Agenda, não por esta tela.
+        // 'ordemServico' existe no tipo mas é gerada pela Agenda, não por esta tela.
         return [];
     }
   }, [

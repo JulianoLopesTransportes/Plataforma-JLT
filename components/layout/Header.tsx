@@ -10,7 +10,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import Icone from './Icone';
 import { iniciais, type Usuario } from '@/lib/auth';
-import { ROTULO_NIVEL } from '@/lib/permissoes';
+import { rotuloDoNivel } from '@/lib/permissoes';
 import { moduloDaRota } from '@/lib/permissoes';
 import { rotuloDoModulo } from '@/lib/navegacao';
 import estilos from './layout.module.css';
@@ -67,7 +67,7 @@ export default function Header({ usuario, aoAbrirMenu, aoSair }: Props) {
         </div>
         <div className={estilos.usuarioTexto}>
           <span className={estilos.usuarioNome}>{usuario.nome}</span>
-          <span className={estilos.usuarioNivel}>{ROTULO_NIVEL[usuario.nivel]}</span>
+          <span className={estilos.usuarioNivel}>{rotuloDoNivel(usuario.nivel)}</span>
         </div>
         <button type="button" className={estilos.botaoSair} onClick={aoSair}>
           <Icone nome="sair" tamanho={16} />

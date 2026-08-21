@@ -127,3 +127,154 @@
   padding-top: var(--space-2);
   border-top: 1px solid var(--color-border);
 }
+
+/* ==========================================================================
+   Matriz editável
+   ========================================================================== */
+
+/* O seletor de acesso de cada célula.
+   As classes .acessoCrud/.acessoR/.acessoNone servem à pastilha redonda e
+   pintam o FUNDO com a cor cheia; num seletor isso apagaria o texto. Por
+   isso a combinação com .seletorAcesso repinta usando os tons de fundo. */
+.seletorAcesso {
+  font-family: var(--font-body);
+  font-size: 12px;
+  font-weight: 600;
+  padding: 4px 8px;
+  border-radius: var(--radius-sm);
+  border: 1.5px solid transparent;
+  cursor: pointer;
+  min-width: 96px;
+}
+
+.seletorAcesso:focus {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 1px;
+}
+
+.seletorAcesso.acessoCrud {
+  background: var(--color-success-bg);
+  color: var(--color-success);
+  border-color: var(--color-success);
+}
+
+.seletorAcesso.acessoR {
+  background: var(--color-warning-bg);
+  color: var(--color-warning);
+  border-color: var(--color-warning);
+}
+
+.seletorAcesso.acessoNone {
+  background: var(--color-bg);
+  color: var(--color-gray-600);
+  border-color: var(--color-border);
+}
+
+/* A coluna do admin e os níveis de sistema: exibidos, não editáveis. */
+.travado {
+  display: block;
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--color-gray-600);
+}
+
+.acoesMatriz {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--space-2);
+  margin-top: var(--space-3);
+}
+
+.avisoNaoSalvo {
+  margin-right: auto;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-warning);
+}
+
+.notaMatriz {
+  margin-top: var(--space-3);
+  padding: var(--space-2) var(--space-3);
+  background: var(--color-info-bg);
+  color: var(--color-info);
+  border-left: 3px solid var(--color-info);
+  border-radius: var(--radius-sm);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+/* ==========================================================================
+   Níveis de acesso
+   ========================================================================== */
+
+.secaoNiveis {
+  margin-top: var(--space-4);
+  padding-top: var(--space-3);
+  border-top: 1px solid var(--color-border);
+}
+
+.tituloNiveis {
+  font-family: var(--font-display);
+  font-size: 15px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin: 0;
+}
+
+.listaNiveis {
+  list-style: none;
+  margin: var(--space-2) 0 0;
+  padding: 0;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+}
+
+.linhaNivel {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  padding: 10px var(--space-3);
+  background: var(--color-surface);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.linhaNivel:last-child {
+  border-bottom: none;
+}
+
+.nomeNivel {
+  display: flex;
+  flex-direction: column;
+  font-size: 14px;
+  font-weight: 600;
+  min-width: 0;
+}
+
+.nomeNivel small {
+  font-weight: 400;
+  font-size: 11.5px;
+  color: var(--color-gray-600);
+}
+
+.excluirNivel {
+  background: transparent;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  color: var(--color-gray-600);
+  cursor: pointer;
+  font-family: var(--font-body);
+  font-size: 12px;
+  font-weight: 600;
+  padding: 4px 12px;
+}
+
+.excluirNivel:hover {
+  border-color: var(--color-danger);
+  background: var(--color-danger-bg);
+  color: var(--color-danger);
+}

@@ -7,7 +7,7 @@
  * vínculo opcional a cliente/veículo/motorista, filtro por período e os
  * gráficos de composição.
  *
- * Acesso: apenas admin e financeiro (ver MATRIZ_PERMISSOES). Operacional e
+ * Acesso: apenas admin e financeiro, pela matriz. Operacional e
  * comercial nem veem o item na sidebar.
  */
 

@@ -53,14 +53,34 @@ autoria em históricos e lançamentos.
 
 ## Permissões
 
-A regra de acesso existe em **dois lugares que precisam concordar**:
+**A matriz é editável pela plataforma**, em Usuários → Matriz de permissões.
+Quem manda é a tabela `permissoes_modulo` no Postgres: o RLS a consulta a
+cada requisição, e a interface a carrega no boot da sessão. Não há mais duas
+cópias para manter em sincronia — `lib/permissoes.ts` guarda a mesma matriz
+apenas como **padrão de fábrica**, usada antes de o banco responder e quando
+não há Supabase configurado.
 
-- `lib/permissoes.ts` — governa a interface (sidebar, guardas, botões)
-- tabela `permissoes_modulo` no Postgres — governa o RLS
+As consultas (`podeVer`, `podeEditar`, `podeFazer`) continuam síncronas e com
+a assinatura de sempre: leem uma variável de módulo que o `SessaoProvider`
+preenche antes de qualquer tela desenhar. Nenhum ponto de chamada mudou.
 
-A duplicação é proposital: uma policy do banco não consegue ler um objeto
-TypeScript. O ganho é que a regra vale mesmo contra acesso direto à API REST,
-não só na tela. **Ao mudar a matriz, mude nos dois lugares.**
+Salvar a matriz vale **imediatamente**, inclusive para quem já está logado.
+
+**Níveis são dado, não código.** Além dos quatro originais, o admin cria
+níveis novos — sempre copiando um existente. A cópia leva a matriz de
+módulos **e** as capacidades transversais, que não têm tela própria: é ao
+escolher de quem copiar que elas ficam decididas. Os quatro originais são
+marcados como `sistema` e não podem ser excluídos.
+
+Três travas vivem no banco, não na tela, e valem mesmo contra quem chamar a
+API REST direto:
+
+1. Nenhuma alteração pode deixar o sistema **sem um nível com acesso total a
+   Usuários** — seria o único estado irreversível pela própria interface
+2. O administrador não pode ser rebaixado nem removido da matriz
+3. Nível de sistema não se exclui
+
+O padrão de fábrica — o que a migration 02 gravou e o que vale sem banco:
 
 | Módulo | Admin | Financeiro | Operacional | Comercial |
 |---|---|---|---|---|
@@ -89,8 +109,8 @@ cada um exigiu um mecanismo próprio no banco:
 
 Outras capacidades: `exportar` e `excluir` (só admin).
 
-A matriz pode ser consultada na plataforma em **Usuários → Matriz de permissões**,
-renderizada do mesmo objeto que governa o sistema.
+A matriz é editada na plataforma em **Usuários → Matriz de permissões**, e é
+a mesma que governa o sistema — a tabela do Postgres, não uma cópia dela.
 
 ---
 
@@ -112,7 +132,7 @@ components/
   modulos/                 PainelPrecificacao
 
 lib/
-  permissoes.ts            matriz de acesso — fonte única no front
+  permissoes.ts            consultas de acesso + padrão de fábrica da matriz
   auth.ts                  Supabase Auth
   supabase/                clientes de navegador e de servidor
   api/                     ÚNICA porta de saída para dados
@@ -197,8 +217,9 @@ primeira e a última cidade.
 
 1. Revisar os **valores de precificação**, que são placeholder inventados na
    Fase A e não dado real da empresa
-2. Verificação automática de paridade entre `lib/permissoes.ts` e
-   `permissoes_modulo`
+2. Conferir na tela, com sessão aberta, tudo o que foi entregue em
+   21/08/2026 — Ordem de Serviço, campo Itens, rotas por cidade e a matriz
+   editável passaram por build e por teste no banco, mas não por uso real
 
 **As tabelas de negócio estão vazias por decisão:** os mocks são pessoas e cargas
 fictícias e não devem virar registro real. O cadastro começa do zero.

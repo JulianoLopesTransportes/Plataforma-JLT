@@ -22,6 +22,11 @@ O schema está **aplicado no projeto remoto**. As migrations abaixo já rodaram:
 | 17 | `17_endereco_por_movimento_e_ordem_das_paradas` | Coluna `endereco` em `parada_movimentos` — dois clientes na mesma cidade, ruas diferentes |
 | 18 | `18_criar_rota_completa_com_endereco_e_ordem` | Movimentos viram `{ temp_id, endereco }`, e a parada passa a gravar `ordem` |
 | 19 | `19_preenche_ordem_das_paradas_antigas` | Preenche `ordem` das paradas gravadas antes da 17, que estava nula |
+| 20 | `20_niveis_viram_tabela` | Tabela `niveis` — níveis deixam de ser enum e viram dado criável |
+| 21 | `21_colunas_nivel_viram_texto` | As quatro colunas `nivel` viram text com FK; o enum `nivel_usuario` é descartado |
+| 22 | `22_matriz_editavel_com_travas` | Policies de escrita na matriz e as três travas que impedem se trancar do lado de fora |
+| 23 | `23_criar_nivel_copiando_de_outro` | `criar_nivel()` — nível novo nasce com a matriz e as capacidades de um modelo |
+| 24 | `24_revoga_execucao_anonima_das_funcoes_novas` | Conserta a revogação das 21 e 23, que revogaram de `anon` sem revogar de PUBLIC |
 
 ## Baixar os arquivos de migration para cá
 
@@ -37,14 +42,40 @@ npx supabase db pull
 
 ## Como as permissões funcionam no banco
 
-A matriz de `lib/permissoes.ts` existe **duas vezes**: no TypeScript, que controla
-a interface, e na tabela `permissoes_modulo`, que o RLS consulta. Isso é
-duplicação consciente — uma policy do Postgres não consegue ler um objeto
-TypeScript. O efeito é que a regra vale mesmo se alguém falar direto com a API
-REST, ignorando a interface.
+**A tabela `permissoes_modulo` é a fonte.** O RLS a consulta a cada requisição,
+e a interface a carrega no boot da sessão — ver `lerPermissoes()` em
+`lib/api/admin.ts`. A matriz em `lib/permissoes.ts` continua existindo, mas
+como **padrão de fábrica**: vale antes de o banco responder e quando não há
+Supabase configurado. Não há mais duas cópias para manter em sincronia.
 
-**Manter as duas em sincronia é obrigatório.** Ao alterar a matriz, mude nos dois
-lugares e rode a verificação de paridade (ver plano da Fase B).
+O admin edita a matriz em Usuários → Matriz de permissões, e a mudança vale
+na hora, inclusive para quem já está logado.
+
+### As três travas
+
+Vivem no banco como triggers, não na tela, e valem contra quem chamar a API
+REST direto:
+
+1. **`matriz_exige_porta`** — nenhuma alteração pode deixar o sistema sem um
+   nível com `crud` em `usuarios`. É o único estado irreversível pela própria
+   interface: sem porta, o RLS negaria a escrita que consertaria. É uma
+   *constraint trigger* adiada de propósito — a tela grava a matriz inteira
+   num upsert só e passa por estados inválidos no meio do caminho.
+2. **`matriz_protege_admin`** — o administrador não pode ser rebaixado nem
+   removido da matriz.
+3. **`niveis_protege_sistema`** — os quatro níveis originais são citados por
+   nome no código e não podem ser excluídos.
+
+### Por que níveis viraram tabela
+
+O Postgres **não remove valor de enum**. Com níveis criáveis pela plataforma,
+um nível cadastrado por engano ficaria no tipo para sempre — e o tipo era
+usado em quatro tabelas e dentro do RLS.
+
+`criar_nivel(id, rotulo, modelo)` copia do modelo tanto a matriz de módulos
+quanto as **capacidades transversais**. Isso não é conveniência: capacidade
+não tem tela de edição (decisão do Juliano), então um nível criado sem elas
+seria inútil e sem conserto pela interface.
 
 ### Os dois cortes por coluna
 
@@ -63,10 +94,18 @@ coluna foram resolvidos assim:
 
 ## Avisos do linter que são intencionais
 
-`get_advisors` aponta 6 funções `SECURITY DEFINER` executáveis por
+`get_advisors` aponta 7 funções `SECURITY DEFINER` executáveis por
 `authenticated`. É o desenho, não descuido: são justamente as funções que
 precisam ler dado que o usuário não alcança diretamente, e cada uma checa a
 permissão internamente antes de devolver qualquer coisa.
+
+**Executável por `anon`, porém, nunca é intencional.** Ao criar função nova,
+revogar de `public` — não só de `anon`, que herda o EXECUTE que toda função
+ganha de PUBLIC ao nascer. Foi o erro que a migration 24 consertou.
+
+Fica um aviso que **não** é intencional e depende do painel, não de migration:
+a proteção contra senha vazada (HaveIBeenPwned) está desligada em
+Authentication → Policies.
 
 ## Como convidar um usuário
 
@@ -96,10 +135,9 @@ Um arquivo em `veiculos/` obedece à permissão de `frota`, e assim por diante.
 
 ## O que ainda falta
 
-1. Enviar o convite do primeiro admin pelo painel do Supabase
-2. Trocar `lib/auth.ts` (mock) por Supabase Auth + `middleware.ts` no servidor
-3. Trocar `lerMock()` por consultas reais em `lib/api/index.ts`
-4. Implementar a escrita nos módulos (hoje as telas só alteram estado local)
-5. Supabase Storage para os anexos
-6. Proteger `app/api/[entidade]/route.ts`, hoje sem autenticação
-7. Revisar os valores de precificação semeados — são placeholder
+1. Revisar os valores de precificação semeados pela migration 05 — são
+   placeholder inventados na Fase A, não dado real da empresa
+
+Os outros seis itens que esta lista trazia foram feitos: Supabase Auth com
+guarda no servidor, consultas reais no lugar dos mocks, escrita nos módulos,
+Storage para anexos e autenticação em `app/api/[entidade]/route.ts`.

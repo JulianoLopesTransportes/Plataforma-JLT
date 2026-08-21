@@ -16,7 +16,14 @@
  */
 
 import { supabase } from '../supabase/cliente';
-import type { Nivel } from '../permissoes';
+import { MODULOS } from '../permissoes';
+import type {
+  Nivel,
+  ModuloId,
+  Acesso,
+  Capacidade,
+  Permissoes,
+} from '../permissoes';
 
 /* ==========================================================================
    Usuários
@@ -281,5 +288,144 @@ export const precificacao = {
 function traduzir(codigo: string | undefined, mensagem: string): string {
   if (codigo === '42501') return 'Seu nível não permite alterar os parâmetros de precificação.';
   if (codigo === '23505') return 'Já existe uma faixa com esse teto de volume.';
+  return mensagem;
+}
+
+/* ==========================================================================
+   Matriz de permissões
+   ========================================================================== */
+
+/**
+ * Lê a matriz inteira do banco.
+ *
+ * Roda no boot, antes de a plataforma desenhar — ver SessaoProvider. É de
+ * propósito uma consulta só por tabela, e não uma por nível: são três
+ * tabelas pequenas (dezenas de linhas), e o custo de trazê-las inteiras é
+ * menor que o de encadear consultas antes da primeira tela aparecer.
+ *
+ * Falha aqui NÃO derruba a plataforma: quem chama cai na semente
+ * compilada. Banco fora do ar com sidebar vazia seria pior do que sidebar
+ * com o padrão de fábrica.
+ */
+export async function lerPermissoes(): Promise<Permissoes> {
+  const cliente = supabase();
+
+  const [{ data: niveis, error: e1 }, { data: matriz, error: e2 }, { data: caps, error: e3 }] =
+    await Promise.all([
+      cliente.from('niveis').select('id, rotulo, ordem, sistema').order('ordem'),
+      cliente.from('permissoes_modulo').select('modulo, nivel, acesso'),
+      cliente.from('permissoes_capacidade').select('capacidade, nivel'),
+    ]);
+
+  if (e1) throw new Error(e1.message);
+  if (e2) throw new Error(e2.message);
+  if (e3) throw new Error(e3.message);
+
+  // Começa de 'none' em tudo: um par (módulo, nível) sem linha no banco é
+  // ausência de permissão, não permissão herdada de lugar nenhum.
+  const porModulo = {} as Permissoes['matriz'];
+  for (const modulo of MODULOS) {
+    porModulo[modulo] = {};
+    for (const n of niveis ?? []) porModulo[modulo][n.id] = 'none';
+  }
+  for (const linha of matriz ?? []) {
+    if (porModulo[linha.modulo as ModuloId]) {
+      porModulo[linha.modulo as ModuloId][linha.nivel] = linha.acesso as Acesso;
+    }
+  }
+
+  const porCapacidade = {} as Permissoes['capacidades'];
+  for (const linha of caps ?? []) {
+    const c = linha.capacidade as Capacidade;
+    (porCapacidade[c] ??= []).push(linha.nivel);
+  }
+
+  return {
+    niveis: (niveis ?? []).map((n) => ({
+      id: n.id,
+      rotulo: n.rotulo,
+      ordem: n.ordem,
+      sistema: n.sistema,
+    })),
+    matriz: porModulo,
+    capacidades: porCapacidade,
+  };
+}
+
+export const permissoes = {
+  /**
+   * Grava a matriz de módulos inteira, de uma vez.
+   *
+   * Um upsert só, não uma chamada por célula: a matriz é uma peça, e
+   * gravar célula a célula deixaria estados intermediários incoerentes no
+   * ar caso a rede caísse no meio. A trava do banco que exige uma porta
+   * para Usuários é uma constraint ADIADA justamente para tolerar os
+   * estados inválidos que existem durante este upsert.
+   *
+   * A linha do admin nunca é enviada: o banco a recusaria, e mandá-la só
+   * produziria erro para uma edição que a tela nem permite.
+   */
+  async gravarMatriz(
+    matriz: Record<ModuloId, Record<Nivel, Acesso>>,
+  ): Promise<void> {
+    const linhas: { modulo: string; nivel: string; acesso: string }[] = [];
+
+    for (const modulo of MODULOS) {
+      for (const [nivel, acesso] of Object.entries(matriz[modulo] ?? {})) {
+        if (nivel === 'admin') continue;
+        linhas.push({ modulo, nivel, acesso });
+      }
+    }
+
+    const { error } = await supabase()
+      .from('permissoes_modulo')
+      .upsert(linhas, { onConflict: 'modulo,nivel' });
+
+    if (error) throw new Error(traduzirPermissao(error.code, error.message));
+  },
+
+  /**
+   * Cria um nível copiando outro.
+   *
+   * Passa pela função `criar_nivel` no Postgres em vez de inserts daqui:
+   * o nível, a matriz e as capacidades precisam nascer juntos, e nível sem
+   * matriz é pior que nível nenhum — o RLS negaria tudo em silêncio.
+   */
+  async criarNivel(id: string, rotulo: string, modelo: Nivel): Promise<string> {
+    const { data, error } = await supabase().rpc('criar_nivel', {
+      p_id: id,
+      p_rotulo: rotulo,
+      p_modelo: modelo,
+    });
+
+    if (error) throw new Error(traduzirPermissao(error.code, error.message));
+    return data as string;
+  },
+
+  async renomearNivel(id: Nivel, rotulo: string): Promise<void> {
+    const { error } = await supabase().from('niveis').update({ rotulo }).eq('id', id);
+    if (error) throw new Error(traduzirPermissao(error.code, error.message));
+  },
+
+  async excluirNivel(id: Nivel): Promise<void> {
+    const { error } = await supabase().from('niveis').delete().eq('id', id);
+    if (error) throw new Error(traduzirPermissao(error.code, error.message));
+  },
+};
+
+/**
+ * Traduz o que o banco recusou.
+ *
+ * As travas do subsistema de permissão são triggers que levantam mensagem
+ * já escrita em português e voltada ao usuário — nesses casos a mensagem
+ * do banco é melhor do que qualquer coisa que a tela inventasse, e passa
+ * direto. O que se traduz é o código seco do Postgres.
+ */
+function traduzirPermissao(codigo: string | undefined, mensagem: string): string {
+  if (codigo === '42501') return 'Seu nível não permite alterar a matriz de permissões.';
+  if (codigo === '23503') {
+    return 'Este nível está em uso por alguém — mude a pessoa de nível antes de excluí-lo.';
+  }
+  if (codigo === '23505') return 'Já existe um nível com esse identificador.';
   return mensagem;
 }

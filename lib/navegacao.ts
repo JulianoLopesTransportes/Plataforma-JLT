@@ -2,7 +2,7 @@
  * ESTRUTURA DA NAVEGAÇÃO
  *
  * Define os itens da sidebar e seus agrupamentos. A sidebar é montada a
- * partir daqui e filtrada pela MATRIZ_PERMISSOES — um item cujo módulo é
+ * partir daqui e filtrada pela matriz de permissões — um item cujo módulo é
  * 'none' para o nível da sessão simplesmente não é renderizado.
  *
  * Para acrescentar um módulo à plataforma: registre-o em permissoes.ts

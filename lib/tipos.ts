@@ -207,10 +207,10 @@ export type Parada = {
   endereco: string;
   /** ISO 8601 (data). */
   data: string;
-  /** Ids de mudanças que EMBARCAM nesta parada. */
-  embarcam: string[];
-  /** Ids de mudanças que DESEMBARCAM nesta parada. */
-  desembarcam: string[];
+  /** Ids de mudanças COLETADAS nesta parada — entram no caminhão. */
+  coletam: string[];
+  /** Ids de mudanças ENTREGUES nesta parada — saem do caminhão. */
+  entregam: string[];
   observacao: string;
 };
 

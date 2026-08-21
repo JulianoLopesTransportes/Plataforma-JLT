@@ -418,10 +418,10 @@ function DetalheRota({
       <h3 className={estilos.subtitulo}>Linha do tempo</h3>
       <ol className={estilos.timeline}>
         {ocupacoes.map(({ parada, ocupacaoApos, percentual, aBordo }) => {
-          const embarcam = parada.embarcam
+          const coletam = parada.coletam
             .map((id) => rota.mudancas.find((m) => m.id === id))
             .filter(Boolean);
-          const desembarcam = parada.desembarcam
+          const entregam = parada.entregam
             .map((id) => rota.mudancas.find((m) => m.id === id))
             .filter(Boolean);
 
@@ -439,10 +439,10 @@ function DetalheRota({
 
                 <span className="texto-secundario">{parada.endereco}</span>
 
-                {embarcam.length > 0 && (
+                {coletam.length > 0 && (
                   <div className={estilos.movimento}>
-                    <span className={estilos.rotuloEmbarque}>Embarca</span>
-                    {embarcam.map((m) => (
+                    <span className={estilos.rotuloColeta}>Coleta</span>
+                    {coletam.map((m) => (
                       <span key={m!.id} className={estilos.carga}>
                         {m!.clienteNome} ({m!.volumeM3} m³)
                       </span>
@@ -450,10 +450,10 @@ function DetalheRota({
                   </div>
                 )}
 
-                {desembarcam.length > 0 && (
+                {entregam.length > 0 && (
                   <div className={estilos.movimento}>
-                    <span className={estilos.rotuloDesembarque}>Desembarca</span>
-                    {desembarcam.map((m) => (
+                    <span className={estilos.rotuloEntrega}>Entrega</span>
+                    {entregam.map((m) => (
                       <span key={m!.id} className={estilos.carga}>
                         {m!.clienteNome} ({m!.volumeM3} m³)
                       </span>

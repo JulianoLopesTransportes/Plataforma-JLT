@@ -49,9 +49,13 @@
         "uf": "MG",
         "endereco": "Av. Amazonas, 5600, Gameleira",
         "data": "2026-08-16",
-        "embarcam": ["mud_001", "mud_002", "mud_003"],
-        "desembarcam": [],
-        "observacao": "Coleta consolidada das três cargas."
+        "observacao": "Coleta consolidada das três cargas.",
+        "coletam": [
+          "mud_001",
+          "mud_002",
+          "mud_003"
+        ],
+        "entregam": []
       },
       {
         "id": "par_002",
@@ -60,9 +64,12 @@
         "uf": "MG",
         "endereco": "Rua Goiás, 300, Centro",
         "data": "2026-08-17",
-        "embarcam": [],
-        "desembarcam": ["mud_002", "mud_003"],
-        "observacao": "Duas entregas na mesma cidade."
+        "observacao": "Duas entregas na mesma cidade.",
+        "coletam": [],
+        "entregam": [
+          "mud_002",
+          "mud_003"
+        ]
       },
       {
         "id": "par_003",
@@ -71,9 +78,11 @@
         "uf": "MG",
         "endereco": "Av. Afonso Pena, 1200, Centro",
         "data": "2026-08-18",
-        "embarcam": [],
-        "desembarcam": ["mud_001"],
-        "observacao": "Descarga com ajudante contratado no local."
+        "observacao": "Descarga com ajudante contratado no local.",
+        "coletam": [],
+        "entregam": [
+          "mud_001"
+        ]
       }
     ]
   },
@@ -107,9 +116,11 @@
         "uf": "MG",
         "endereco": "Rod. Fernão Dias, km 12, Galpão 4",
         "data": "2026-08-18",
-        "embarcam": ["mud_004"],
-        "desembarcam": [],
-        "observacao": "Janela de carregamento das 7h às 11h."
+        "observacao": "Janela de carregamento das 7h às 11h.",
+        "coletam": [
+          "mud_004"
+        ],
+        "entregam": []
       },
       {
         "id": "par_005",
@@ -118,9 +129,11 @@
         "uf": "MG",
         "endereco": "Av. Getúlio Vargas, 2100, Centro",
         "data": "2026-08-19",
-        "embarcam": [],
-        "desembarcam": ["mud_004"],
-        "observacao": ""
+        "observacao": "",
+        "coletam": [],
+        "entregam": [
+          "mud_004"
+        ]
       }
     ]
   },
@@ -154,9 +167,11 @@
         "uf": "MG",
         "endereco": "Rua Piauí, 1420, Funcionários",
         "data": "2026-08-29",
-        "embarcam": ["mud_005"],
-        "desembarcam": [],
-        "observacao": ""
+        "observacao": "",
+        "coletam": [
+          "mud_005"
+        ],
+        "entregam": []
       },
       {
         "id": "par_007",
@@ -165,9 +180,11 @@
         "uf": "MG",
         "endereco": "Rua Coronel Pedro Jorge, 90, Centro",
         "data": "2026-08-30",
-        "embarcam": [],
-        "desembarcam": ["mud_005"],
-        "observacao": "Possível necessidade de transbordo para veículo menor."
+        "observacao": "Possível necessidade de transbordo para veículo menor.",
+        "coletam": [],
+        "entregam": [
+          "mud_005"
+        ]
       }
     ]
   },
@@ -201,9 +218,11 @@
         "uf": "MG",
         "endereco": "Rua Rio de Janeiro, 2200, Lourdes",
         "data": "2026-09-12",
-        "embarcam": ["mud_006"],
-        "desembarcam": [],
-        "observacao": ""
+        "observacao": "",
+        "coletam": [
+          "mud_006"
+        ],
+        "entregam": []
       },
       {
         "id": "par_009",
@@ -212,9 +231,11 @@
         "uf": "ES",
         "endereco": "Rua Sete de Setembro, 45, Centro",
         "data": "2026-09-14",
-        "embarcam": [],
-        "desembarcam": ["mud_006"],
-        "observacao": ""
+        "observacao": "",
+        "coletam": [],
+        "entregam": [
+          "mud_006"
+        ]
       }
     ]
   },
@@ -248,9 +269,11 @@
         "uf": "MG",
         "endereco": "Rua Grão Mogol, 780, Sion",
         "data": "2026-08-06",
-        "embarcam": ["mud_007"],
-        "desembarcam": [],
-        "observacao": "Coleta e entrega no mesmo dia."
+        "observacao": "Coleta e entrega no mesmo dia.",
+        "coletam": [
+          "mud_007"
+        ],
+        "entregam": []
       },
       {
         "id": "par_011",
@@ -259,9 +282,11 @@
         "uf": "MG",
         "endereco": "Rua Ouro Preto, 155, Barro Preto",
         "data": "2026-08-06",
-        "embarcam": [],
-        "desembarcam": ["mud_007"],
-        "observacao": ""
+        "observacao": "",
+        "coletam": [],
+        "entregam": [
+          "mud_007"
+        ]
       }
     ]
   }

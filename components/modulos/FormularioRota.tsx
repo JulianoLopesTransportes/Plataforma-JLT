@@ -45,8 +45,8 @@ type ParadaForm = {
   endereco: string;
   data: string;
   observacao: string;
-  embarcam: string[];
-  desembarcam: string[];
+  coletam: string[];
+  entregam: string[];
 };
 
 const UFS = [
@@ -115,8 +115,8 @@ export default function FormularioRota({
         uf: p.uf,
         endereco: p.endereco,
         data: p.data,
-        embarcam: p.embarcam,
-        desembarcam: p.desembarcam,
+        coletam: p.coletam,
+        entregam: p.entregam,
         observacao: p.observacao,
       })),
     };
@@ -176,8 +176,8 @@ export default function FormularioRota({
     setParadas((lista) =>
       lista.map((p) => ({
         ...p,
-        embarcam: p.embarcam.filter((id) => id !== tempId),
-        desembarcam: p.desembarcam.filter((id) => id !== tempId),
+        coletam: p.coletam.filter((id) => id !== tempId),
+        entregam: p.entregam.filter((id) => id !== tempId),
       })),
     );
   }
@@ -197,8 +197,8 @@ export default function FormularioRota({
         endereco: '',
         data: dataSaida,
         observacao: '',
-        embarcam: [],
-        desembarcam: [],
+        coletam: [],
+        entregam: [],
       },
     ]);
   }
@@ -212,18 +212,18 @@ export default function FormularioRota({
   }
 
   /** Alterna o movimento de uma carga numa parada. */
-  function alternarMovimento(paradaId: string, cargaId: string, tipo: 'embarcam' | 'desembarcam') {
+  function alternarMovimento(paradaId: string, cargaId: string, tipo: 'coletam' | 'entregam') {
     setParadas((lista) =>
       lista.map((p) => {
         if (p.tempId !== paradaId) return p;
 
         const jaTem = p[tipo].includes(cargaId);
-        const oposto = tipo === 'embarcam' ? 'desembarcam' : 'embarcam';
+        const oposto = tipo === 'coletam' ? 'entregam' : 'coletam';
 
         return {
           ...p,
           [tipo]: jaTem ? p[tipo].filter((id) => id !== cargaId) : [...p[tipo], cargaId],
-          // Uma carga não embarca e desembarca na mesma parada.
+          // Uma carga não é coletada e entregue na mesma parada.
           [oposto]: p[oposto].filter((id) => id !== cargaId),
         };
       }),
@@ -275,8 +275,8 @@ export default function FormularioRota({
           endereco: p.endereco,
           data: p.data,
           observacao: p.observacao,
-          embarcam: p.embarcam,
-          desembarcam: p.desembarcam,
+          coletam: p.coletam,
+          entregam: p.entregam,
         })),
       });
 
@@ -619,20 +619,20 @@ export default function FormularioRota({
                         <button
                           type="button"
                           className={`${estilos.botaoMov} ${
-                            p.embarcam.includes(c.tempId) ? estilos.movEmbarque : ''
+                            p.coletam.includes(c.tempId) ? estilos.movColeta : ''
                           }`}
-                          onClick={() => alternarMovimento(p.tempId, c.tempId, 'embarcam')}
+                          onClick={() => alternarMovimento(p.tempId, c.tempId, 'coletam')}
                         >
-                          Embarca
+                          Coleta
                         </button>
                         <button
                           type="button"
                           className={`${estilos.botaoMov} ${
-                            p.desembarcam.includes(c.tempId) ? estilos.movDesembarque : ''
+                            p.entregam.includes(c.tempId) ? estilos.movEntrega : ''
                           }`}
-                          onClick={() => alternarMovimento(p.tempId, c.tempId, 'desembarcam')}
+                          onClick={() => alternarMovimento(p.tempId, c.tempId, 'entregam')}
                         >
-                          Desembarca
+                          Entrega
                         </button>
                       </div>
                     </div>

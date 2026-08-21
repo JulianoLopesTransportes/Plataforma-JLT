@@ -137,13 +137,13 @@
   border-color: var(--color-primary);
 }
 
-.movEmbarque {
+.movColeta {
   background: var(--color-info-bg);
   border-color: var(--color-info);
   color: var(--color-info);
 }
 
-.movDesembarque {
+.movEntrega {
   background: var(--color-success-bg);
   border-color: var(--color-success);
   color: var(--color-success);

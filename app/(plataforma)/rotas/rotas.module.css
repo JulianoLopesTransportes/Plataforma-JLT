@@ -321,8 +321,8 @@
   margin-top: 2px;
 }
 
-.rotuloEmbarque,
-.rotuloDesembarque {
+.rotuloColeta,
+.rotuloEntrega {
   font-size: 10.5px;
   text-transform: uppercase;
   letter-spacing: 0.06em;
@@ -331,12 +331,12 @@
   border-radius: 20px;
 }
 
-.rotuloEmbarque {
+.rotuloColeta {
   background: var(--color-info-bg);
   color: var(--color-info);
 }
 
-.rotuloDesembarque {
+.rotuloEntrega {
   background: var(--color-success-bg);
   color: var(--color-success);
 }

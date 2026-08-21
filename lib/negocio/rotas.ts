@@ -6,8 +6,8 @@
  *
  * Uma diferença de modelagem em relação ao original: lá uma parada tinha um
  * `tipo` (coleta ou entrega) e uma lista única de mudanças. Aqui a parada
- * tem `embarcam` e `desembarcam` separados, o que permite representar uma
- * parada mista — descarregar uma mudança e carregar outra no mesmo ponto —
+ * tem `coletam` e `entregam` separados, o que permite representar uma
+ * parada mista — entregar uma mudança e coletar outra no mesmo ponto —
  * que o modelo antigo não conseguia expressar.
  */
 
@@ -43,8 +43,8 @@ export function paradasOrdenadas(rota: Rota): Parada[] {
 }
 
 /**
- * Percorre a rota parada a parada somando o que embarca e subtraindo o que
- * desembarca. É isto que responde "o caminhão cabe?" em cada trecho — a
+ * Percorre a rota parada a parada somando o que é coletado e subtraindo o
+ * que é entregue. É isto que responde "o caminhão cabe?" em cada trecho — a
  * ocupação de pico raramente está na primeira nem na última parada.
  */
 export function calcularOcupacao(rota: Rota, capacidadeM3: number | null): OcupacaoParada[] {
@@ -55,16 +55,16 @@ export function calcularOcupacao(rota: Rota, capacidadeM3: number | null): Ocupa
   const aBordo = new Set<string>();
 
   return ordenadas.map((parada) => {
-    for (const id of parada.embarcam) {
+    for (const id of parada.coletam) {
       acumulado += volumeDe(id);
       aBordo.add(id);
     }
-    for (const id of parada.desembarcam) {
+    for (const id of parada.entregam) {
       acumulado -= volumeDe(id);
       aBordo.delete(id);
     }
 
-    // Nunca negativo: um desembarque sem embarque correspondente é erro de
+    // Nunca negativo: uma entrega sem coleta correspondente é erro de
     // cadastro, e um número negativo na tela só confundiria.
     const ocupacao = Math.max(0, acumulado);
 
@@ -176,19 +176,19 @@ export function detectarAlertas(rota: Rota, veiculo: Veiculo | null): Alerta[] {
   }
 
   // --- Consistência do cadastro ---
-  const embarcadas = new Set(ordenadas.flatMap((p) => p.embarcam));
-  const desembarcadas = new Set(ordenadas.flatMap((p) => p.desembarcam));
+  const coletadas = new Set(ordenadas.flatMap((p) => p.coletam));
+  const entregues = new Set(ordenadas.flatMap((p) => p.entregam));
 
   for (const mudanca of rota.mudancas) {
-    if (!embarcadas.has(mudanca.id)) {
+    if (!coletadas.has(mudanca.id)) {
       alertas.push({
         nivel: 'danger',
-        texto: `A carga de ${mudanca.clienteNome} não embarca em nenhuma parada — falta a parada de coleta.`,
+        texto: `A carga de ${mudanca.clienteNome} não é coletada em nenhuma cidade — falta a parada de coleta.`,
       });
-    } else if (!desembarcadas.has(mudanca.id)) {
+    } else if (!entregues.has(mudanca.id)) {
       alertas.push({
         nivel: 'warning',
-        texto: `A carga de ${mudanca.clienteNome} embarca mas não desembarca — falta a parada de entrega.`,
+        texto: `A carga de ${mudanca.clienteNome} é coletada mas não entregue — falta a parada de entrega.`,
       });
     }
   }

@@ -161,8 +161,8 @@ export function paraCompromisso(linha: any): Compromisso {
  *
  * A relação parada↔mudança está normalizada no banco como
  * `parada_movimentos`, com um tipo por linha. Aqui ela volta ao formato
- * que o motor de ocupação espera: dois arrays por parada, embarcam e
- * desembarcam. Ver lib/negocio/rotas.ts.
+ * que o motor de ocupação espera: dois arrays por parada, coletam e
+ * entregam. Ver lib/negocio/rotas.ts.
  */
 export function paraRota(linha: any): Rota {
   const paradas = (linha.paradas ?? []).map((p: any) => {
@@ -174,11 +174,11 @@ export function paraRota(linha: any): Rota {
       uf: txt(p.uf),
       endereco: txt(p.endereco),
       data: txt(p.data),
-      embarcam: movimentos
-        .filter((m: any) => m.tipo === 'embarque')
+      coletam: movimentos
+        .filter((m: any) => m.tipo === 'coleta')
         .map((m: any) => m.mudanca_id),
-      desembarcam: movimentos
-        .filter((m: any) => m.tipo === 'desembarque')
+      entregam: movimentos
+        .filter((m: any) => m.tipo === 'entrega')
         .map((m: any) => m.mudanca_id),
       observacao: txt(p.observacao),
     };

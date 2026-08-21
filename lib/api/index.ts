@@ -611,8 +611,8 @@ const rotas = {
       endereco: string;
       data: string;
       observacao: string;
-      embarcam: string[];
-      desembarcam: string[];
+      coletam: string[];
+      entregam: string[];
     }[];
   }): Promise<string> {
     if (!usandoBanco()) throw new Error('Criar rota exige o banco de dados configurado.');
@@ -645,8 +645,8 @@ const rotas = {
           endereco: p.endereco,
           data: p.data,
           observacao: p.observacao,
-          embarcam: p.embarcam,
-          desembarcam: p.desembarcam,
+          coletam: p.coletam,
+          entregam: p.entregam,
         })),
       },
     });

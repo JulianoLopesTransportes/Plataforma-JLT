@@ -16,6 +16,9 @@ O schema está **aplicado no projeto remoto**. As migrations abaixo já rodaram:
 | 20260817200510 | `06_revoga_execucao_anonima` | Tira as funções de permissão do alcance do papel `anon` |
 | 07 | `07_provisionamento_de_perfis` | Gatilho em `auth.users` que cria o perfil ao aceitar o convite, e a tabela `niveis_pre_atribuidos` |
 | 08 | `08_remove_funcao_orfa` | Remove função criada sem gatilho na 07 |
+| 14 | `14_itens_do_cliente` | Coluna `itens` em `clientes` — a relação de bens que sai na Ordem de Serviço |
+| 15 | `15_coleta_e_entrega_no_lugar_de_embarque` | Renomeia os valores do enum `tipo_movimento` para `coleta` e `entrega` |
+| 16 | `16_criar_rota_completa_fala_coleta_e_entrega` | Acompanha a 15 dentro da função, que inseria os literais antigos |
 
 ## Baixar os arquivos de migration para cá
 

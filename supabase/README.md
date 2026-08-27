@@ -27,6 +27,9 @@ O schema está **aplicado no projeto remoto**. As migrations abaixo já rodaram:
 | 22 | `22_matriz_editavel_com_travas` | Policies de escrita na matriz e as três travas que impedem se trancar do lado de fora |
 | 23 | `23_criar_nivel_copiando_de_outro` | `criar_nivel()` — nível novo nasce com a matriz e as capacidades de um modelo |
 | 24 | `24_revoga_execucao_anonima_das_funcoes_novas` | Conserta a revogação das 21 e 23, que revogaram de `anon` sem revogar de PUBLIC |
+| 25 | `25_codigo_do_cliente` | Coluna `codigo` (2026-0001) com contador por ano e gatilho |
+| 26 | `26_agenda_separa_coleta_de_entrega` | `cliente` vira `coleta_mudanca` em `tipo_compromisso` |
+| 27 | `27_agenda_ganha_entrega_de_mudanca` | Acrescenta `entrega_mudanca` ao mesmo enum |
 
 ## Baixar os arquivos de migration para cá
 

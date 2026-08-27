@@ -49,6 +49,7 @@ function txt(valor: unknown): string {
 export function paraCliente(linha: any): Cliente {
   return {
     id: linha.id,
+    codigo: txt(linha.codigo),
     tipo: linha.tipo as TipoPessoa,
     nome: txt(linha.nome),
     documento: txt(linha.documento),

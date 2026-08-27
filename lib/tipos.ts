@@ -55,6 +55,14 @@ export type EventoHistorico = {
 
 export type Cliente = {
   id: string;
+  /**
+   * Código curto para achar o cliente depois: 2026-0001.
+   *
+   * Gerado pelo banco no cadastro e imutável — é por ele que se procura
+   * no telefone, então mudar depois quebraria a referência de quem anotou.
+   * A numeração reinicia a cada ano; o par ano+número é que é único.
+   */
+  codigo: string;
   tipo: TipoPessoa;
   nome: string;
   /** CPF ou CNPJ, já mascarado para exibição. */
@@ -153,7 +161,19 @@ export type Lancamento = {
    Agenda
    ========================================================================== */
 
-export type TipoCompromisso = 'cliente' | 'visita' | 'rota' | 'equipe' | 'pessoal' | 'outro';
+/**
+ * Coleta e entrega de uma mesma mudança quase sempre caem em dias
+ * diferentes, então são dois compromissos. O antigo 'cliente' — rotulado
+ * "Mudança" — não conseguia dizer qual dos dois era.
+ */
+export type TipoCompromisso =
+  | 'coleta_mudanca'
+  | 'entrega_mudanca'
+  | 'visita'
+  | 'rota'
+  | 'equipe'
+  | 'pessoal'
+  | 'outro';
 
 export type Compromisso = {
   id: string;

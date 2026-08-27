@@ -199,6 +199,18 @@ guardados em bucket privado com URL assinada de curta duração. O cadastro do
 cliente tem um campo **Itens** — a relação de bens da mudança, digitada ou
 importada de um `.txt` — que sai impressa na Ordem de Serviço.
 
+Cada cliente ganha um **código** no formato `2026-0001`, gerado pelo banco e
+imutável. Ele aparece na lista, entra na busca e sai impresso na Ordem de
+Serviço — é por ele que se acha o cadastro quando alguém liga com o papel na
+mão. A numeração reinicia a cada ano, e buracos na sequência são normais: o
+contador nunca reaproveita número, que é o que garante nunca repetir.
+
+Na **agenda**, escolher o cliente traz endereços e título do cadastro,
+preenchendo só o que estiver vazio ou o que ainda for do cliente anterior —
+o que você digitou à mão sobrevive à troca. Os itens do cliente aparecem ali
+em leitura, e coleta e entrega são tipos separados de compromisso, porque
+quase sempre caem em dias diferentes.
+
 A criação de rota passa pela função `criar_rota_completa` no Postgres, e não
 por inserts sucessivos do navegador: rota, cargas, paradas e movimentos são
 quatro tabelas encadeadas, e sem transação uma falha no meio deixaria rota

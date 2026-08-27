@@ -50,7 +50,12 @@ import { STATUS_CLIENTE, ORIGENS_CLIENTE, type Cliente, type StatusCliente } fro
 import PainelAnexos from '@/components/modulos/PainelAnexos';
 import estilos from './clientes.module.css';
 
-const CLIENTE_VAZIO: Omit<Cliente, 'id' | 'criadoEm' | 'anexos' | 'historico'> = {
+/*
+ * O formulário não tem 'codigo': quem o gera é o banco, num gatilho, e ele
+ * é imutável depois. Deixá-lo aqui abriria a porta para a tela mandar um
+ * código e furar a sequência.
+ */
+const CLIENTE_VAZIO: Omit<Cliente, 'id' | 'codigo' | 'criadoEm' | 'anexos' | 'historico'> = {
   tipo: 'PF',
   nome: '',
   documento: '',
@@ -119,6 +124,7 @@ export default function PaginaClientes() {
     return clientes.filter((c) => {
       const casaTermo =
         !termo ||
+        c.codigo.includes(termo) ||
         c.nome.toLowerCase().includes(termo) ||
         c.documento.includes(termo) ||
         c.email.toLowerCase().includes(termo) ||
@@ -191,7 +197,14 @@ export default function PaginaClientes() {
   function abrirEdicao(cliente: Cliente) {
     setEditandoId(cliente.id);
     setArquivoItens(null);
-    const { id: _i, criadoEm: _c, anexos: _a, historico: _h, ...campos } = cliente;
+    const {
+      id: _i,
+      codigo: _cod,
+      criadoEm: _c,
+      anexos: _a,
+      historico: _h,
+      ...campos
+    } = cliente;
     setFormulario(campos);
     setDetalhe(null);
     setFormAberto(true);
@@ -271,8 +284,16 @@ export default function PaginaClientes() {
         await subirArquivoItens(criado.id);
         await recarregar();
       } else {
+        // Sem banco não há gatilho: o código sai do maior já usado no ano.
+        const ano = new Date().getFullYear();
+        const usados = clientes
+          .filter((c) => c.codigo.startsWith(`${ano}-`))
+          .map((c) => Number(c.codigo.slice(5)))
+          .filter((n) => !Number.isNaN(n));
+
         const cliente: Cliente = {
           ...formulario,
+          codigo: `${ano}-${String(Math.max(0, ...usados) + 1).padStart(4, '0')}`,
           id: novoId('cli'),
           criadoEm: new Date().toISOString(),
           anexos: [],
@@ -334,6 +355,7 @@ export default function PaginaClientes() {
         <div className={estilos.celulaCliente}>
           <strong>{c.nome}</strong>
           <span className="texto-secundario">
+            <span className={estilos.codigoCliente}>{c.codigo}</span>
             {c.tipo} · {c.documento}
           </span>
         </div>
@@ -550,6 +572,9 @@ export default function PaginaClientes() {
 
             {abaDetalhe === 'dados' && (
               <dl className={estilos.listaDados}>
+                <Dado rotulo="Código">
+                  <span className={estilos.codigoCliente}>{detalhe.codigo}</span>
+                </Dado>
                 <Dado rotulo="Tipo">{detalhe.tipo === 'PF' ? 'Pessoa física' : 'Pessoa jurídica'}</Dado>
                 <Dado rotulo={detalhe.tipo === 'PF' ? 'CPF' : 'CNPJ'}>{detalhe.documento}</Dado>
                 <Dado rotulo="Telefone">{detalhe.telefone}</Dado>

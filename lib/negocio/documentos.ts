@@ -1115,6 +1115,8 @@ export type EntradaOrdemServico = {
   observacoes: string;
   /** Relação de itens do cadastro do cliente, um por linha. */
   itens: string;
+  /** Código curto do cliente (2026-0001), para achar o cadastro depois. */
+  codigo: string;
 };
 
 export function gerarOrdemServico(e: EntradaOrdemServico): BlocoDocumento[] {
@@ -1137,6 +1139,9 @@ export function gerarOrdemServico(e: EntradaOrdemServico): BlocoDocumento[] {
     {
       tipo: 'paragrafo',
       partes: [
+        // O código vem primeiro: é por ele que se acha o cadastro quando
+        // alguém liga com o papel na mão.
+        ...(e.codigo ? ([{ b: 'Código:' }, ` ${e.codigo}`, '\n'] as Trecho[]) : []),
         { b: 'Nome:' },
         ` ${ou(c.nome, '[cliente]')}`,
         '\n',

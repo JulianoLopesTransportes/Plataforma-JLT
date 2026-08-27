@@ -197,3 +197,12 @@
 .listaItens li {
   margin-bottom: 2px;
 }
+
+/* Código do cliente — 2026-0001. Tabular para os números alinharem entre
+   linhas, e destacado do resto porque é o que se procura na busca. */
+.codigoCliente {
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+  color: var(--color-primary);
+  margin-right: var(--space-1);
+}

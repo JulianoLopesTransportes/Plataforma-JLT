@@ -116,7 +116,14 @@ const clientes = {
     return data ? paraCliente(data) : null;
   },
 
-  async criar(cliente: Omit<Cliente, 'id' | 'criadoEm' | 'anexos' | 'historico'>): Promise<Cliente> {
+  /**
+   * `codigo` fica de fora da entrada: é o gatilho `clientes_codigo` que o
+   * gera, a partir de um contador por ano. Aceitá-lo aqui deixaria a tela
+   * furar a sequência — e o código é o que alguém vai anotar num papel.
+   */
+  async criar(
+    cliente: Omit<Cliente, 'id' | 'codigo' | 'criadoEm' | 'anexos' | 'historico'>,
+  ): Promise<Cliente> {
     if (!usandoBanco()) {
       throw new Error('Cadastro exige o banco de dados configurado.');
     }

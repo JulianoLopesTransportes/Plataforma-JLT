@@ -1,7 +1,7 @@
 [
   {
     "id": "com_001",
-    "tipo": "cliente",
+    "tipo": "coleta_mudanca",
     "titulo": "Mudança — Maria da Silva Rezende",
     "data": "2026-08-22",
     "horario": "07:30",
@@ -12,7 +12,13 @@
     "rotaId": null,
     "enderecoColeta": "Rua Aimorés, 100, Funcionários, Belo Horizonte - MG",
     "enderecoEntrega": "Rua Pernambuco, 200, Savassi, Belo Horizonte - MG",
-    "caracteristicas": ["Embalagem", "Desmontagem", "Montagem", "Içamento", "Uso de elevador"],
+    "caracteristicas": [
+      "Embalagem",
+      "Desmontagem",
+      "Montagem",
+      "Içamento",
+      "Uso de elevador"
+    ],
     "observacoes": "Piano de cauda exige içamento pela sacada. Equipe de 4 ajudantes."
   },
   {
@@ -65,7 +71,7 @@
   },
   {
     "id": "com_005",
-    "tipo": "cliente",
+    "tipo": "coleta_mudanca",
     "titulo": "Mudança — Anderson Gomes Ribeiro",
     "data": "2026-08-20",
     "horario": "08:00",
@@ -76,7 +82,9 @@
     "rotaId": null,
     "enderecoColeta": "Rua Tupinambás, 500, Centro, Belo Horizonte - MG",
     "enderecoEntrega": "Rua Manoel Teixeira, 210, Centro, Betim - MG",
-    "caracteristicas": ["Carregamento de automóvel/motocicleta"],
+    "caracteristicas": [
+      "Carregamento de automóvel/motocicleta"
+    ],
     "observacoes": "Cliente faz o próprio empacotamento."
   },
   {
@@ -113,7 +121,7 @@
   },
   {
     "id": "com_008",
-    "tipo": "cliente",
+    "tipo": "coleta_mudanca",
     "titulo": "Mudança — Roberto Nunes Barbosa",
     "data": "2026-08-29",
     "horario": "06:30",
@@ -124,7 +132,11 @@
     "rotaId": "rot_003",
     "enderecoColeta": "Rua Piauí, 1420, Funcionários, Belo Horizonte - MG",
     "enderecoEntrega": "Rua Coronel Pedro Jorge, 90, Centro, Ouro Preto - MG",
-    "caracteristicas": ["Embalagem", "Desmontagem", "Montagem"],
+    "caracteristicas": [
+      "Embalagem",
+      "Desmontagem",
+      "Montagem"
+    ],
     "observacoes": "Saída cedo por causa da ladeira estreita no destino."
   },
   {

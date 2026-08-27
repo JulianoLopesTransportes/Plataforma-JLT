@@ -30,12 +30,18 @@ import {
 } from '@/components/ui';
 import Icone from '@/components/layout/Icone';
 import FolhaDocumento from '@/components/modulos/FolhaDocumento';
-import { gerarOrdemServico, TITULO_DOCUMENTO, NOME_ARQUIVO } from '@/lib/negocio/documentos';
+import {
+  gerarOrdemServico,
+  linhasDeItens,
+  TITULO_DOCUMENTO,
+  NOME_ARQUIVO,
+} from '@/lib/negocio/documentos';
 import type { Compromisso, Cliente, Veiculo, Motorista, TipoCompromisso } from '@/lib/tipos';
 import estilos from './agenda.module.css';
 
 const ROTULO_TIPO: Record<TipoCompromisso, string> = {
-  cliente: 'Mudança',
+  coleta_mudanca: 'Coleta de mudança',
+  entrega_mudanca: 'Entrega de mudança',
   visita: 'Visita técnica',
   rota: 'Rota',
   equipe: 'Equipe',
@@ -43,14 +49,20 @@ const ROTULO_TIPO: Record<TipoCompromisso, string> = {
   outro: 'Outro',
 };
 
+/* Coleta e entrega herdam as cores que as rotas já usam para os mesmos
+   dois conceitos — o mesmo evento tem a mesma cor nas duas telas. */
 const TOM_TIPO: Record<TipoCompromisso, TomBadge> = {
-  cliente: 'danger',
-  visita: 'info',
-  rota: 'warning',
+  coleta_mudanca: 'info',
+  entrega_mudanca: 'success',
+  visita: 'warning',
+  rota: 'danger',
   equipe: 'success',
   pessoal: 'neutro',
   outro: 'neutro',
 };
+
+/** Os dois tipos que movimentam a mudança de um cliente. */
+const TIPOS_DE_MUDANCA: TipoCompromisso[] = ['coleta_mudanca', 'entrega_mudanca'];
 
 /** Serviços que um compromisso de mudança pode incluir. */
 const CARACTERISTICAS = [
@@ -63,7 +75,7 @@ const CARACTERISTICAS = [
 ];
 
 const COMPROMISSO_VAZIO: Omit<Compromisso, 'id'> = {
-  tipo: 'cliente',
+  tipo: 'coleta_mudanca',
   titulo: '',
   data: '',
   horario: '08:00',
@@ -195,6 +207,60 @@ export default function PaginaAgenda() {
     setDetalhe(null);
   }
 
+  /**
+   * Escolher o cliente traz os dados dele para o formulário.
+   *
+   * Até 27/08/2026 este seletor só gravava o vínculo: os endereços ficavam
+   * em branco e era preciso digitá-los à mão, mesmo estando no cadastro.
+   * Parecia meio funcionar porque a Ordem de Serviço cai no cadastro na
+   * hora de imprimir — o papel saía certo, a tela nunca mostrava.
+   *
+   * Sobre sobrescrever: um campo só é substituído se estiver VAZIO ou se
+   * ainda contiver exatamente o que veio do cliente anterior. Assim, se
+   * esta mudança sai de um endereço diferente do cadastrado e você digitou
+   * o endereço certo, trocar o cliente depois não apaga o que você escreveu.
+   */
+  function escolherCliente(clienteId: string | null) {
+    if (!formulario) return;
+
+    const novo = clientes.find((c) => c.id === clienteId);
+    const anterior = clientes.find((c) => c.id === formulario.clienteId);
+
+    /** Mantém o que foi digitado à mão; troca o que veio do cadastro. */
+    const herdar = (atual: string, doAnterior: string | undefined, doNovo: string) =>
+      !atual.trim() || atual === doAnterior ? doNovo : atual;
+
+    if (!novo) {
+      // "Nenhum" desfaz o vínculo, mas não limpa endereço nem título: eles
+      // podem ter sido escritos à mão para um compromisso sem cadastro.
+      setFormulario({ ...formulario, clienteId: null });
+      return;
+    }
+
+    setFormulario({
+      ...formulario,
+      clienteId: novo.id,
+      titulo: herdar(formulario.titulo, anterior?.nome, novo.nome),
+      enderecoColeta: herdar(
+        formulario.enderecoColeta,
+        anterior?.enderecoColeta,
+        novo.enderecoColeta,
+      ),
+      enderecoEntrega: herdar(
+        formulario.enderecoEntrega,
+        anterior?.enderecoEntrega,
+        novo.enderecoEntrega,
+      ),
+    });
+  }
+
+  /** O cliente escolhido no formulário, e os itens que ele traz do cadastro. */
+  const clienteDoFormulario = formulario
+    ? (clientes.find((c) => c.id === formulario.clienteId) ?? null)
+    : null;
+
+  const itensDoFormulario = linhasDeItens(clienteDoFormulario?.itens ?? '');
+
   async function salvar(evento: React.FormEvent) {
     evento.preventDefault();
     if (!formulario) return;
@@ -279,6 +345,7 @@ export default function PaginaAgenda() {
         // A relação de itens mora no cadastro do cliente, não no
         // compromisso: é a mesma lista para toda mudança dele.
         itens: clienteDaOrdem?.itens ?? '',
+        codigo: clienteDaOrdem?.codigo ?? '',
       })
     : [];
 
@@ -292,7 +359,7 @@ export default function PaginaAgenda() {
 
   /** Tipos que rendem ordem de serviço: os que envolvem cliente e endereços. */
   function geraOrdemServico(c: Compromisso): boolean {
-    return c.tipo === 'cliente' || c.tipo === 'rota';
+    return TIPOS_DE_MUDANCA.includes(c.tipo) || c.tipo === 'rota';
   }
 
   function alternarCaracteristica(item: string) {
@@ -728,14 +795,12 @@ export default function PaginaAgenda() {
                 <select
                   id="cliC"
                   value={formulario.clienteId ?? ''}
-                  onChange={(e) =>
-                    setFormulario({ ...formulario, clienteId: e.target.value || null })
-                  }
+                  onChange={(e) => escolherCliente(e.target.value || null)}
                 >
                   <option value="">Nenhum</option>
                   {clientes.map((c) => (
                     <option key={c.id} value={c.id}>
-                      {c.nome}
+                      {c.codigo} — {c.nome}
                     </option>
                   ))}
                 </select>
@@ -796,7 +861,39 @@ export default function PaginaAgenda() {
               />
             </div>
 
-            {(formulario.tipo === 'cliente' || formulario.tipo === 'rota') && (
+            {clienteDoFormulario && (
+              <div className="field" style={{ marginBottom: 20 }}>
+                <label>
+                  Itens do cliente
+                  {itensDoFormulario.length > 0 && (
+                    <span className={estilos.contadorItens}>
+                      {itensDoFormulario.length}
+                    </span>
+                  )}
+                </label>
+
+                {itensDoFormulario.length > 0 ? (
+                  <>
+                    <ul className={estilos.listaItens}>
+                      {itensDoFormulario.map((item, i) => (
+                        <li key={i}>{item}</li>
+                      ))}
+                    </ul>
+                    <small className="field-hint">
+                      Vem do cadastro de {clienteDoFormulario.nome} e sai impresso
+                      na Ordem de Serviço. Para mudar, edite o cliente.
+                    </small>
+                  </>
+                ) : (
+                  <small className="field-hint">
+                    {clienteDoFormulario.nome} ainda não tem itens no cadastro.
+                    Em Clientes → Itens dá para digitar ou importar um .txt.
+                  </small>
+                )}
+              </div>
+            )}
+
+            {(TIPOS_DE_MUDANCA.includes(formulario.tipo) || formulario.tipo === 'rota') && (
               <div className="field" style={{ marginBottom: 20 }}>
                 <label>Serviços contratados</label>
                 <div className={estilos.gradeServicos}>

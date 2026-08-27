@@ -125,13 +125,27 @@
   flex-shrink: 0;
 }
 
-/* Cor por tipo de compromisso — espelha TOM_TIPO no componente. */
-.ponto_cliente { background: var(--color-danger); }
-.ponto_visita { background: var(--color-info); }
-.ponto_rota { background: var(--color-warning); }
-.ponto_equipe { background: var(--color-success); }
-.ponto_pessoal { background: var(--color-gray-600); }
-.ponto_outro { background: var(--color-gold); }
+/*
+ * Cor da bolinha, POR TOM — não por tipo de compromisso.
+ *
+ * Antes havia uma classe por tipo (.ponto_cliente, .ponto_visita…) que o
+ * comentário dizia "espelhar TOM_TIPO". Espelho mantido à mão diverge: em
+ * 27/08/2026 o tipo 'cliente' virou 'coleta_mudanca' e as bolinhas
+ * sumiram do calendário inteiro, porque estilos['ponto_coleta_mudanca']
+ * não existia e classe inexistente não reclama — só não pinta.
+ *
+ * A cor passou a viver em COR_PONTO, no componente — um
+ * Record<TipoCompromisso, …>, que faz o TypeScript exigir uma entrada para
+ * todo tipo novo. O que era falha silenciosa em tempo de execução virou
+ * erro de compilação. Aqui ficam só os sete tons.
+ */
+.ponto_info { background: var(--color-info); }
+.ponto_success { background: var(--color-success); }
+.ponto_warning { background: var(--color-warning); }
+.ponto_danger { background: var(--color-danger); }
+.ponto_gold { background: var(--color-gold); }
+.ponto_neutro { background: var(--color-gray-600); }
+.ponto_primary { background: var(--color-primary); }
 
 .maisEventos {
   font-size: 9.5px;

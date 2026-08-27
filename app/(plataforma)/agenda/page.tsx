@@ -64,6 +64,31 @@ const TOM_TIPO: Record<TipoCompromisso, TomBadge> = {
 /** Os dois tipos que movimentam a mudança de um cliente. */
 const TIPOS_DE_MUDANCA: TipoCompromisso[] = ['coleta_mudanca', 'entrega_mudanca'];
 
+/**
+ * Cor da bolinha de cada tipo no calendário.
+ *
+ * Existe separada de TOM_TIPO porque os badges só têm cinco tons e aqui há
+ * sete tipos: dois tipos com o mesmo tom viram duas bolinhas idênticas, e
+ * no calendário a bolinha é o único sinal — não há texto ao lado dela para
+ * desempatar, só a legenda embaixo.
+ *
+ * Ser Record<TipoCompromisso, …> é o que importa: um tipo novo sem cor não
+ * compila. Antes as cores viviam só no CSS, e renomear um tipo apagava a
+ * bolinha em silêncio — foi o que aconteceu em 27/08/2026.
+ *
+ * Coleta em azul e entrega em verde repetem o que as Rotas já usam para os
+ * mesmos dois conceitos.
+ */
+const COR_PONTO: Record<TipoCompromisso, string> = {
+  coleta_mudanca: 'info',
+  entrega_mudanca: 'success',
+  visita: 'warning',
+  rota: 'danger',
+  equipe: 'gold',
+  pessoal: 'neutro',
+  outro: 'primary',
+};
+
 /** Serviços que um compromisso de mudança pode incluir. */
 const CARACTERISTICAS = [
   'Embalagem',
@@ -486,7 +511,7 @@ export default function PaginaAgenda() {
                       {eventos.slice(0, 3).map((e) => (
                         <span
                           key={e.id}
-                          className={`${estilos.ponto} ${estilos[`ponto_${e.tipo}`]}`}
+                          className={`${estilos.ponto} ${estilos[`ponto_${COR_PONTO[e.tipo]}`]}`}
                         />
                       ))}
                       {eventos.length > 3 && (
@@ -502,7 +527,9 @@ export default function PaginaAgenda() {
           <div className={estilos.legenda}>
             {Object.entries(ROTULO_TIPO).map(([tipo, rotulo]) => (
               <span key={tipo} className={estilos.itemLegenda}>
-                <span className={`${estilos.ponto} ${estilos[`ponto_${tipo}`]}`} />
+                <span
+                  className={`${estilos.ponto} ${estilos[`ponto_${COR_PONTO[tipo as TipoCompromisso]}`]}`}
+                />
                 {rotulo}
               </span>
             ))}

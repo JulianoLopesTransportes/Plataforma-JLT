@@ -30,6 +30,7 @@ O schema está **aplicado no projeto remoto**. As migrations abaixo já rodaram:
 | 25 | `25_codigo_do_cliente` | Coluna `codigo` (2026-0001) com contador por ano e gatilho |
 | 26 | `26_agenda_separa_coleta_de_entrega` | `cliente` vira `coleta_mudanca` em `tipo_compromisso` |
 | 27 | `27_agenda_ganha_entrega_de_mudanca` | Acrescenta `entrega_mudanca` ao mesmo enum |
+| 28 | `28_categoria_nos_anexos` | Coluna `categoria` com CHECK nas três tabelas de anexo |
 
 ## Baixar os arquivos de migration para cá
 

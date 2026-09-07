@@ -15,7 +15,7 @@
 
 import { useEffect, useState, useMemo, useCallback } from 'react';
 import { api, usandoBanco } from '@/lib/api';
-import { anexos as apiAnexos } from '@/lib/api/anexos';
+import { anexos as apiAnexos, categoriaValida } from '@/lib/api/anexos';
 import { linhasDeItens } from '@/lib/negocio/documentos';
 import { useUsuario } from '@/components/layout/SessaoProvider';
 import { podeEditar, podeFazer } from '@/lib/permissoes';
@@ -251,7 +251,9 @@ export default function PaginaClientes() {
     if (!arquivoItens || !usandoBanco()) return;
 
     try {
-      await apiAnexos.enviar('clientes', clienteId, arquivoItens);
+      // Nasce em "Inventário": é a relação de bens da mudança, e deixá-la
+      // cair em "Outro" obrigaria a movê-la de gaveta toda vez.
+      await apiAnexos.enviar('clientes', clienteId, arquivoItens, 'inventario');
     } catch (e) {
       mostrar(
         `Itens salvos, mas o arquivo não foi anexado: ${
@@ -631,6 +633,7 @@ export default function PaginaClientes() {
                   tipo: a.tipo,
                   tamanho: a.tamanho,
                   enviadoEm: a.enviadoEm,
+                  categoria: categoriaValida(a.categoria),
                 }))}
                 podeEnviar={podeMexer}
                 podeExcluir={podeExcluir}

@@ -37,6 +37,8 @@ export type ClasseVolume = 'Pequeno' | 'Médio' | 'Grande';
 export type Anexo = {
   id: string;
   nome: string;
+  /** Gaveta do anexo: contrato, orçamento, documento pessoal… */
+  categoria: string;
   /** Caminho no Supabase Storage. Vazio nos mocks da Fase A. */
   caminho?: string;
   tipo: string;

@@ -38,6 +38,7 @@ import {
 } from '@/components/ui';
 import type { Veiculo, Motorista } from '@/lib/tipos';
 import PainelAnexos from '@/components/modulos/PainelAnexos';
+import { categoriaValida } from '@/lib/api/anexos';
 import estilos from './frota.module.css';
 
 /** Quantos dias antes do vencimento a CNH já entra em alerta. */
@@ -562,6 +563,7 @@ export default function PaginaFrota() {
                   tipo: a.tipo,
                   tamanho: a.tamanho,
                   enviadoEm: a.enviadoEm,
+                  categoria: categoriaValida(a.categoria),
                 }))}
                 podeEnviar={podeMexer}
                 podeExcluir={podeExcluir}
@@ -661,6 +663,7 @@ export default function PaginaFrota() {
                   tipo: a.tipo,
                   tamanho: a.tamanho,
                   enviadoEm: a.enviadoEm,
+                  categoria: categoriaValida(a.categoria),
                 }))}
                 podeEnviar={podeMexer}
                 podeExcluir={podeExcluir}

@@ -21,6 +21,42 @@ const VALIDADE_URL = 60 * 10;
 
 export type DonoAnexo = 'clientes' | 'veiculos' | 'motoristas';
 
+/**
+ * Gaveta do anexo.
+ *
+ * Lista fechada, espelhando o CHECK da migration 28 — texto e não enum,
+ * porque é lista que muda com o uso e enum do Postgres não devolve valor
+ * removido. Ao acrescentar uma aqui, acrescente lá também.
+ */
+export const CATEGORIAS_ANEXO = [
+  'contrato',
+  'orcamento',
+  'documento_pessoal',
+  'comprovante_endereco',
+  'inventario',
+  'foto',
+  'outro',
+] as const;
+
+export type CategoriaAnexo = (typeof CATEGORIAS_ANEXO)[number];
+
+export const ROTULO_CATEGORIA: Record<CategoriaAnexo, string> = {
+  contrato: 'Contrato',
+  orcamento: 'Orçamento',
+  documento_pessoal: 'Documento pessoal',
+  comprovante_endereco: 'Comprovante de endereço',
+  inventario: 'Inventário',
+  foto: 'Foto',
+  outro: 'Outro',
+};
+
+/** Categoria vinda do banco que o código não conhece cai em 'outro'. */
+export function categoriaValida(valor: unknown): CategoriaAnexo {
+  return (CATEGORIAS_ANEXO as readonly string[]).includes(valor as string)
+    ? (valor as CategoriaAnexo)
+    : 'outro';
+}
+
 /** Tabela de anexos correspondente a cada dono. */
 const TABELA: Record<DonoAnexo, string> = {
   clientes: 'cliente_anexos',
@@ -42,6 +78,7 @@ export type AnexoSalvo = {
   tipo: string;
   tamanho: number;
   enviadoEm: string;
+  categoria: CategoriaAnexo;
 };
 
 /**
@@ -61,8 +98,20 @@ function montarCaminho(dono: DonoAnexo, donoId: string, nomeArquivo: string): st
 }
 
 export const anexos = {
-  /** Envia o arquivo e registra a referência na tabela do módulo. */
-  async enviar(dono: DonoAnexo, donoId: string, arquivo: File): Promise<AnexoSalvo> {
+  /**
+   * Envia o arquivo e registra a referência na tabela do módulo.
+   *
+   * A categoria vai só para a tabela, NUNCA para o caminho do Storage.
+   * Assim recategorizar é um UPDATE, e não copiar-e-apagar o arquivo — e o
+   * caminho, que as policies do Storage inspecionam para decidir
+   * permissão, continua estável.
+   */
+  async enviar(
+    dono: DonoAnexo,
+    donoId: string,
+    arquivo: File,
+    categoria: CategoriaAnexo = 'outro',
+  ): Promise<AnexoSalvo> {
     if (!supabaseConfigurado()) {
       throw new Error('Envio de arquivo exige o banco de dados configurado.');
     }
@@ -85,6 +134,7 @@ export const anexos = {
         caminho,
         tipo: arquivo.type,
         tamanho: arquivo.size,
+        categoria,
       })
       .select()
       .single();
@@ -103,7 +153,28 @@ export const anexos = {
       tipo: data.tipo,
       tamanho: data.tamanho,
       enviadoEm: data.enviado_em,
+      categoria: categoriaValida(data.categoria),
     };
+  },
+
+  /**
+   * Move o anexo de gaveta.
+   *
+   * Existe porque a categoria nasceu depois dos arquivos: tudo que já
+   * estava anexado caiu em 'outro', e sem isto ficaria preso lá. Só mexe
+   * na tabela — o arquivo no Storage não se move.
+   */
+  async recategorizar(
+    dono: DonoAnexo,
+    anexoId: string,
+    categoria: CategoriaAnexo,
+  ): Promise<void> {
+    const { error } = await supabase()
+      .from(TABELA[dono])
+      .update({ categoria })
+      .eq('id', anexoId);
+
+    if (error) throw new Error(traduzirStorage(error.message));
   },
 
   /**

@@ -742,6 +742,100 @@ const orcamentos = {
   },
 
   /**
+   * Orçamentos de um cliente, com os adicionais aplicados.
+   *
+   * São duas consultas e não um join embutido: `orcamentos_visao` é uma
+   * VIEW, e o PostgREST não descobre relacionamento a partir de view —
+   * não há chave estrangeira para ele seguir. Ler pela view é obrigatório,
+   * porém: é ela que devolve custo e margem nulos para quem não tem
+   * `ver_custos`. A tabela crua entregaria o custo interno para o
+   * Comercial pela porta dos fundos.
+   */
+  async doCliente(clienteId: string): Promise<Orcamento[]> {
+    if (!usandoBanco()) {
+      const dados = (await lerMock(orcamentosJson)) as Orcamento[];
+      return dados
+        .filter((o) => o.clienteId === clienteId)
+        .sort((a, b) => b.data.localeCompare(a.data));
+    }
+
+    const cliente = supabase();
+
+    const { data: linhas, error } = await cliente
+      .from('orcamentos_visao')
+      .select('*')
+      .eq('cliente_id', clienteId)
+      .order('data', { ascending: false });
+
+    if (error) throw new Error(error.message);
+    if (!linhas || linhas.length === 0) return [];
+
+    const { data: adicionais } = await cliente
+      .from('orcamento_adicionais')
+      .select('orcamento_id, adicional_id, quantidade, nome')
+      .in(
+        'orcamento_id',
+        linhas.map((l) => l.id),
+      );
+
+    // Falha ao ler os adicionais não derruba a lista: o valor final e a
+    // data são o essencial, e a composição é detalhe.
+    const porOrcamento = new Map<string, unknown[]>();
+    for (const a of adicionais ?? []) {
+      const atual = porOrcamento.get(a.orcamento_id) ?? [];
+      atual.push(a);
+      porOrcamento.set(a.orcamento_id, atual);
+    }
+
+    return linhas.map((l) =>
+      paraOrcamento({ ...l, orcamento_adicionais: porOrcamento.get(l.id) ?? [] }),
+    );
+  },
+
+  /**
+   * Grava o cálculo, vinculado a um cliente.
+   *
+   * Passa pela função `criar_orcamento` no Postgres em vez de dois inserts
+   * daqui: orçamento e adicionais são tabelas encadeadas, e sem transação
+   * uma falha no meio deixaria o preço gravado sem a composição que o
+   * justifica. A função também resolve o NOME de cada adicional, que o
+   * navegador do Comercial não consegue ler.
+   */
+  async criar(entrada: {
+    clienteId: string;
+    volumeM3: number;
+    distanciaKm: number;
+    custoBase: number;
+    margemPercentual: number;
+    valorFinal: number;
+    observacoes: string;
+    adicionais: { adicionalId: string; quantidade: number }[];
+  }): Promise<string> {
+    if (!usandoBanco()) {
+      throw new Error('Vincular orçamento exige o banco de dados configurado.');
+    }
+
+    const { data, error } = await supabase().rpc('criar_orcamento', {
+      p_orcamento: {
+        cliente_id: entrada.clienteId,
+        volume_m3: entrada.volumeM3,
+        distancia_km: entrada.distanciaKm,
+        custo_base: entrada.custoBase,
+        margem_percentual: entrada.margemPercentual,
+        valor_final: entrada.valorFinal,
+        observacoes: entrada.observacoes,
+        adicionais: entrada.adicionais.map((a) => ({
+          adicional_id: a.adicionalId,
+          quantidade: a.quantidade,
+        })),
+      },
+    });
+
+    if (error) throw new Error(traduzir(error));
+    return data as string;
+  },
+
+  /**
    * Parâmetros de precificação — contêm CUSTO INTERNO.
    *
    * Com o banco, o RLS já barra quem não tem a capacidade ver_custos: as

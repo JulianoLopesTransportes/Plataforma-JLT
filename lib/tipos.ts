@@ -301,6 +301,12 @@ export type Adicional = {
 
 export type StatusOrcamento = 'rascunho' | 'enviado' | 'aprovado' | 'recusado';
 
+export type AdicionalAplicado = {
+  id: string;
+  nome: string;
+  quantidade: number;
+};
+
 export type Orcamento = {
   id: string;
   clienteId: string;
@@ -314,7 +320,15 @@ export type Orcamento = {
   custoBase: number;
   /** Margem aplicada, em %. Comercial NUNCA vê este campo. */
   margemPercentual: number;
-  adicionaisSelecionados: string[];
+  /**
+   * Adicionais aplicados, com o nome como estava NA ÉPOCA.
+   *
+   * O nome vem gravado junto, não resolvido na leitura, por dois motivos:
+   * a tabela `adicionais` só é legível por quem tem `ver_custos`, e o
+   * Comercial veria uma lista sem nomes; e renomear um adicional depois
+   * não pode reescrever o que foi orçado.
+   */
+  adicionais: AdicionalAplicado[];
   /** Preço final apresentado ao cliente. Comercial vê apenas este. */
   valorFinal: number;
   observacoes: string;

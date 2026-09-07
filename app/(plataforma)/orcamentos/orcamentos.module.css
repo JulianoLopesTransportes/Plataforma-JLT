@@ -271,3 +271,23 @@
     grid-template-columns: 1fr;
   }
 }
+
+/* Vincular o cálculo à ficha do cliente. Separado do parcelamento por
+   uma linha: é ação que grava, não mais um número para ler. */
+.vinculo {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+  margin-top: var(--space-3);
+  padding-top: var(--space-3);
+  border-top: 1px solid var(--color-border);
+}
+
+.explicacaoVinculo {
+  flex: 1;
+  min-width: 180px;
+  font-size: 12.5px;
+  color: var(--color-gray-600);
+  line-height: 1.4;
+}

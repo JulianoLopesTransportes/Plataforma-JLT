@@ -9,9 +9,25 @@
     "distanciaKm": 8,
     "custoBase": 4200,
     "margemPercentual": 38,
-    "adicionaisSelecionados": ["adi_001", "adi_003", "adi_004"],
     "valorFinal": 8900,
-    "observacoes": "Içamento de piano incluso."
+    "observacoes": "Içamento de piano incluso.",
+    "adicionais": [
+      {
+        "id": "adi_001",
+        "nome": "Embalagem completa",
+        "quantidade": 1
+      },
+      {
+        "id": "adi_003",
+        "nome": "Desmontagem e montagem de móveis",
+        "quantidade": 1
+      },
+      {
+        "id": "adi_004",
+        "nome": "Içamento por sacada",
+        "quantidade": 1
+      }
+    ]
   },
   {
     "id": "orc_002",
@@ -23,9 +39,20 @@
     "distanciaKm": 6,
     "custoBase": 5600,
     "margemPercentual": 35,
-    "adicionaisSelecionados": ["adi_001", "adi_005"],
     "valorFinal": 11500,
-    "observacoes": "Seguro adicional para equipamentos médicos."
+    "observacoes": "Seguro adicional para equipamentos médicos.",
+    "adicionais": [
+      {
+        "id": "adi_001",
+        "nome": "Embalagem completa",
+        "quantidade": 1
+      },
+      {
+        "id": "adi_005",
+        "nome": "Manuseio de equipamento sensível",
+        "quantidade": 1
+      }
+    ]
   },
   {
     "id": "orc_003",
@@ -37,9 +64,20 @@
     "distanciaKm": 524,
     "custoBase": 9800,
     "margemPercentual": 32,
-    "adicionaisSelecionados": ["adi_001", "adi_002"],
     "valorFinal": 17900,
-    "observacoes": "Versão com seguro. Cliente pediu também versão sem."
+    "observacoes": "Versão com seguro. Cliente pediu também versão sem.",
+    "adicionais": [
+      {
+        "id": "adi_001",
+        "nome": "Embalagem completa",
+        "quantidade": 1
+      },
+      {
+        "id": "adi_002",
+        "nome": "Seguro de carga estendido",
+        "quantidade": 1
+      }
+    ]
   },
   {
     "id": "orc_004",
@@ -51,9 +89,15 @@
     "distanciaKm": 22,
     "custoBase": 3100,
     "margemPercentual": 40,
-    "adicionaisSelecionados": ["adi_003"],
     "valorFinal": 5900,
-    "observacoes": "Aguardando data de entrega das chaves."
+    "observacoes": "Aguardando data de entrega das chaves.",
+    "adicionais": [
+      {
+        "id": "adi_003",
+        "nome": "Desmontagem e montagem de móveis",
+        "quantidade": 1
+      }
+    ]
   },
   {
     "id": "orc_005",
@@ -65,9 +109,25 @@
     "distanciaKm": 18,
     "custoBase": 9200,
     "margemPercentual": 42,
-    "adicionaisSelecionados": ["adi_001", "adi_003", "adi_004"],
     "valorFinal": 18500,
-    "observacoes": "Desmontagem de 14 estações de trabalho."
+    "observacoes": "Desmontagem de 14 estações de trabalho.",
+    "adicionais": [
+      {
+        "id": "adi_001",
+        "nome": "Embalagem completa",
+        "quantidade": 1
+      },
+      {
+        "id": "adi_003",
+        "nome": "Desmontagem e montagem de móveis",
+        "quantidade": 1
+      },
+      {
+        "id": "adi_004",
+        "nome": "Içamento por sacada",
+        "quantidade": 1
+      }
+    ]
   },
   {
     "id": "orc_006",
@@ -79,9 +139,25 @@
     "distanciaKm": 98,
     "custoBase": 5100,
     "margemPercentual": 36,
-    "adicionaisSelecionados": ["adi_001", "adi_003", "adi_006"],
     "valorFinal": 9800,
-    "observacoes": "Adicional de acesso difícil por causa da ladeira."
+    "observacoes": "Adicional de acesso difícil por causa da ladeira.",
+    "adicionais": [
+      {
+        "id": "adi_001",
+        "nome": "Embalagem completa",
+        "quantidade": 1
+      },
+      {
+        "id": "adi_003",
+        "nome": "Desmontagem e montagem de móveis",
+        "quantidade": 1
+      },
+      {
+        "id": "adi_006",
+        "nome": "Acesso difícil (ladeira, rua estreita)",
+        "quantidade": 1
+      }
+    ]
   },
   {
     "id": "orc_007",
@@ -93,9 +169,15 @@
     "distanciaKm": 312,
     "custoBase": 7400,
     "margemPercentual": 30,
-    "adicionaisSelecionados": ["adi_002"],
     "valorFinal": 12400,
-    "observacoes": "Peso elevado para o volume — conferir limite de kg do veículo."
+    "observacoes": "Peso elevado para o volume — conferir limite de kg do veículo.",
+    "adicionais": [
+      {
+        "id": "adi_002",
+        "nome": "Seguro de carga estendido",
+        "quantidade": 1
+      }
+    ]
   },
   {
     "id": "orc_008",
@@ -107,9 +189,9 @@
     "distanciaKm": 34,
     "custoBase": 1900,
     "margemPercentual": 45,
-    "adicionaisSelecionados": [],
     "valorFinal": 3500,
-    "observacoes": "Cliente faz o próprio empacotamento — sem adicional de embalagem."
+    "observacoes": "Cliente faz o próprio empacotamento — sem adicional de embalagem.",
+    "adicionais": []
   },
   {
     "id": "orc_009",
@@ -121,9 +203,15 @@
     "distanciaKm": 268,
     "custoBase": 18400,
     "margemPercentual": 28,
-    "adicionaisSelecionados": ["adi_002"],
     "valorFinal": 32000,
-    "observacoes": "Contrato recorrente. Margem menor negociada por volume."
+    "observacoes": "Contrato recorrente. Margem menor negociada por volume.",
+    "adicionais": [
+      {
+        "id": "adi_002",
+        "nome": "Seguro de carga estendido",
+        "quantidade": 1
+      }
+    ]
   },
   {
     "id": "orc_010",
@@ -135,8 +223,19 @@
     "distanciaKm": 556,
     "custoBase": 14200,
     "margemPercentual": 34,
-    "adicionaisSelecionados": ["adi_001", "adi_002"],
     "valorFinal": 24800,
-    "observacoes": "Cliente fechou com concorrente nesta operação. Renegociado depois."
+    "observacoes": "Cliente fechou com concorrente nesta operação. Renegociado depois.",
+    "adicionais": [
+      {
+        "id": "adi_001",
+        "nome": "Embalagem completa",
+        "quantidade": 1
+      },
+      {
+        "id": "adi_002",
+        "nome": "Seguro de carga estendido",
+        "quantidade": 1
+      }
+    ]
   }
 ]

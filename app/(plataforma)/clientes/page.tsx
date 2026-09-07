@@ -18,7 +18,7 @@ import { api, usandoBanco } from '@/lib/api';
 import { anexos as apiAnexos, categoriaValida } from '@/lib/api/anexos';
 import { linhasDeItens } from '@/lib/negocio/documentos';
 import { useUsuario } from '@/components/layout/SessaoProvider';
-import { podeEditar, podeFazer } from '@/lib/permissoes';
+import { podeEditar, podeFazer, podeVer } from '@/lib/permissoes';
 import {
   formatarData,
   mascararDocumento,
@@ -46,7 +46,14 @@ import {
   useToast,
   type Coluna,
 } from '@/components/ui';
-import { STATUS_CLIENTE, ORIGENS_CLIENTE, type Cliente, type StatusCliente } from '@/lib/tipos';
+import {
+  STATUS_CLIENTE,
+  ORIGENS_CLIENTE,
+  type Cliente,
+  type StatusCliente,
+  type Orcamento,
+} from '@/lib/tipos';
+import { formatarBRL } from '@/lib/utils/formato';
 import PainelAnexos from '@/components/modulos/PainelAnexos';
 import estilos from './clientes.module.css';
 
@@ -103,6 +110,19 @@ export default function PaginaClientes() {
   const podeMexer = podeEditar(usuario.nivel, 'clientes');
   const podeExcluir = podeFazer(usuario.nivel, 'excluir');
 
+  /*
+   * O Operacional tem leitura em Clientes mas nenhum acesso a Orçamentos.
+   * Sem esta condição, a ficha do cliente viraria uma porta lateral para
+   * um módulo que a matriz fecha para ele.
+   */
+  const podeVerOrcamentos = podeVer(usuario.nivel, 'orcamentos');
+  /* Custo e margem são mascarados pelo BANCO, na view. Isto aqui só evita
+     desenhar colunas que viriam vazias. */
+  const verCustos = podeFazer(usuario.nivel, 'ver_custos');
+
+  const [orcamentos, setOrcamentos] = useState<Orcamento[]>([]);
+  const [carregandoOrcamentos, setCarregandoOrcamentos] = useState(false);
+
   const recarregar = useCallback(async () => {
     try {
       setClientes(await api.clientes.listar());
@@ -117,6 +137,29 @@ export default function PaginaClientes() {
   useEffect(() => {
     recarregar();
   }, [recarregar]);
+
+  /*
+   * Busca sob demanda, ao abrir a aba — e não junto da lista de clientes.
+   * A lista carrega todos os clientes de uma vez; puxar os orçamentos de
+   * cada um ali seria uma consulta por cliente para um dado que quase
+   * nunca é olhado.
+   */
+  useEffect(() => {
+    if (!detalhe || abaDetalhe !== 'orcamentos' || !podeVerOrcamentos) return;
+
+    let ativo = true;
+    setCarregandoOrcamentos(true);
+
+    api.orcamentos
+      .doCliente(detalhe.id)
+      .then((lista) => ativo && setOrcamentos(lista))
+      .catch(() => ativo && setOrcamentos([]))
+      .finally(() => ativo && setCarregandoOrcamentos(false));
+
+    return () => {
+      ativo = false;
+    };
+  }, [detalhe, abaDetalhe, podeVerOrcamentos]);
 
   /* --- Filtro em memória ------------------------------------------------ */
   const filtrados = useMemo(() => {
@@ -566,6 +609,7 @@ export default function PaginaClientes() {
               abas={[
                 { chave: 'dados', rotulo: 'Dados' },
                 { chave: 'anexos', rotulo: `Anexos (${detalhe.anexos.length})` },
+                ...(podeVerOrcamentos ? [{ chave: 'orcamentos', rotulo: 'Orçamentos' }] : []),
                 { chave: 'historico', rotulo: `Histórico (${detalhe.historico.length})` },
               ]}
               ativa={abaDetalhe}
@@ -643,6 +687,71 @@ export default function PaginaClientes() {
                   if (atualizado) setDetalhe(atualizado);
                 }}
               />
+            )}
+
+            {abaDetalhe === 'orcamentos' && podeVerOrcamentos && (
+              <>
+                {carregandoOrcamentos ? (
+                  <div className="estado-vazio">Carregando orçamentos…</div>
+                ) : orcamentos.length === 0 ? (
+                  <div className="estado-vazio">
+                    <strong>Nenhum orçamento</strong>
+                    Calcule em Orçamentos e use &quot;Vincular valor ao cliente&quot; para
+                    guardar aqui o que entrou na conta.
+                  </div>
+                ) : (
+                  <ul className={estilos.listaOrcamentos}>
+                    {orcamentos.map((o) => (
+                      <li key={o.id} className={estilos.orcamento}>
+                        <div className={estilos.cabecalhoOrcamento}>
+                          <strong className={estilos.valorOrcamento}>
+                            {formatarBRL(o.valorFinal)}
+                          </strong>
+                          <Badge texto={o.status} tom={o.status === 'aprovado' ? 'success' : 'neutro'} />
+                          <span className="texto-secundario">{formatarData(o.data)}</span>
+                        </div>
+
+                        <dl className={estilos.dadosOrcamento}>
+                          <div>
+                            <dt>Volume</dt>
+                            <dd>{o.volumeM3} m³</dd>
+                          </div>
+                          <div>
+                            <dt>Distância</dt>
+                            <dd>{o.distanciaKm} km</dd>
+                          </div>
+
+                          {/* O banco já devolve nulo para quem não tem
+                              ver_custos; isto evita a coluna vazia. */}
+                          {verCustos && (
+                            <>
+                              <div>
+                                <dt>Custo base</dt>
+                                <dd>{formatarBRL(o.custoBase)}</dd>
+                              </div>
+                              <div>
+                                <dt>Margem</dt>
+                                <dd>{o.margemPercentual.toFixed(1).replace('.', ',')}%</dd>
+                              </div>
+                            </>
+                          )}
+                        </dl>
+
+                        {o.adicionais.length > 0 && (
+                          <div className={estilos.adicionaisOrcamento}>
+                            {o.adicionais.map((a) => (
+                              <span key={a.id} className={estilos.pastilhaAdicional}>
+                                {a.nome}
+                                {a.quantidade > 1 && ` ×${a.quantidade}`}
+                              </span>
+                            ))}
+                          </div>
+                        )}
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </>
             )}
 
             {abaDetalhe === 'historico' && (

@@ -1,0 +1,11 @@
+-- Sobra da migration 25: proximo_codigo_cliente() nasceu SECURITY DEFINER
+-- e eu não revoguei o EXECUTE que toda função ganha de PUBLIC. O linter
+-- apontou que `anon` podia chamá-la por /rest/v1/rpc.
+--
+-- O estrago seria pequeno mas real: cada chamada incrementa o contador do
+-- ano, então um anônimo conseguiria abrir buracos na numeração dos
+-- clientes à vontade.
+--
+-- Nem authenticated precisa dela: quem a chama é o gatilho
+-- `clientes_codigo`, de dentro do banco, e gatilho não passa por GRANT.
+revoke execute on function public.proximo_codigo_cliente() from public, anon, authenticated;

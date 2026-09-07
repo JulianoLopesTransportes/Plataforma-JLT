@@ -199,6 +199,22 @@ guardados em bucket privado com URL assinada de curta duração. O cadastro do
 cliente tem um campo **Itens** — a relação de bens da mudança, digitada ou
 importada de um `.txt` — que sai impressa na Ordem de Serviço.
 
+Os **anexos têm categoria** — contrato, orçamento, documento pessoal,
+comprovante de endereço, inventário, foto e outro — e a lista aparece
+agrupada por gaveta. A categoria fica só na tabela, nunca no caminho do
+Storage: mover um documento de gaveta é um UPDATE, não copiar-e-apagar.
+
+O **cálculo de um orçamento pode ser guardado na ficha do cliente**. Na tela
+de Orçamentos escolhe-se o cliente, calcula-se, e "Vincular valor ao
+cliente" grava volume, distância, adicionais, custo, margem e valor final.
+A ficha do cliente ganha uma aba **Orçamentos** com esse histórico. Sem
+cliente escolhido a calculadora funciona igual e nada é gravado.
+
+Dois recortes valem aqui, e os dois vivem no banco: **custo e margem só
+aparecem para quem tem `ver_custos`** — a leitura passa pela view
+`orcamentos_visao`, nunca pela tabela — e a **aba some para quem não vê o
+módulo Orçamentos**, como o Operacional.
+
 Cada cliente ganha um **código** no formato `2026-0001`, gerado pelo banco e
 imutável. Ele aparece na lista, entra na busca e sai impresso na Ordem de
 Serviço — é por ele que se acha o cadastro quando alguém liga com o papel na

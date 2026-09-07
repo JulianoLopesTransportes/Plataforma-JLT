@@ -16,6 +16,7 @@ import {
   type ResultadoOrcamento,
 } from '@/lib/negocio/precificacao';
 import { TituloPagina, useToast } from '@/components/ui';
+import type { Cliente } from '@/lib/tipos';
 import PainelPrecificacao from '@/components/modulos/PainelPrecificacao';
 import estilos from './orcamentos.module.css';
 
@@ -32,8 +33,16 @@ export default function PaginaOrcamentos() {
   const [quantidades, setQuantidades] = useState<Record<string, number>>({});
   const [resultado, setResultado] = useState<ResultadoOrcamento | null>(null);
 
+  const [clientes, setClientes] = useState<Cliente[]>([]);
+  const [clienteId, setClienteId] = useState('');
+  const [vinculando, setVinculando] = useState(false);
+
   const verCustos = podeFazer(usuario.nivel, 'ver_custos');
   const editarParametros = podeFazer(usuario.nivel, 'editar_parametros_precificacao');
+
+  useEffect(() => {
+    api.clientes.listar().then(setClientes).catch(() => setClientes([]));
+  }, []);
 
   useEffect(() => {
     api.orcamentos.parametros().then((p) => {
@@ -46,6 +55,58 @@ export default function PaginaOrcamentos() {
   const margem = parametros
     ? margemDoFator(fator, parametros.margemMinima, parametros.margemMaxima)
     : 0;
+
+  const clienteEscolhido = clientes.find((c) => c.id === clienteId) ?? null;
+
+  /**
+   * Escolher o cliente traz o volume do cadastro, se o campo estiver vazio.
+   *
+   * Só se estiver vazio: o volume digitado aqui pode ser uma reavaliação
+   * mais recente que a do cadastro, e sobrescrever apagaria o trabalho de
+   * quem acabou de medir.
+   */
+  function escolherCliente(id: string) {
+    setClienteId(id);
+
+    const c = clientes.find((x) => x.id === id);
+    if (c?.volumeM3 && !volume.trim()) setVolume(String(c.volumeM3));
+  }
+
+  /**
+   * Grava o cálculo no cadastro do cliente.
+   *
+   * O status nasce 'rascunho': vincular é registrar o que foi calculado,
+   * não afirmar que o cliente aceitou.
+   */
+  async function vincularAoCliente() {
+    if (!resultado || !clienteEscolhido) return;
+
+    setVinculando(true);
+    try {
+      await api.orcamentos.criar({
+        clienteId: clienteEscolhido.id,
+        volumeM3: Number(volume) || 0,
+        distanciaKm: Number(distancia) || 0,
+        custoBase: resultado.custoTotal,
+        margemPercentual: resultado.margemPercentual,
+        valorFinal: resultado.precoRedondo,
+        observacoes: '',
+        adicionais: Object.entries(quantidades).map(([adicionalId, quantidade]) => ({
+          adicionalId,
+          quantidade,
+        })),
+      });
+
+      mostrar(
+        `Orçamento vinculado a ${clienteEscolhido.nome}. Está na ficha dele, em Clientes.`,
+        'sucesso',
+      );
+    } catch (e) {
+      mostrar(e instanceof Error ? e.message : 'Falha ao vincular o orçamento.', 'erro');
+    } finally {
+      setVinculando(false);
+    }
+  }
 
   function alternarAdicional(id: string) {
     setQuantidades((atual) => {
@@ -87,6 +148,7 @@ export default function PaginaOrcamentos() {
   }
 
   function limpar() {
+    setClienteId('');
     setVolume('');
     setDistancia('');
     setQuantidades({});
@@ -131,6 +193,26 @@ export default function PaginaOrcamentos() {
         {/* ---------------- Entrada ---------------- */}
         <div className="card">
           <h2 className="card-title">Dados da mudança</h2>
+
+          <div className="field" style={{ marginBottom: 20 }}>
+            <label htmlFor="clienteOrc">Cliente</label>
+            <select
+              id="clienteOrc"
+              value={clienteId}
+              onChange={(e) => escolherCliente(e.target.value)}
+            >
+              <option value="">Nenhum — só calcular</option>
+              {clientes.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.codigo} — {c.nome}
+                </option>
+              ))}
+            </select>
+            <p className="field-hint">
+              Escolher um cliente permite guardar o cálculo na ficha dele. Sem
+              cliente, a calculadora funciona igual e nada é gravado.
+            </p>
+          </div>
 
           <div className="form-row">
             <div className="field">
@@ -323,6 +405,29 @@ export default function PaginaOrcamentos() {
                   valor={resultado.parcelamento.segundaParcela}
                   quando="Antes do descarregamento"
                 />
+              </div>
+
+              {/* Guardar o cálculo na ficha do cliente. */}
+              <div className={estilos.vinculo}>
+                <button
+                  type="button"
+                  className="btn btn-primary"
+                  onClick={vincularAoCliente}
+                  disabled={!clienteEscolhido || vinculando}
+                  title={
+                    clienteEscolhido
+                      ? undefined
+                      : 'Escolha um cliente no topo para poder vincular'
+                  }
+                >
+                  {vinculando ? 'Vinculando…' : 'Vincular valor ao cliente'}
+                </button>
+
+                <span className={estilos.explicacaoVinculo}>
+                  {clienteEscolhido
+                    ? `Guarda este cálculo na ficha de ${clienteEscolhido.nome}, com tudo que entrou na conta.`
+                    : 'Sem cliente escolhido, o cálculo não é gravado em lugar nenhum.'}
+                </span>
               </div>
             </>
           )}

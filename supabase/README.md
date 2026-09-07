@@ -31,6 +31,8 @@ O schema está **aplicado no projeto remoto**. As migrations abaixo já rodaram:
 | 26 | `26_agenda_separa_coleta_de_entrega` | `cliente` vira `coleta_mudanca` em `tipo_compromisso` |
 | 27 | `27_agenda_ganha_entrega_de_mudanca` | Acrescenta `entrega_mudanca` ao mesmo enum |
 | 28 | `28_categoria_nos_anexos` | Coluna `categoria` com CHECK nas três tabelas de anexo |
+| 29 | `29_criar_orcamento_vinculado_ao_cliente` | `criar_orcamento()` e o nome do adicional denormalizado em `orcamento_adicionais` |
+| 30 | `30_revoga_execucao_anonima_do_gerador_de_codigo` | Conserta a 25, que deixou `proximo_codigo_cliente()` ao alcance de `anon` |
 
 ## Baixar os arquivos de migration para cá
 
@@ -98,7 +100,7 @@ coluna foram resolvidos assim:
 
 ## Avisos do linter que são intencionais
 
-`get_advisors` aponta 7 funções `SECURITY DEFINER` executáveis por
+`get_advisors` aponta 8 funções `SECURITY DEFINER` executáveis por
 `authenticated`. É o desenho, não descuido: são justamente as funções que
 precisam ler dado que o usuário não alcança diretamente, e cada uma checa a
 permissão internamente antes de devolver qualquer coisa.
@@ -106,6 +108,11 @@ permissão internamente antes de devolver qualquer coisa.
 **Executável por `anon`, porém, nunca é intencional.** Ao criar função nova,
 revogar de `public` — não só de `anon`, que herda o EXECUTE que toda função
 ganha de PUBLIC ao nascer. Foi o erro que a migration 24 consertou.
+
+Um aviso INFO também é intencional: `codigo_sequencia` tem RLS ligado e
+**nenhuma policy**. É de propósito — ninguém fala com o contador pela API;
+quem escreve nele é o gatilho `clientes_codigo`, que roda como SECURITY
+DEFINER e ignora RLS. Sem policy, a tabela fica inalcançável de fora.
 
 Fica um aviso que **não** é intencional e depende do painel, não de migration:
 a proteção contra senha vazada (HaveIBeenPwned) está desligada em

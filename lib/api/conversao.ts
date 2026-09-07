@@ -233,7 +233,11 @@ export function paraOrcamento(linha: any): Orcamento {
     distanciaKm: num(linha.distancia_km),
     custoBase: num(linha.custo_base),
     margemPercentual: num(linha.margem_percentual),
-    adicionaisSelecionados: (linha.orcamento_adicionais ?? []).map((a: any) => a.adicional_id),
+    adicionais: (linha.orcamento_adicionais ?? []).map((a: any) => ({
+      id: a.adicional_id,
+      nome: txt(a.nome),
+      quantidade: num(a.quantidade),
+    })),
     valorFinal: num(linha.valor_final),
     observacoes: txt(linha.observacoes),
   };

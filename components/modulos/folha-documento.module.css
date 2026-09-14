@@ -245,17 +245,6 @@
   color: var(--color-gray-600);
 }
 
-@media (max-width: 1100px) {
-  .grade {
-    grid-template-columns: 1fr;
-  }
-
-  .painel {
-    position: static;
-    max-height: none;
-  }
-}
-
 /* --------------------------------------------------------------------------
    Impressão: só a folha, sem sombra nem borda, ocupando a página inteira.
    -------------------------------------------------------------------------- */
@@ -317,4 +306,32 @@
 .linhasEmBranco span {
   display: block;
   border-bottom: 1px solid var(--color-border);
+}
+
+/* --------------------------------------------------------------------------
+   Telas estreitas — o documento é a leitura, então ele fica com a largura
+
+   A moldura de 40px nas laterais é generosa no papel e no computador. Num
+   celular de 375px ela consome 80px, e o texto jurídico — que já é denso —
+   passa a quebrar em linhas curtas demais para acompanhar.
+   -------------------------------------------------------------------------- */
+@media (max-width: 640px) {
+  .folha {
+    padding: var(--space-2) var(--space-3) var(--space-3);
+  }
+
+  /* A logo encolhe junto: 200px num cabeçalho de 375px empurra o contato
+     da empresa para debaixo dela. */
+  .logoDocumento {
+    width: 140px;
+  }
+
+  /* A tabela do inventário é a única coisa aqui que não tem como encolher
+     sem perder sentido — as colunas são item, quantidade e valor. Rola de
+     lado dentro da própria folha, sem arrastar a página junto. */
+  .tabelaDocumento {
+    display: block;
+    overflow-x: auto;
+    white-space: nowrap;
+  }
 }

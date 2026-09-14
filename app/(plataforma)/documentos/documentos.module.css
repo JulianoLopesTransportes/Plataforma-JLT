@@ -245,6 +245,36 @@
 }
 
 /* --------------------------------------------------------------------------
+   Telas estreitas — as duas colunas viram uma
+
+   Este bloco existia em folha-documento.module.css, e não fazia nada: são
+   CSS Modules, cada arquivo gera nomes de classe próprios, e a `.grade`
+   de lá não era a `.grade` daqui. O componente FolhaDocumento nem usa
+   essas classes. Resultado: a grade ficava em `380px 1fr` em QUALQUER
+   largura, e num celular de 375px só a primeira coluna já era mais larga
+   que a tela — a página inteira vazava para a direita e a prévia do
+   documento virava um filete com uma palavra por linha.
+
+   1024px e não 1100px: é o mesmo limite em que a sidebar vira gaveta, em
+   layout.module.css. Dois limites diferentes para "a tela ficou estreita"
+   criariam uma faixa onde metade da moldura é de celular e a outra
+   metade de computador.
+   -------------------------------------------------------------------------- */
+@media (max-width: 1024px) {
+  .grade {
+    grid-template-columns: 1fr;
+  }
+
+  /* Grudar o painel no topo só faz sentido quando ele está AO LADO do
+     documento. Empilhado, o sticky o deixaria cobrindo a prévia. */
+  .painel {
+    position: static;
+    max-height: none;
+    overflow-y: visible;
+  }
+}
+
+/* --------------------------------------------------------------------------
    Impressão
 
    A grade precisa virar bloco: o painel some por 'sem-impressao', mas a

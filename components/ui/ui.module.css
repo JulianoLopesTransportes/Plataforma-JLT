@@ -356,6 +356,95 @@
 
    Quem esconde o conteúdo atrás é a classe `sem-impressao` na página.
    -------------------------------------------------------------------------- */
+/* ==========================================================================
+   Modal em tela pequena — vira folha, com rodapé sempre à vista
+
+   No computador o modal é uma caixa centrada que cresce com o conteúdo, e
+   isso está bom. No telefone o mesmo desenho falha de dois jeitos, e os
+   dois apareceram nas fotos:
+
+   - em pé, a moldura de 28px do fundo come largura que já é escassa;
+   - DEITADO, com 375px de altura, cabeçalho e rodapé rolam junto com o
+     formulário. O botão "Criar rota" ficava cortado embaixo, e só
+     aparecia depois de rolar o formulário inteiro — sem nenhuma pista de
+     que ele existia.
+
+   O conserto é o modal virar coluna flexível de altura limitada: o miolo
+   rola, as pontas ficam. Assim a ação principal está sempre no lugar,
+   nos dois sentidos do aparelho.
+
+   Vale por LARGURA (celular em pé) ou por ALTURA (aparelho deitado) — a
+   segunda condição é a que o desenho antigo ignorava.
+
+   A condição de altura carrega um teto de largura de propósito: sem ele,
+   quem apenas deixasse a janela do computador baixa cairia no modal de
+   tela cheia. No desktop o modal atual está bom e não se toca nele.
+   ========================================================================== */
+@media (max-width: 640px), (max-height: 540px) and (max-width: 1024px) {
+  .modalFundo {
+    padding: 0;
+    align-items: stretch;
+    /* O próprio fundo não rola mais: quem rola é o corpo do modal. Com os
+       dois rolando, o iOS entrega a rolagem ao elemento errado e o modal
+       "escorrega" enquanto se lê o formulário. */
+    overflow: hidden;
+  }
+
+  .modal,
+  .modalLargo {
+    max-width: none;
+    width: 100%;
+    margin: 0;
+    border-radius: 0;
+
+    /*
+     * dvh e não vh: no celular a barra do navegador entra e sai, e 100vh
+     * mede a tela SEM contar com ela. O rodapé ficaria escondido atrás da
+     * barra justamente quando se vai tocar em Salvar.
+     */
+    height: 100dvh;
+    max-height: 100dvh;
+
+    display: flex;
+    flex-direction: column;
+  }
+
+  .modalCabecalho,
+  .modalRodape {
+    flex-shrink: 0;
+  }
+
+  .modalCorpo {
+    flex: 1;
+    overflow-y: auto;
+    /* Rolagem com inércia no iOS, e sem arrastar a página atrás junto. */
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+    padding: var(--space-3);
+  }
+
+  /* Deitado sobra pouca altura: as pontas encolhem para o formulário
+     ficar com o que resta. */
+  .modalCabecalho {
+    padding: var(--space-2) var(--space-3);
+  }
+
+  .modalRodape {
+    padding: var(--space-2) var(--space-3);
+  }
+
+  .modalTitulo {
+    font-size: 16px;
+  }
+
+  /* O botão que confirma fica por último e ocupa o que sobrar da linha:
+     é o maior alvo do modal, e o que a pessoa procura. */
+  .modalRodape > :last-child {
+    flex: 1;
+    justify-content: center;
+  }
+}
+
 @media print {
   .modalFundo {
     position: static;

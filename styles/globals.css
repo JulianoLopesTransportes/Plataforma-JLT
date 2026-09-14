@@ -142,16 +142,33 @@ hr.rule {
 /* --------------------------------------------------------------------------
    Formulário
    -------------------------------------------------------------------------- */
+/*
+ * Grade dos formulários — quantas colunas cabem, não quantas eu mandei.
+ *
+ * Era `1fr 1fr` e `1fr 1fr 1fr` fixos, sem breakpoint nenhum: num celular
+ * de 375px o form-row-3 dava três campos de ~80px, e dentro de um modal o
+ * terceiro vazava para fora da tela. Era o caso do "Retorno previsto" em
+ * Nova rota.
+ *
+ * auto-fit com minmax resolve os dois sentidos de uma vez, sem media
+ * query: a grade mede a largura REAL disponível — que dentro de um modal
+ * não é a da tela — e quebra quando o campo não cabe mais. Deitar o
+ * telefone devolve as colunas sozinho.
+ *
+ * 220px é o mínimo para uma data ou um select caberem sem truncar o
+ * rótulo; 170px serve para os campos mais curtos das trincas (UF,
+ * volume, quantidade).
+ */
 .form-row {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
   gap: var(--space-3);
   margin-bottom: var(--space-3);
 }
 
 .form-row-3 {
   display: grid;
-  grid-template-columns: 1fr 1fr 1fr;
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
   gap: var(--space-3);
   margin-bottom: var(--space-3);
 }
@@ -323,6 +340,63 @@ tbody tr:hover td {
 }
 
 /* Impressão: some com a moldura, mantém só o documento. */
+/* ==========================================================================
+   CELULAR
+
+   A plataforma nasceu para o computador e não tinha NENHUM breakpoint de
+   tela aqui — só regras de impressão. O que segue é o mínimo que separa
+   "funciona no telefone" de "funciona no telefone sem raiva".
+
+   Nada acima de 1024px é tocado: o desktop fica idêntico.
+   ========================================================================== */
+
+@media (max-width: 640px) {
+  /*
+   * 16px nos campos, e isto NÃO é preferência de tamanho.
+   *
+   * O Safari do iPhone amplia a página inteira quando se toca num campo
+   * com fonte menor que 16px, e depois não desfaz o zoom. A tela pula a
+   * cada toque, e o usuário fica arrastando de lado para achar o resto do
+   * formulário. É o bug mais irritante de formulário em iOS, e o conserto
+   * é exatamente este número.
+   */
+  input,
+  select,
+  textarea,
+  /*
+   * A repetição com `.field` não é descuido: a regra base é
+   * `.field input` — classe mais elemento —, e um seletor de elemento
+   * sozinho perde dela por especificidade, não importa vir depois. A
+   * primeira versão desta correção não pegava por isso, e só apareceu
+   * porque fui medir o tamanho computado no navegador em vez de confiar
+   * que tinha funcionado.
+   */
+  .field input,
+  .field select,
+  .field textarea {
+    font-size: 16px;
+  }
+
+  /*
+   * Alvo de toque. O ícone continua do mesmo tamanho — o que cresce é a
+   * área que aceita o dedo. 44px é a medida que a Apple e o Google
+   * publicam, e abaixo dela o erro de toque cresce rápido.
+   */
+  .btn {
+    min-height: 44px;
+  }
+
+  .btn-sm {
+    min-height: 38px;
+  }
+
+  /* Botão sozinho numa linha ocupa a largura toda: alvo maior e alinhamento
+     previsível, em vez de um botão pequeno perdido no meio. */
+  .btn-bloco-celular {
+    width: 100%;
+  }
+}
+
 @media print {
   .sem-impressao {
     display: none !important;

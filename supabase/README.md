@@ -35,6 +35,9 @@ O schema está **aplicado no projeto remoto**. As migrations abaixo já rodaram:
 | 30 | `30_revoga_execucao_anonima_do_gerador_de_codigo` | Conserta a 25, que deixou `proximo_codigo_cliente()` ao alcance de `anon` |
 | 31 | `31_conserta_gatilho_de_codigo_quebrado_pela_30` | A 30 quebrou todo insert em `clientes`; o gatilho vira SECURITY DEFINER |
 | 32 | `32_motivo_real_ao_criar_acesso` | `motivo_para_nao_criar_acesso()` — o Supabase esconde a exceção do gatilho atrás de "Database error saving new user" |
+| 33 | `33_comercial_orca_sem_ver_custo` | `adicionais_visao` e `faixas_volume_visao` — mostram o nome, escondem o dinheiro |
+| 34 | `34_visao_de_adicionais_respeita_ativo` | Acerto da 33: a visão expunha adicional desativado |
+| 35 | `35_preco_aceita_fator_e_deriva_a_margem` | `preco_do_orcamento()` — o preço calculado no banco, sem a margem sair de lá |
 
 ## Baixar os arquivos de migration para cá
 
@@ -92,9 +95,20 @@ coluna foram resolvidos assim:
 
 - **"Comercial não vê custo"** — a view `orcamentos_visao` devolve `custo_base` e
   `margem_percentual` como `NULL` para quem não tem a capacidade `ver_custos`.
-  O app lê a view, nunca a tabela crua. Para calcular preço sem ver custo, o
-  Comercial chama `calcular_preco()`, que roda dentro do banco e devolve apenas
-  o valor final.
+  O app lê a view, nunca a tabela crua.
+
+  **As tabelas de parâmetro também são custo.** `adicionais`, `faixas_volume` e
+  `parametros_precificacao` exigem `ver_custos`, então para o Comercial elas
+  voltavam VAZIAS e a calculadora não tinha com o que trabalhar. Desde a
+  migration 33 ele lê `adicionais_visao` e `faixas_volume_visao`, que mostram
+  o nome e anulam o valor, e o preço vem de `preco_do_orcamento()`.
+
+  Essa função recebe o **fator** da régua, não a margem: a faixa mínima/máxima
+  também é custo, e enviar margem calculada na tela faria o Comercial cotar
+  diferente do admin no mesmo ponto da régua. Ver a migration 35.
+
+  `calcular_preco()` da migration 04 está OBSOLETA — ignora adicionais por
+  unidade e quantidade, e não arredonda. Não usar.
 - **"Operacional não vê faturamento"** — `relatorio_operacoes()` devolve a coluna
   de faturamento como `NULL` para quem não tem `ver_faturamento`, e a de custo
   como `NULL` para quem não tem `ver_custos`. `NULL` e não zero: zero seria uma

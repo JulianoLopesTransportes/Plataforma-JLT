@@ -291,3 +291,16 @@
   color: var(--color-gray-600);
   line-height: 1.4;
 }
+
+/* Explicação de por que não há composição para quem não vê custo. Dizer o
+   motivo evita que a ausência pareça defeito da tela. */
+.notaSemCusto {
+  margin-top: var(--space-3);
+  padding: var(--space-2) var(--space-3);
+  background: var(--color-info-bg);
+  color: var(--color-info);
+  border-left: 3px solid var(--color-info);
+  border-radius: var(--radius-sm);
+  font-size: 12.5px;
+  line-height: 1.5;
+}

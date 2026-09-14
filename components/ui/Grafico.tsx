@@ -171,7 +171,19 @@ export default function Grafico({
       chartRef.current?.destroy();
       chartRef.current = null;
     };
-  }, [tipo, rotulos, series, formatarValor, corPorItem, mostrarLegenda]);
+    /*
+     * Dependências por CONTEÚDO, não por identidade.
+     *
+     * `rotulos` e `series` são criados inline nas telas que usam este
+     * componente — arrays novos a cada render. Com eles na lista, o efeito
+     * rodava sempre, destruindo e recriando o Chart a cada atualização da
+     * página: animação perdida, piscada, e trabalho à toa.
+     *
+     * Serializar é barato aqui (dezenas de pontos) e transforma "mudou o
+     * array" em "mudaram os dados", que é a pergunta certa.
+     */
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tipo, JSON.stringify(rotulos), JSON.stringify(series), formatarValor, corPorItem, mostrarLegenda]);
 
   return (
     <div className={estilos.grafico} style={{ height: altura }}>

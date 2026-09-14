@@ -33,6 +33,18 @@ export default function PaginaOrcamentos() {
   const [quantidades, setQuantidades] = useState<Record<string, number>>({});
   const [resultado, setResultado] = useState<ResultadoOrcamento | null>(null);
 
+  /*
+   * Preço de quem NÃO vê custo, vindo pronto do banco.
+   *
+   * Separado de `resultado` de propósito. Para esse usuário as visões
+   * devolvem valor nulo — que vira 0 na conversão — então calcular aqui
+   * produziria um preço errado e baixo, sem nada indicando o erro. Manter
+   * os dois caminhos em variáveis distintas torna impossível exibir por
+   * engano um número calculado com valores zerados.
+   */
+  const [precoSemCusto, setPrecoSemCusto] = useState<number | null>(null);
+  const [calculando, setCalculando] = useState(false);
+
   const [clientes, setClientes] = useState<Cliente[]>([]);
   const [clienteId, setClienteId] = useState('');
   const [vinculando, setVinculando] = useState(false);
@@ -121,12 +133,39 @@ export default function PaginaOrcamentos() {
     setQuantidades((atual) => ({ ...atual, [id]: Math.max(1, valor) }));
   }
 
-  function calcular() {
+  async function calcular() {
     if (!parametros) return;
 
     const volumeNum = Number(volume);
     if (!volumeNum || volumeNum <= 0) {
       mostrar('Informe o volume estimado para calcular.', 'erro');
+      return;
+    }
+
+    /*
+     * Sem `ver_custos`, a conta roda no banco e volta só o valor final.
+     * É a mesma matemática — portada para SQL na migration 33 e conferida
+     * contra esta em 29 casos de borda —, mas a composição nunca sai do
+     * Postgres.
+     */
+    if (!verCustos) {
+      setCalculando(true);
+      try {
+        const preco = await api.orcamentos.precoDoOrcamento({
+          volumeM3: volumeNum,
+          distanciaKm: Number(distancia) || 0,
+          fator,
+          adicionais: Object.entries(quantidades).map(([id, quantidade]) => ({ id, quantidade })),
+        });
+
+        setPrecoSemCusto(preco);
+        setResultado(null);
+        if (preco === null) mostrar('Não foi possível calcular com os valores informados.', 'erro');
+      } catch (e) {
+        mostrar(e instanceof Error ? e.message : 'Falha ao calcular o preço.', 'erro');
+      } finally {
+        setCalculando(false);
+      }
       return;
     }
 
@@ -144,6 +183,7 @@ export default function PaginaOrcamentos() {
     });
 
     setResultado(saida);
+    setPrecoSemCusto(null);
     if (!saida) mostrar('Não foi possível calcular com os valores informados.', 'erro');
   }
 
@@ -153,6 +193,7 @@ export default function PaginaOrcamentos() {
     setDistancia('');
     setQuantidades({});
     setResultado(null);
+    setPrecoSemCusto(null);
     if (parametros) {
       setFator(
         fatorDaMargem(
@@ -330,9 +371,10 @@ export default function PaginaOrcamentos() {
             type="button"
             className="btn btn-primary"
             onClick={calcular}
+            disabled={calculando}
             style={{ marginTop: 20 }}
           >
-            Calcular
+            {calculando ? 'Calculando…' : 'Calcular'}
           </button>
         </div>
 
@@ -340,12 +382,30 @@ export default function PaginaOrcamentos() {
         <div className="card">
           <h2 className="card-title">Resultado</h2>
 
-          {!resultado ? (
+          {!resultado && precoSemCusto === null ? (
             <div className="estado-vazio">
               <strong>Aguardando cálculo</strong>
               Informe o volume e clique em calcular.
             </div>
-          ) : (
+          ) : precoSemCusto !== null ? (
+            /*
+             * Caminho de quem não vê custo: só o preço, calculado no banco.
+             * Sem composição, sem parcelamento derivado daqui — o que a tela
+             * não recebeu, ela não inventa.
+             */
+            <>
+              <div className={estilos.precoFinal}>
+                <span className={estilos.precoRotulo}>Preço sugerido</span>
+                <strong className={estilos.precoValor}>{formatarBRL(precoSemCusto)}</strong>
+              </div>
+
+              <p className={estilos.notaSemCusto}>
+                O cálculo roda no servidor e devolve apenas o valor final. A
+                composição do preço é dado interno e não fica disponível no seu
+                nível de acesso.
+              </p>
+            </>
+          ) : resultado ? (
             <>
               {verCustos && (
                 <div className={estilos.composicao}>
@@ -430,7 +490,7 @@ export default function PaginaOrcamentos() {
                 </span>
               </div>
             </>
-          )}
+          ) : null}
         </div>
       </div>
 

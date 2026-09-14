@@ -735,6 +735,49 @@ const orcamentos = {
     return data ? paraOrcamento(data) : null;
   },
 
+  /**
+   * Preço calculado DENTRO do banco, sem a composição.
+   *
+   * É o caminho de quem não tem `ver_custos`: a pessoa escolhe volume,
+   * distância e serviços, e recebe só o valor final. Custo base, margem e
+   * a composição nunca saem do Postgres.
+   *
+   * A conta é a mesma de lib/negocio/precificacao.ts, portada para SQL na
+   * migration 33 — e existe um teste que compara as duas em 29 casos de
+   * borda, porque dois preços diferentes para o mesmo serviço seria o pior
+   * defeito possível aqui.
+   */
+  async precoDoOrcamento(entrada: {
+    volumeM3: number;
+    distanciaKm: number;
+    /**
+     * O FATOR da régua (0 a 10), não a margem.
+     *
+     * A margem sai da faixa mínima/máxima em `parametros_precificacao`, que
+     * também exige `ver_custos` — para o Comercial a faixa voltava vazia e
+     * a tela caía em valores de reserva. O mesmo ponto da régua daria margem
+     * diferente para ele e para o admin, e portanto preço diferente para o
+     * mesmo serviço. Mandando o fator, quem converte é o banco, com os
+     * parâmetros reais, e a margem nunca precisa sair de lá.
+     */
+    fator: number;
+    adicionais: { id: string; quantidade: number }[];
+  }): Promise<number | null> {
+    if (!usandoBanco()) return null;
+
+    const { data, error } = await supabase().rpc('preco_do_orcamento', {
+      p_entrada: {
+        volume_m3: entrada.volumeM3,
+        distancia_km: entrada.distanciaKm,
+        fator: entrada.fator,
+        adicionais: entrada.adicionais,
+      },
+    });
+
+    if (error) throw new Error(traduzir(error));
+    return data === null ? null : Number(data);
+  },
+
   async aprovar(id: string): Promise<void> {
     if (!usandoBanco()) throw new Error('Aprovação exige o banco de dados configurado.');
     const { error } = await supabase().from('orcamentos').update({ status: 'aprovado' }).eq('id', id);
@@ -847,10 +890,22 @@ const orcamentos = {
       return lerMock(parametrosJson as unknown as ParametrosPrecificacao);
     }
 
+    /*
+     * Lê as VISÕES, não as tabelas.
+     *
+     * `faixas_volume` e `adicionais` guardam custo interno, e o RLS delas
+     * exige `ver_custos`. Lendo a tabela, o Comercial recebia ZERO linhas:
+     * a lista de serviços adicionais sumia e a calculadora ficava sem faixa
+     * para calcular nada. As visões devolvem as linhas para quem enxerga o
+     * módulo e anulam só a COLUNA de dinheiro.
+     *
+     * O filtro de ativo saiu do select e foi para dentro da visão — ali ele
+     * não depende de alguém lembrar de escrevê-lo de novo.
+     */
     const cliente = supabase();
     const [{ data: faixas }, { data: adicionais }, { data: gerais }] = await Promise.all([
-      cliente.from('faixas_volume').select('id, ate, valor_base').order('ate'),
-      cliente.from('adicionais').select('id, nome, tipo, valor').eq('ativo', true).order('nome'),
+      cliente.from('faixas_volume_visao').select('id, ate, valor_base').order('ate'),
+      cliente.from('adicionais_visao').select('id, nome, tipo, valor, unidade').order('nome'),
       cliente
         .from('parametros_precificacao')
         .select('custo_por_km, margem_minima, margem_maxima')
@@ -861,13 +916,16 @@ const orcamentos = {
       faixasVolume: (faixas ?? []).map((f) => ({
         id: f.id,
         ate: Number(f.ate),
-        valorBase: Number(f.valor_base),
+        // null para quem não vê custo. Vira 0, e é por isso que a tela NÃO
+        // pode calcular localmente nesse caso — ver precoDoOrcamento().
+        valorBase: Number(f.valor_base ?? 0),
       })),
       adicionais: (adicionais ?? []).map((a) => ({
         id: a.id,
         nome: a.nome,
         tipo: a.tipo as Adicional['tipo'],
-        valor: Number(a.valor),
+        valor: Number(a.valor ?? 0),
+        unidade: a.unidade || undefined,
       })),
       custoPorKm: Number(gerais?.custo_por_km ?? 0),
       margemMinima: Number(gerais?.margem_minima ?? 25),

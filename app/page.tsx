@@ -24,7 +24,7 @@ const TITULO: Record<Modo, string> = {
 
 const SUBTITULO: Record<Modo, string> = {
   entrar: 'Informe seu e-mail e senha para acessar.',
-  criar: 'Preencha seus dados e defina uma senha.',
+  criar: 'Seu e-mail precisa ter sido autorizado antes por um administrador.',
   recuperar: 'Enviaremos um link para você definir uma nova senha.',
 };
 

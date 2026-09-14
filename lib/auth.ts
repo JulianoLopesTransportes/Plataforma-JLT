@@ -56,6 +56,18 @@ function traduzirErro(mensagem: string): string {
   if (m.includes('rate limit') || m.includes('too many')) {
     return 'Muitas tentativas seguidas. Aguarde um minuto e tente de novo.';
   }
+
+  /*
+   * O Supabase troca QUALQUER exceção de gatilho por esta frase, perdendo
+   * o motivo pelo caminho. A checagem prévia em criarAcesso() cobre os
+   * casos conhecidos; se ainda assim chegar aqui, o usuário não pode levar
+   * "Database error saving new user" na cara — isso não diz nada a ele e
+   * parece que a plataforma quebrou.
+   */
+  if (m.includes('database error')) {
+    return 'Não foi possível criar o acesso. Confirme com o administrador se o seu e-mail foi autorizado.';
+  }
+
   return mensagem;
 }
 
@@ -71,7 +83,18 @@ export async function entrar(email: string, senha: string): Promise<ResultadoAut
 
 /**
  * Cria o acesso de quem já foi autorizado pelo admin.
- * Falha se o e-mail não estiver na lista — a mensagem vem do banco.
+ *
+ * A trava real é o gatilho `criar_perfil_do_usuario` no banco, que recusa
+ * e-mail fora da lista. O problema é que o Supabase Auth NÃO propaga
+ * exceção de gatilho: ele troca qualquer uma por "Database error saving
+ * new user". A tradução logo acima para 'acesso autorizado' existe e
+ * nunca disparou — a string jamais chega aqui.
+ *
+ * Por isso perguntamos o motivo ANTES de tentar. Não é validação
+ * duplicada por capricho: sem isso, quem não foi autorizado — ou
+ * escolheu um nome de usuário em uso — recebe um erro de banco e não tem
+ * como saber o que fazer. O gatilho continua sendo a fechadura; isto
+ * aqui é a placa na porta.
  */
 export async function criarAcesso(dados: {
   email: string;
@@ -79,6 +102,20 @@ export async function criarAcesso(dados: {
   nome: string;
   usuario: string;
 }): Promise<ResultadoAuth> {
+  const { data: impedimento, error: erroChecagem } = await supabase().rpc(
+    'motivo_para_nao_criar_acesso',
+    { p_email: dados.email, p_usuario: dados.usuario },
+  );
+
+  if (impedimento) return { ok: false, erro: impedimento as string };
+
+  // Falha ao CONSULTAR o motivo não impede a tentativa: o banco ainda vai
+  // recusar se for o caso, e travar o cadastro porque a checagem prévia
+  // caiu seria pior do que seguir e deixar a trava real decidir.
+  if (erroChecagem) {
+    console.warn('Não foi possível checar a autorização antes do cadastro:', erroChecagem.message);
+  }
+
   const { error } = await supabase().auth.signUp({
     email: dados.email.trim().toLowerCase(),
     password: dados.senha,

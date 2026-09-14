@@ -34,6 +34,7 @@ O schema está **aplicado no projeto remoto**. As migrations abaixo já rodaram:
 | 29 | `29_criar_orcamento_vinculado_ao_cliente` | `criar_orcamento()` e o nome do adicional denormalizado em `orcamento_adicionais` |
 | 30 | `30_revoga_execucao_anonima_do_gerador_de_codigo` | Conserta a 25, que deixou `proximo_codigo_cliente()` ao alcance de `anon` |
 | 31 | `31_conserta_gatilho_de_codigo_quebrado_pela_30` | A 30 quebrou todo insert em `clientes`; o gatilho vira SECURITY DEFINER |
+| 32 | `32_motivo_real_ao_criar_acesso` | `motivo_para_nao_criar_acesso()` — o Supabase esconde a exceção do gatilho atrás de "Database error saving new user" |
 
 ## Baixar os arquivos de migration para cá
 
@@ -120,7 +121,13 @@ valer, o teste precisa de `set local role authenticated` **e** de
 `request.jwt.claims` com um `sub` real, senão `auth.uid()` é nulo e o RLS
 recusa por outro motivo, mascarando o primeiro.
 
-**Executável por `anon`, porém, nunca é intencional.** Ao criar função nova,
+**Executável por `anon` tem UMA exceção deliberada:**
+`motivo_para_nao_criar_acesso()`, da migration 32. Quem cria o acesso ainda
+não tem sessão, então sem `anon` ela não serviria para nada. Ela só devolve
+o impedimento — nunca nome, cargo ou nível — e não revela nada que já não
+fosse obtível tentando o cadastro e comparando a resposta.
+
+Fora essa, **executável por `anon` nunca é intencional.** Ao criar função nova,
 revogar de `public` — não só de `anon`, que herda o EXECUTE que toda função
 ganha de PUBLIC ao nascer. Foi o erro que a migration 24 consertou.
 

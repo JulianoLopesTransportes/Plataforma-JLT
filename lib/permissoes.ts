@@ -84,8 +84,8 @@ type MatrizModulo = Record<Nivel, Acesso>;
  *                   operacional e comercial.
  *  - Operacional  — frota, motoristas, viagens, cargas; leitura no comercial;
  *                   sem qualquer acesso a dado financeiro.
- *  - Comercial    — clientes, cotações, propostas; sem custo interno,
- *                   sem margem, sem folha.
+ *  - Comercial    — clientes, cotações, propostas. Via custo desde
+ *                   14/09/2026, mas segue sem editar parâmetro e sem folha.
  */
 export const MATRIZ_PADRAO: Record<ModuloId, MatrizModulo> = {
   dashboard: { admin: 'crud', financeiro: 'r', operacional: 'r', comercial: 'r' },
@@ -104,8 +104,8 @@ export const MATRIZ_PADRAO: Record<ModuloId, MatrizModulo> = {
  * CAPACIDADES TRANSVERSAIS
  *
  * Permissões que não são "um módulo inteiro", e sim um recorte dentro dele.
- * Existem porque a pirâmide corta alguns módulos ao meio: Comercial usa a
- * calculadora de orçamento, mas não pode ver o custo interno que a alimenta.
+ * Existem porque a pirâmide corta alguns módulos ao meio — o Operacional
+ * trabalha em rotas e agenda mas não pode ver faturamento, por exemplo.
  *
  * Não há tela para editá-las — decisão do Juliano. Mas elas TAMBÉM passaram
  * a ser lidas do banco, e não por capricho: um nível criado depois do
@@ -115,7 +115,14 @@ export const MATRIZ_PADRAO: Record<ModuloId, MatrizModulo> = {
  * capacidades de um nível-modelo.
  */
 export type Capacidade =
-  /** Ver custo interno, margem e markup. O que o Comercial não pode enxergar. */
+  /**
+   * Ver custo interno, margem e markup.
+   *
+   * Vale para todos os quatro níveis desde 14/09/2026. Continua sendo
+   * capacidade separada porque é o que a view `orcamentos_visao` e a
+   * função `relatorio_operacoes()` consultam para anular coluna — e um
+   * nível novo pode nascer sem ela.
+   */
   | 'ver_custos'
   /** Ver faturamento e receita. O que o Operacional não pode enxergar. */
   | 'ver_faturamento'
@@ -129,7 +136,10 @@ export type Capacidade =
   | 'excluir';
 
 export const CAPACIDADES_PADRAO: Record<Capacidade, Nivel[]> = {
-  ver_custos: ['admin', 'financeiro', 'operacional'],
+  // Comercial entrou em 14/09/2026, a pedido do Juliano: quem negocia
+  // precisa enxergar o valor das coisas. Ver NÃO é editar — os parâmetros
+  // seguem trancados por 'editar_parametros_precificacao'.
+  ver_custos: ['admin', 'financeiro', 'operacional', 'comercial'],
   ver_faturamento: ['admin', 'financeiro', 'comercial'],
   editar_parametros_precificacao: ['admin', 'financeiro'],
   exportar: ['admin', 'financeiro', 'operacional', 'comercial'],

@@ -38,6 +38,7 @@ O schema está **aplicado no projeto remoto**. As migrations abaixo já rodaram:
 | 33 | `33_comercial_orca_sem_ver_custo` | `adicionais_visao` e `faixas_volume_visao` — mostram o nome, escondem o dinheiro |
 | 34 | `34_visao_de_adicionais_respeita_ativo` | Acerto da 33: a visão expunha adicional desativado |
 | 35 | `35_preco_aceita_fator_e_deriva_a_margem` | `preco_do_orcamento()` — o preço calculado no banco, sem a margem sair de lá |
+| 36 | `36_comercial_passa_a_ver_custos` | O Comercial passa a ver valores; editar parâmetro continua restrito |
 
 ## Baixar os arquivos de migration para cá
 

@@ -99,10 +99,23 @@ Dois recortes não cabem numa matriz por módulo e existem como **capacidades
 transversais**. Como RLS filtra linhas e estes requisitos são sobre colunas,
 cada um exigiu um mecanismo próprio no banco:
 
-1. **Comercial não vê custo.** A view `orcamentos_visao` devolve `custo_base` e
-   `margem_percentual` como `NULL` para quem não tem `ver_custos`. Como o
-   Comercial ainda precisa do *preço*, a função `calcular_preco()` roda dentro
-   do banco e devolve só o valor final — a composição nunca sai.
+1. **Quem não tem `ver_custos` não vê custo.** A view `orcamentos_visao`
+   devolve `custo_base` e `margem_percentual` como `NULL`, e
+   `adicionais_visao` e `faixas_volume_visao` anulam o valor do serviço e da
+   faixa. Para esse caso o preço vem de `preco_do_orcamento()`, que roda no
+   banco e devolve só o valor final — a composição nunca sai.
+
+   **O Comercial passou a ter `ver_custos` em 14/09/2026**, a pedido do
+   Juliano: quem negocia precisa enxergar o valor das coisas. O mecanismo
+   continua de pé e vale para qualquer nível criado sem a capacidade.
+
+   **Ver não é editar.** Alterar faixa, adicional ou parâmetro exige
+   `editar_parametros_precificacao`, que segue restrita a Admin e
+   Financeiro. Vale avisar de um detalhe do Postgres: o RLS recusa um
+   UPDATE **em silêncio** — zero linhas afetadas, sem erro. A tela esconde
+   o painel de precificação de quem não pode editar, então isso não
+   aparece na prática, mas quem for testar precisa contar linhas em vez de
+   esperar exceção.
 2. **Operacional não vê faturamento.** `relatorio_operacoes()` anula a coluna
    conforme a capacidade. Devolve `NULL`, não zero: zero seria falso. O mesmo
    recorte se aplica ao CSV exportado.

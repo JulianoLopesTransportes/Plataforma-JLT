@@ -33,6 +33,7 @@ O schema está **aplicado no projeto remoto**. As migrations abaixo já rodaram:
 | 28 | `28_categoria_nos_anexos` | Coluna `categoria` com CHECK nas três tabelas de anexo |
 | 29 | `29_criar_orcamento_vinculado_ao_cliente` | `criar_orcamento()` e o nome do adicional denormalizado em `orcamento_adicionais` |
 | 30 | `30_revoga_execucao_anonima_do_gerador_de_codigo` | Conserta a 25, que deixou `proximo_codigo_cliente()` ao alcance de `anon` |
+| 31 | `31_conserta_gatilho_de_codigo_quebrado_pela_30` | A 30 quebrou todo insert em `clientes`; o gatilho vira SECURITY DEFINER |
 
 ## Baixar os arquivos de migration para cá
 
@@ -104,6 +105,20 @@ coluna foram resolvidos assim:
 `authenticated`. É o desenho, não descuido: são justamente as funções que
 precisam ler dado que o usuário não alcança diretamente, e cada uma checa a
 permissão internamente antes de devolver qualquer coisa.
+
+### Revogar EXECUTE quebra gatilho
+
+Um gatilho **SECURITY INVOKER** roda com os privilégios de quem escreve na
+tabela, e as funções que ele chama passam por GRANT normalmente. Revogar
+EXECUTE de `authenticated` numa função chamada por gatilho derruba a
+operação inteira — foi o que a 30 fez com `clientes`, e ficou assim uma
+semana.
+
+**Testar isso a partir daqui não funciona.** O MCP roda como `postgres`,
+dono das funções, e dono ignora GRANT: o teste passa mesmo quebrado. Para
+valer, o teste precisa de `set local role authenticated` **e** de
+`request.jwt.claims` com um `sub` real, senão `auth.uid()` é nulo e o RLS
+recusa por outro motivo, mascarando o primeiro.
 
 **Executável por `anon`, porém, nunca é intencional.** Ao criar função nova,
 revogar de `public` — não só de `anon`, que herda o EXECUTE que toda função

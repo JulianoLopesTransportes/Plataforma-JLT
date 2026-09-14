@@ -52,6 +52,15 @@ const SUBTITULO_DOCUMENTO: Record<TipoDocumento, string> = {
   ordemServico: 'Ordem de serviço da equipe',
 };
 
+/*
+ * Valor do seletor que significa "não é cliente cadastrado".
+ *
+ * Um valor sentinela, e não string vazia: vazio já quer dizer "ainda não
+ * escolhi", e os dois estados precisam ser distinguíveis — um mostra
+ * "selecione um cliente", o outro abre o campo de nome.
+ */
+const AVULSO = '__avulso__';
+
 const CATALOGO = catalogoItens as Record<string, string[]>;
 
 /** Ambiente onde entram os itens digitados à mão, fora do catálogo. */
@@ -69,6 +78,15 @@ export default function PaginaDocumentos() {
   const [clientes, setClientes] = useState<Cliente[]>([]);
   const [tipo, setTipo] = useState<TipoDocumento>('orcamento');
   const [clienteId, setClienteId] = useState('');
+
+  /*
+   * Nome digitado à mão, para documento de quem não está cadastrado.
+   *
+   * O resto dos campos — CPF, telefone, endereços — sai como linha em
+   * branco no papel: os geradores já fazem isso por `ou()` quando o dado
+   * falta. Quem atende na rua preenche à caneta.
+   */
+  const [nomeAvulso, setNomeAvulso] = useState('');
 
   // --- Campos comuns e por documento ---
   const [valor, setValor] = useState('');
@@ -126,6 +144,8 @@ export default function PaginaDocumentos() {
     }
   }, [clienteSelecionado]);
 
+  const avulso = clienteId === AVULSO;
+
   const dadosCliente: DadosCliente | null = clienteSelecionado
     ? {
         nome: clienteSelecionado.nome,
@@ -136,7 +156,20 @@ export default function PaginaDocumentos() {
         enderecoColeta: clienteSelecionado.enderecoColeta,
         enderecoEntrega: clienteSelecionado.enderecoEntrega,
       }
-    : null;
+    : avulso && nomeAvulso.trim()
+      ? {
+          // Só o nome. Todo o resto vazio, e os geradores transformam
+          // vazio em linha preenchível — inclusive o tipo de pessoa, que
+          // não pode ser adivinhado dentro de um contrato.
+          nome: nomeAvulso.trim(),
+          tipoPessoa: null,
+          documento: '',
+          telefone: '',
+          email: '',
+          enderecoColeta: '',
+          enderecoEntrega: '',
+        }
+      : null;
 
   const totalItens = useMemo(
     () => Object.values(itensInventario).reduce((s, q) => s + q, 0),
@@ -328,11 +361,29 @@ export default function PaginaDocumentos() {
               <option value="">Selecione um cliente…</option>
               {clientes.map((c) => (
                 <option key={c.id} value={c.id}>
-                  {c.nome}
+                  {c.codigo} — {c.nome}
                 </option>
               ))}
+              <option value={AVULSO}>— Avulso, sem cadastro —</option>
             </select>
           </CampoFiltro>
+
+          {avulso && (
+            <div className="field" style={{ marginTop: 16 }}>
+              <label htmlFor="nomeAvulso">Nome de quem recebe o documento</label>
+              <input
+                id="nomeAvulso"
+                value={nomeAvulso}
+                onChange={(e) => setNomeAvulso(e.target.value)}
+                placeholder="Maria da Silva Rezende"
+              />
+              <p className="field-hint">
+                CPF/CNPJ, telefone e endereços saem como linhas em branco, para
+                preencher à mão no papel. Nada é gravado: documento avulso não
+                cria cliente.
+              </p>
+            </div>
+          )}
 
           {usaValor && (
             <div className="field" style={{ marginTop: 16 }}>
@@ -711,8 +762,10 @@ export default function PaginaDocumentos() {
           {!dadosCliente ? (
             <div className="card sem-impressao">
               <div className="estado-vazio">
-                <strong>Selecione um cliente</strong>
-                O documento é montado com os dados do cliente escolhido ao lado.
+                <strong>{avulso ? 'Informe o nome' : 'Selecione um cliente'}</strong>
+                {avulso
+                  ? 'O documento sai com o nome informado e linhas em branco no resto.'
+                  : 'Escolha um cliente cadastrado, ou "Avulso" para gerar sem cadastro.'}
               </div>
             </div>
           ) : (

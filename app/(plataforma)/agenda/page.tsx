@@ -349,7 +349,10 @@ export default function PaginaAgenda() {
     ? gerarOrdemServico({
         cliente: {
           nome: clienteDaOrdem?.nome ?? ordemServico.titulo,
-          tipoPessoa: clienteDaOrdem?.tipo ?? 'PF',
+          // null, e não 'PF': sem cliente cadastrado ninguém sabe se é
+          // pessoa física. A Ordem de Serviço não usa este campo hoje, mas
+          // um padrão falso guardado aqui vazaria no dia em que usar.
+          tipoPessoa: clienteDaOrdem?.tipo ?? null,
           documento: clienteDaOrdem?.documento ?? '',
           telefone: clienteDaOrdem?.telefone ?? '',
           email: clienteDaOrdem?.email ?? '',

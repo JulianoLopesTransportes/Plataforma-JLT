@@ -118,7 +118,15 @@ export type BlocoDocumento =
 /** Dados do cliente usados na qualificação das partes. */
 export type DadosCliente = {
   nome: string;
-  tipoPessoa: 'PF' | 'PJ';
+  /**
+   * null quando o documento é avulso e ninguém informou.
+   *
+   * Importa porque a cláusula 1 do contrato imprime "pessoa física" ou
+   * "pessoa jurídica" em TEXTO CORRIDO. Assumir PF faria um contrato de
+   * empresa afirmar algo falso — e, ao contrário de um CPF em branco,
+   * isso não se corrige à mão no papel. Nulo vira linha preenchível.
+   */
+  tipoPessoa: 'PF' | 'PJ' | null;
   documento: string;
   telefone: string;
   email: string;
@@ -173,7 +181,8 @@ export function calcularParcelas(valorTotal: number | null): Parcelas {
 
 /** Cláusula 1 — qualificação das partes. Igual em contrato e guarda-móveis. */
 function blocoPartes(c: DadosCliente, variante: 'contrato' | 'guarda'): BlocoDocumento[] {
-  const pessoa = c.tipoPessoa === 'PF' ? 'pessoa física' : 'pessoa jurídica';
+  const pessoa =
+    c.tipoPessoa === 'PF' ? 'pessoa física' : c.tipoPessoa === 'PJ' ? 'pessoa jurídica' : LINHA;
 
   return [
     { tipo: 'secao', titulo: 'Cláusula 1 – Identificação das Partes' },

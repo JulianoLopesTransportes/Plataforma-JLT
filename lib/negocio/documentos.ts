@@ -590,16 +590,28 @@ export function gerarContrato(e: EntradaContrato): BlocoDocumento[] {
 
     ...blocoForcaMaior(10, 'contrato'),
 
-    { tipo: 'secao', titulo: 'Cláusula 11 – Rescisão' },
+    { tipo: 'secao', titulo: 'Cláusula 11 – Rescisão Contratual' },
     {
       tipo: 'paragrafo',
-      partes: [{ b: '11.1.' }, ' O contrato poderá ser rescindido mediante comunicação por escrito.'],
+      partes: [
+        { b: '11.1.' },
+        ' O contrato poderá ser rescindido por qualquer das partes mediante aviso prévio por escrito.',
+      ],
     },
     {
       tipo: 'paragrafo',
       partes: [
         { b: '11.2.' },
-        ' Havendo cancelamento após o início da execução, poderão ser cobrados os custos já incorridos.',
+        ' Em caso de cancelamento por parte do CONTRATANTE após a assinatura do contrato, o valor pago a título de sinal terá a seguinte destinação:',
+        '\na) Cancelamentos realizados com antecedência superior a 72 horas da data agendada para o serviço: será retido 70% do valor pago a título de sinal, a título de compensação pela reserva de agenda, equipe e logística, sendo o restante devolvido ao CONTRATANTE;',
+        '\nb) Cancelamentos realizados com antecedência inferior a 72 horas da data agendada para o serviço: o valor do sinal não será devolvido.',
+      ],
+    },
+    {
+      tipo: 'paragrafo',
+      partes: [
+        { b: '11.3.' },
+        ' Caso o cancelamento ocorra após o início da execução do serviço, o CONTRATANTE deverá arcar com os valores proporcionais aos serviços já realizados, bem como eventuais custos operacionais já incorridos.',
       ],
     },
 

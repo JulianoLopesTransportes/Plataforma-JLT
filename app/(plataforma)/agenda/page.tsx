@@ -113,6 +113,9 @@ const COMPROMISSO_VAZIO: Omit<Compromisso, 'id'> = {
   enderecoEntrega: '',
   caracteristicas: [],
   observacoes: '',
+  // Criado à mão aqui na agenda. Só o que nasce do cliente fechar é
+  // automático, e só esse se move junto com a data prevista.
+  automatico: false,
 };
 
 const DIAS_SEMANA = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
@@ -305,8 +308,28 @@ export default function PaginaAgenda() {
 
     setSalvando(true);
     try {
-      if (editandoId) await api.agenda.atualizar(editandoId, formulario);
-      else await api.agenda.criar(formulario);
+      if (editandoId) {
+        await api.agenda.atualizar(editandoId, formulario);
+
+        /*
+         * O compromisso automático é o cadastro do cliente visto de outro
+         * ângulo, então mover a data aqui move a data prevista lá.
+         *
+         * Só o automático: um compromisso criado à mão nesta tela não
+         * representa o cadastro de ninguém, e alterar cliente a partir
+         * dele seria efeito colateral invisível.
+         */
+        const antes = compromissos.find((c) => c.id === editandoId);
+        if (antes?.automatico && antes.clienteId && formulario.data !== antes.data) {
+          await api.clientes.atualizar(antes.clienteId, { dataPrevista: formulario.data });
+          mostrar(
+            `Data prevista de ${nomeCliente(antes.clienteId) ?? 'o cliente'} atualizada no cadastro.`,
+            'sucesso',
+          );
+        }
+      } else {
+        await api.agenda.criar(formulario);
+      }
       await recarregar();
       setFormulario(null);
       setEditandoId(null);

@@ -40,7 +40,7 @@
     "documento": "12.345.678/0001-90",
     "telefone": "(31) 98888-4321",
     "email": "contato@vettaengenharia.com.br",
-    "status": "Concluído",
+    "status": "Finalizada",
     "origem": "Indicação",
     "origemDetalhe": "Indicado por Construtora Âncora",
     "enderecoColeta": "Av. Raja Gabaglia, 1300, Luxemburgo, Belo Horizonte - MG",
@@ -61,7 +61,7 @@
         "id": "h2",
         "em": "2026-07-16T18:20:00",
         "autor": "Marcos Vieira",
-        "descricao": "Status alterado de Em andamento para Concluído."
+        "descricao": "Status alterado de Em andamento para Finalizada."
       }
     ],
     "itens": "18 estações de trabalho\n4 armários de aço\n2 servidores de rack\nMesa de reunião para 10\n30 cadeiras de escritório",
@@ -130,7 +130,7 @@
     "documento": "333.444.555-66",
     "telefone": "(31) 96666-2211",
     "email": "fernanda.coelho@email.com",
-    "status": "Concluído",
+    "status": "Finalizada",
     "origem": "Instagram",
     "origemDetalhe": "",
     "enderecoColeta": "Rua Grão Mogol, 780, Sion, Belo Horizonte - MG",
@@ -151,7 +151,7 @@
         "id": "h2",
         "em": "2026-07-01T10:00:00",
         "autor": "Marcos Vieira",
-        "descricao": "Status alterado de Em andamento para Concluído."
+        "descricao": "Status alterado de Em andamento para Finalizada."
       }
     ],
     "itens": "",
@@ -276,7 +276,7 @@
     "documento": "56.789.012/0001-34",
     "telefone": "(31) 3666-4455",
     "email": "suprimentos@construtorancora.com.br",
-    "status": "Concluído",
+    "status": "Finalizada",
     "origem": "Indicação",
     "origemDetalhe": "",
     "enderecoColeta": "Rua Herculano de Freitas, 800, Barro Preto, Belo Horizonte - MG",
@@ -297,7 +297,7 @@
         "id": "h2",
         "em": "2026-05-21T16:30:00",
         "autor": "Marcos Vieira",
-        "descricao": "Status alterado de Em andamento para Concluído."
+        "descricao": "Status alterado de Em andamento para Finalizada."
       }
     ],
     "itens": "",

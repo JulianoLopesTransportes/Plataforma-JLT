@@ -1,0 +1,12 @@
+-- O funil do cliente passa a ter quatro etapas, e esta é a primeira de
+-- duas migrations que o reorganizam:
+--
+--   Novo → Em andamento → Fechada → Finalizada
+--
+-- "Fechada" é o ponto em que o serviço está contratado, e é ela que
+-- alimenta a agenda. "Finalizada" é o serviço já executado.
+--
+-- Renomear, e não criar status novo e migrar: renomear preserva as linhas
+-- que já estão no valor antigo — 3 clientes — sem precisar tocar em
+-- nenhuma delas.
+alter type status_cliente rename value 'Concluído' to 'Finalizada';

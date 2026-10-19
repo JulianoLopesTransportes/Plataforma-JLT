@@ -234,6 +234,18 @@ Serviço — é por ele que se acha o cadastro quando alguém liga com o papel n
 mão. A numeração reinicia a cada ano, e buracos na sequência são normais: o
 contador nunca reaproveita número, que é o que garante nunca repetir.
 
+**O funil do cliente alimenta a agenda.** As etapas são Novo → Em andamento
+→ Fechada → Finalizada, e é **Fechada** que põe o cliente no calendário: um
+compromisso de coleta, dia inteiro, com o nome e os endereços do cadastro.
+Veículo e motorista ficam para depois.
+
+A data anda nos dois sentidos — mudou no cadastro, o compromisso se move;
+moveu o compromisso, a data prevista acompanha. Vale só para o compromisso
+automático, que é marcado como tal; os criados à mão na agenda não mexem em
+cliente nenhum. Sair de "Fechada" pergunta antes de tirar da agenda, e um
+compromisso apagado só volta se a data prevista mudar — editar telefone ou
+endereço não ressuscita.
+
 Na **agenda**, escolher o cliente traz endereços e título do cadastro,
 preenchendo só o que estiver vazio ou o que ainda for do cliente anterior —
 o que você digitou à mão sobrevive à troca. Os itens do cliente aparecem ali

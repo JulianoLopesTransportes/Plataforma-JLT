@@ -4,7 +4,7 @@
  * CLIENTES — migrado de referencia/01-cadastro-clientes_5.html
  *
  * Lógica preservada: máscaras de CPF/CNPJ/telefone, classificação de porte
- * pelo volume, funil de status Novo → Em andamento → Concluído, anexos e
+ * pelo volume, funil de status Novo → Em andamento → Fechada → Finalizada, anexos e
  * histórico de alterações.
  *
  * Persistência: quando o Supabase está configurado, criar, alterar status e
@@ -49,6 +49,7 @@ import {
 import {
   STATUS_CLIENTE,
   ORIGENS_CLIENTE,
+  STATUS_QUE_AGENDA,
   type Cliente,
   type StatusCliente,
   type Orcamento,
@@ -197,6 +198,50 @@ export default function PaginaClientes() {
     };
   }
 
+  /**
+   * Põe o cliente na agenda, ou tira — conforme o status para onde ele vai.
+   *
+   * Entrar em "Fechada" cria o compromisso. Sair dela PERGUNTA antes de
+   * remover: o serviço pode ter voltado à negociação sem que a data tenha
+   * deixado de valer, e sumir da agenda sem avisar faria a equipe perder
+   * de vista um compromisso que ainda contava.
+   *
+   * Recebe o cliente como ele estava ANTES da mudança — é de lá que sai a
+   * resposta a "ele estava fechado?".
+   */
+  async function ajustarAgenda(antes: Cliente, novoStatus: StatusCliente) {
+    if (!usandoBanco()) return;
+
+    if (novoStatus === STATUS_QUE_AGENDA) {
+      if (!antes.dataPrevista) {
+        mostrar(
+          `${antes.nome} fechou, mas está sem data prevista — informe a data para ele entrar na agenda.`,
+          'erro',
+        );
+        return;
+      }
+      await api.agenda.agendarCliente(antes);
+      mostrar(
+        `${antes.nome} entrou na agenda em ${formatarData(antes.dataPrevista)}.`,
+        'sucesso',
+      );
+      return;
+    }
+
+    if (antes.status !== STATUS_QUE_AGENDA) return;
+    if (!(await api.agenda.temAgendamento(antes.id))) return;
+
+    const tirar = confirm(
+      `${antes.nome} está saindo de "${STATUS_QUE_AGENDA}".\n\n` +
+        'Tirar o compromisso dele da agenda?',
+    );
+
+    if (tirar) {
+      await api.agenda.desagendarCliente(antes.id);
+      mostrar(`${antes.nome} saiu da agenda.`, 'sucesso');
+    }
+  }
+
   async function avancarStatus(cliente: Cliente) {
     const novo = proximoStatus(cliente.status);
     const descricao = `Status alterado de ${cliente.status} para ${novo}.`;
@@ -205,6 +250,7 @@ export default function PaginaClientes() {
       if (usandoBanco()) {
         await api.clientes.atualizar(cliente.id, { status: novo });
         await api.clientes.registrarHistorico(cliente.id, usuario.nome, descricao);
+        await ajustarAgenda(cliente, novo);
         await recarregar();
       } else {
         // Sem banco, a mudança vive só nesta tela e some no refresh.
@@ -319,9 +365,32 @@ export default function PaginaClientes() {
 
     try {
       if (editandoId) {
+        const anterior = clientes.find((c) => c.id === editandoId);
+
         await api.clientes.atualizar(editandoId, formulario);
         await api.clientes.registrarHistorico(editandoId, usuario.nome, 'Cadastro atualizado.');
         await subirArquivoItens(editandoId);
+
+        /*
+         * Mexer na DATA de um cliente fechado reagenda. Mexer em telefone,
+         * endereço ou qualquer outro campo, não.
+         *
+         * Essa distinção é o que faz um compromisso apagado continuar
+         * apagado: só o gesto de mudar a data — que é claramente
+         * "reagendar" — traz ele de volta.
+         */
+        if (
+          formulario.status === STATUS_QUE_AGENDA &&
+          formulario.dataPrevista &&
+          formulario.dataPrevista !== anterior?.dataPrevista
+        ) {
+          await api.agenda.agendarCliente({ ...(anterior as Cliente), ...formulario, id: editandoId });
+          mostrar(
+            `Agenda atualizada para ${formatarData(formulario.dataPrevista)}.`,
+            'sucesso',
+          );
+        }
+
         await recarregar();
       } else if (usandoBanco()) {
         const criado = await api.clientes.criar(formulario);
@@ -379,6 +448,7 @@ export default function PaginaClientes() {
       if (usandoBanco()) {
         await api.clientes.atualizar(cliente.id, { status: novo });
         await api.clientes.registrarHistorico(cliente.id, usuario.nome, descricao);
+        await ajustarAgenda(cliente, novo);
         await recarregar();
       } else {
         const atualizado = registrarHistorico({ ...cliente, status: novo }, descricao);
@@ -494,8 +564,8 @@ export default function PaginaClientes() {
           detalhe="Mudança contratada ou em negociação"
         />
         <CardMetrica
-          rotulo="Concluídos"
-          valor={String(porStatus('Concluído'))}
+          rotulo="Finalizados"
+          valor={String(porStatus('Finalizada'))}
           detalhe="Atendimento finalizado"
           tom="positivo"
         />

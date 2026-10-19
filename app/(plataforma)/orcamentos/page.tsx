@@ -30,7 +30,17 @@ export default function PaginaOrcamentos() {
   const [volume, setVolume] = useState('');
   const [distancia, setDistancia] = useState('');
   const [fator, setFator] = useState(5);
-  const [quantidades, setQuantidades] = useState<Record<string, number>>({});
+  /*
+      * Quantidade como TEXTO, não número.
+      *
+      * Guardando número, marcar um serviço escrevia 1 no campo e era
+      * preciso apagar esse 1 antes de digitar. Guardando o texto cru, o
+      * campo nasce vazio e aceita o valor direto.
+      *
+      * Vazio continua valendo 1 no cálculo — mesma regra que
+      * preco_do_orcamento() já aplica no banco com coalesce(nullif(...)).
+      */
+     const [quantidades, setQuantidades] = useState<Record<string, string>>({});
   const [resultado, setResultado] = useState<ResultadoOrcamento | null>(null);
 
   /*
@@ -103,9 +113,9 @@ export default function PaginaOrcamentos() {
         margemPercentual: resultado.margemPercentual,
         valorFinal: resultado.precoRedondo,
         observacoes: '',
-        adicionais: Object.entries(quantidades).map(([adicionalId, quantidade]) => ({
+        adicionais: Object.keys(quantidades).map((adicionalId) => ({
           adicionalId,
-          quantidade,
+          quantidade: quantidadeDe(adicionalId),
         })),
       });
 
@@ -124,13 +134,21 @@ export default function PaginaOrcamentos() {
     setQuantidades((atual) => {
       const copia = { ...atual };
       if (id in copia) delete copia[id];
-      else copia[id] = 1;
+      // Vazio, e não '1': o campo abre pronto para receber o número.
+      else copia[id] = '';
       return copia;
     });
   }
 
-  function mudarQuantidade(id: string, valor: number) {
-    setQuantidades((atual) => ({ ...atual, [id]: Math.max(1, valor) }));
+  function mudarQuantidade(id: string, texto: string) {
+    // Só dígitos. O campo é number, mas colar texto ou usar o teclado do
+    // celular ainda entrega coisa que não é número.
+    setQuantidades((atual) => ({ ...atual, [id]: texto.replace(/[^0-9]/g, '') }));
+  }
+
+  /** Quantidade para o cálculo: vazio e zero valem 1. */
+  function quantidadeDe(id: string): number {
+    return Number(quantidades[id]) || 1;
   }
 
   async function calcular() {
@@ -155,7 +173,10 @@ export default function PaginaOrcamentos() {
           volumeM3: volumeNum,
           distanciaKm: Number(distancia) || 0,
           fator,
-          adicionais: Object.entries(quantidades).map(([id, quantidade]) => ({ id, quantidade })),
+          adicionais: Object.keys(quantidades).map((id) => ({
+            id,
+            quantidade: quantidadeDe(id),
+          })),
         });
 
         setPrecoSemCusto(preco);
@@ -176,9 +197,9 @@ export default function PaginaOrcamentos() {
       margemPercentual: margem,
       faixas: parametros.faixasVolume,
       adicionais: parametros.adicionais,
-      adicionaisSelecionados: Object.entries(quantidades).map(([id, quantidade]) => ({
+      adicionaisSelecionados: Object.keys(quantidades).map((id) => ({
         id,
-        quantidade,
+        quantidade: quantidadeDe(id),
       })),
     });
 
@@ -306,7 +327,8 @@ export default function PaginaOrcamentos() {
                         min="1"
                         step="1"
                         value={quantidades[a.id]}
-                        onChange={(e) => mudarQuantidade(a.id, Number(e.target.value))}
+                        onChange={(e) => mudarQuantidade(a.id, e.target.value)}
+                        placeholder="1"
                         aria-label={`Quantidade de ${a.nome}`}
                       />
                       <span>{a.unidade || 'un'}</span>

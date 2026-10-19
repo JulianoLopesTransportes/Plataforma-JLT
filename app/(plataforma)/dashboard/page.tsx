@@ -84,7 +84,7 @@ export default function PaginaDashboard() {
   const hoje = hojeISO();
 
   /* --- Números derivados ------------------------------------------------ */
-  const clientesAtivos = dados.clientes.filter((c) => c.status !== 'Concluído').length;
+  const clientesAtivos = dados.clientes.filter((c) => c.status !== 'Finalizada').length;
   const veiculosDisponiveis = dados.veiculos.filter((v) => v.status === 'Disponível').length;
   const rotasEmAndamento = dados.rotas.filter(
     (r) => r.status === 'em_transito' || r.status === 'carregando',

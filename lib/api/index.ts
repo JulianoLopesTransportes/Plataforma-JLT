@@ -510,11 +510,75 @@ const agenda = {
     const { error } = await supabase().from('compromissos').delete().eq('id', id);
     if (error) throw new Error(traduzir(error));
   },
+
+  /**
+   * Põe na agenda o cliente que fechou, ou move o que já está lá.
+   *
+   * Chamada quando o cliente ENTRA em "Fechada" e quando a data prevista
+   * muda estando ele já fechado. Em nenhuma outra situação — é isso que
+   * faz um compromisso apagado continuar apagado quando se edita o
+   * telefone do cliente, e o que faz mexer na data ser o gesto de
+   * reagendar.
+   *
+   * Um upsert, não um "procura e decide": o índice único parcial em
+   * (cliente_id) where automatico garante um só por cliente, e deixa o
+   * banco resolver a corrida entre duas abas abertas.
+   */
+  async agendarCliente(cliente: Cliente): Promise<void> {
+    if (!usandoBanco()) return;
+
+    /*
+     * Passa pela função agendar_cliente no Postgres, e não pelo upsert do
+     * PostgREST. O índice que garante um automático por cliente é PARCIAL
+     * — (cliente_id) where automatico — e a inferência do ON CONFLICT só
+     * casa com índice parcial se a cláusula WHERE for repetida. O
+     * PostgREST monta só `on conflict (cliente_id)`, sem o WHERE, e o
+     * banco recusa com "there is no unique or exclusion constraint
+     * matching the ON CONFLICT specification".
+     *
+     * A função também lê o cliente lá dentro: a data e os endereços que
+     * vão para a agenda são os GRAVADOS, não os que esta tela imagina.
+     * Por isso só o id viaja.
+     */
+    const { error } = await supabase().rpc('agendar_cliente', {
+      p_cliente_id: cliente.id,
+    });
+
+    if (error) throw new Error(traduzir(error));
+  },
+
+  /** Tira da agenda o compromisso automático de um cliente, se houver. */
+  async desagendarCliente(clienteId: string): Promise<void> {
+    if (!usandoBanco()) return;
+
+    const { error } = await supabase()
+      .from('compromissos')
+      .delete()
+      .eq('cliente_id', clienteId)
+      .eq('automatico', true);
+
+    if (error) throw new Error(traduzir(error));
+  },
+
+  /** O cliente tem compromisso automático na agenda? */
+  async temAgendamento(clienteId: string): Promise<boolean> {
+    if (!usandoBanco()) return false;
+
+    const { data } = await supabase()
+      .from('compromissos')
+      .select('id')
+      .eq('cliente_id', clienteId)
+      .eq('automatico', true)
+      .maybeSingle();
+
+    return Boolean(data);
+  },
 };
 
 /** Converte o compromisso do formato do front para o do banco. */
 function paraLinhaCompromisso(c: Partial<Compromisso>): Record<string, unknown> {
   const linha: Record<string, unknown> = {};
+  if (c.automatico !== undefined) linha.automatico = c.automatico;
   if (c.tipo !== undefined) linha.tipo = c.tipo;
   if (c.titulo !== undefined) linha.titulo = c.titulo;
   if (c.data !== undefined) linha.data = c.data;

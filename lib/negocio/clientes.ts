@@ -28,7 +28,7 @@ export function descreverVolume(volumeM3: number | null): string {
 
 /**
  * Próximo status no funil. O último status não avança — o funil termina
- * em Concluído e não volta ao início sozinho.
+ * em Finalizada e não volta ao início sozinho.
  */
 export function proximoStatus(atual: StatusCliente): StatusCliente {
   const indice = STATUS_CLIENTE.indexOf(atual);
@@ -45,7 +45,10 @@ export function tomDoStatus(status: StatusCliente): TomBadge {
   const mapa: Record<StatusCliente, TomBadge> = {
     Novo: 'info',
     'Em andamento': 'warning',
-    Concluído: 'success',
+    // Fechada em dourado: é o momento que importa no funil — o serviço
+    // foi contratado e entrou na agenda. Finalizada em verde fecha o ciclo.
+    Fechada: 'danger',
+    Finalizada: 'success',
   };
   return mapa[status];
 }

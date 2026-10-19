@@ -155,6 +155,7 @@ export function paraCompromisso(linha: any): Compromisso {
     enderecoEntrega: txt(linha.endereco_entrega),
     caracteristicas: Array.isArray(linha.caracteristicas) ? linha.caracteristicas : [],
     observacoes: txt(linha.observacoes),
+    automatico: Boolean(linha.automatico),
   };
 }
 

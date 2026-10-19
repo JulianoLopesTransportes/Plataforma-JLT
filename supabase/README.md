@@ -39,6 +39,11 @@ O schema está **aplicado no projeto remoto**. As migrations abaixo já rodaram:
 | 34 | `34_visao_de_adicionais_respeita_ativo` | Acerto da 33: a visão expunha adicional desativado |
 | 35 | `35_preco_aceita_fator_e_deriva_a_margem` | `preco_do_orcamento()` — o preço calculado no banco, sem a margem sair de lá |
 | 36 | `36_comercial_passa_a_ver_custos` | O Comercial passa a ver valores; editar parâmetro continua restrito |
+| 37 | `37_status_concluido_vira_finalizada` | Renomeia o status final; o funil vai a quatro etapas |
+| 38 | `38_status_cliente_ganha_fechada` | Acrescenta `Fechada`, o status que alimenta a agenda |
+| 39 | `39_compromisso_automatico_do_cliente` | Coluna `automatico` + índice parcial: um por cliente |
+| 40 | `40_agendar_cliente` | `agendar_cliente()` — o upsert do PostgREST não casa com índice parcial |
+| 41 | `41_apagar_cliente_leva_o_automatico` | Apagar o cliente remove o automático; o manual sobrevive |
 
 ## Baixar os arquivos de migration para cá
 

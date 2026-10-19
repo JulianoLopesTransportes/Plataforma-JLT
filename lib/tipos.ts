@@ -16,9 +16,19 @@
 
 export type TipoPessoa = 'PF' | 'PJ';
 
-/** Funil comercial do cliente. A ordem do array é a ordem do funil. */
-export const STATUS_CLIENTE = ['Novo', 'Em andamento', 'Concluído'] as const;
+/**
+ * Funil comercial do cliente. A ordem do array É a ordem do funil, e
+ * espelha a ordem do enum `status_cliente` no Postgres.
+ *
+ * "Fechada" é o ponto em que o serviço está contratado — é ela que
+ * alimenta a agenda. "Finalizada" é o serviço já executado.
+ */
+export const STATUS_CLIENTE = ['Novo', 'Em andamento', 'Fechada', 'Finalizada'] as const;
+
 export type StatusCliente = (typeof STATUS_CLIENTE)[number];
+
+/** O status a partir do qual o cliente aparece na agenda. */
+export const STATUS_QUE_AGENDA: StatusCliente = 'Fechada';
 
 /** Como o cliente chegou até a empresa. */
 export const ORIGENS_CLIENTE = [
@@ -195,6 +205,14 @@ export type Compromisso = {
   /** Serviços contratados: embalagem, desmontagem, içamento... */
   caracteristicas: string[];
   observacoes: string;
+  /**
+   * Nasceu do cliente entrar em "Fechada".
+   *
+   * É o único compromisso que a data prevista do cliente move, e o único
+   * que move a data prevista de volta. Os criados à mão na agenda não
+   * mexem em cliente nenhum.
+   */
+  automatico: boolean;
 };
 
 /* ==========================================================================

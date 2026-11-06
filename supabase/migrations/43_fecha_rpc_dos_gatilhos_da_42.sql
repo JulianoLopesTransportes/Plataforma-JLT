@@ -1,0 +1,29 @@
+-- Tira os dois gatilhos da 42 do alcance de /rest/v1/rpc.
+--
+-- Criar função devolve EXECUTE para PUBLIC, então as duas nasceram
+-- chamáveis por `anon` e por `authenticated` pela API REST. Chamadas
+-- fora de um gatilho elas falham na hora ("trigger functions can only be
+-- called as triggers"), então a superfície é estreita — mas função
+-- SECURITY DEFINER pendurada numa rota pública é dívida sem motivo.
+--
+-- ISTO FOI TESTADO ANTES DE ENTRAR, e não por raciocínio.
+--
+-- A migration 30 fez este mesmo gesto e derrubou TODO insert em clientes
+-- por uma semana. Mas o que a 30 quebrou foi a chamada INTERNA que uma
+-- função SECURITY INVOKER fazia a outra função — essa sim passa por GRANT.
+-- A função de gatilho em si é invocada pela máquina de gatilhos, que
+-- checa EXECUTE na criação do trigger, não a cada disparo.
+--
+-- A sondagem rodou com o revoke aplicado, em transação desfeita no fim, e
+-- no papel `authenticated` com o `sub` real — como `postgres` o teste não
+-- prova nada, porque dono ignora GRANT. Três casos:
+--
+--   INSERT de cliente                  → passou, e nasceu com o dono certo
+--   UPDATE do próprio responsável      → passou
+--   UPDATE roubando de outra pessoa    → 42501, e o valor NÃO mudou
+--
+-- O terceiro é o que importa: ele prova que o gatilho continuou
+-- DISPARANDO. Os dois primeiros passariam igual se ele tivesse deixado de
+-- rodar em silêncio.
+revoke execute on function public.preenche_responsavel_cliente() from public, anon, authenticated;
+revoke execute on function public.protege_responsavel_do_cliente() from public, anon, authenticated;

@@ -19,9 +19,12 @@ create index if not exists clientes_responsavel_idx on clientes(responsavel_id);
 
 -- 2. Cliente novo nasce com dono: quem cadastrou.
 --
--- SECURITY DEFINER porque lê `perfis`, que tem RLS. Como INVOKER a
--- consulta voltaria vazia para o próprio usuário em alguns caminhos e o
--- cliente nasceria órfão sem ninguém perceber.
+-- SECURITY DEFINER não é obrigatório hoje — a policy `perfis_leitura` é
+-- `using (true)`, então como INVOKER a consulta funcionaria. É DEFINER
+-- para que o caminho de INSERT em clientes não dependa do RLS de OUTRA
+-- tabela: apertar `perfis_leitura` para "só a própria linha" um dia é
+-- hardening razoável, e não deve ter como efeito colateral todo cliente
+-- novo nascer órfão.
 --
 -- A consulta é o que também protege o INSERT: se por algum motivo não
 -- houver perfil ativo para o auth.uid() da requisição, a coluna fica NULA
@@ -59,10 +62,11 @@ create trigger clientes_responsavel_padrao
 --   - dono INATIVO: funcionário que saiu da empresa não tranca a carteira
 --     dele até alguém lembrar de reatribuir à mão.
 --
--- SECURITY DEFINER pelo mesmo motivo do gatilho acima: precisa ler o
--- `ativo` de OUTRA pessoa em `perfis`. Como INVOKER o RLS devolveria nada,
--- `dono_ativo` viria NULL e a trava liberaria a troca achando que o dono
--- está inativo — um falso negativo que ninguém veria.
+-- SECURITY DEFINER pelo mesmo motivo do gatilho acima, e aqui o risco é
+-- maior: a trava lê o `ativo` de OUTRA pessoa. Se `perfis_leitura` for
+-- apertada um dia, como INVOKER a consulta voltaria vazia, `dono_ativo`
+-- viria NULL e a trava LIBERARIA a troca achando que o dono está inativo.
+-- Falha aberta e silenciosa — exatamente o que uma trava não pode fazer.
 create or replace function public.protege_responsavel_do_cliente()
 returns trigger
 language plpgsql
@@ -107,17 +111,20 @@ create trigger clientes_protege_responsavel
 
 -- 4. A lista de nomes que o seletor precisa.
 --
--- `perfis` tem RLS de linha própria: ninguém enxerga o colega, então um
--- <select> de responsáveis viria com uma opção só. Esta view é o recorte
--- mínimo que resolve isso — id, nome, cargo e ativo.
+-- Esta view NÃO existe para contornar RLS: a policy `perfis_leitura` é
+-- `using (true)`, e qualquer autenticado já lê `perfis` inteira. Ela existe
+-- para RECORTAR COLUNA, que é o que o RLS não faz.
 --
--- E-mail e NÍVEL ficam de fora de propósito. Nome e cargo de quem senta na
--- sala ao lado não são segredo; quem tem qual nível de acesso é outra
--- conversa, e não é informação que um seletor precisa.
+-- Sem ela, a tela de clientes leria `perfis` direto para montar o seletor e
+-- traria E-MAIL e NÍVEL de toda a equipe junto, porque é o que um
+-- `select *` do PostgREST devolve. Nome e cargo de quem senta na sala ao
+-- lado não são segredo; quem tem qual nível de acesso é outra conversa, e
+-- não é coisa que um <select> precisa saber.
 --
--- security_invoker = off (o padrão, explicitado aqui porque é o ponto
--- inteiro da view): ela roda como dona e atravessa o RLS de `perfis`.
-create or replace view public.equipe with (security_invoker = off) as
+-- security_invoker = ON de propósito: a view respeita o RLS de `perfis` em
+-- vez de atravessá-lo. Como o recorte é só de coluna, não há nada a ganhar
+-- rodando como dona — e uma view que fura RLS é dívida que alguém herda.
+create or replace view public.equipe with (security_invoker = on) as
   select id, nome, cargo, ativo from perfis;
 
 -- A 24 ensinou que recriar objeto devolve o privilégio padrão. Revoga de

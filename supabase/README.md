@@ -45,6 +45,7 @@ O schema está **aplicado no projeto remoto**. As migrations abaixo já rodaram:
 | 40 | `40_agendar_cliente` | `agendar_cliente()` — o upsert do PostgREST não casa com índice parcial |
 | 41 | `41_apagar_cliente_leva_o_automatico` | Apagar o cliente remove o automático; o manual sobrevive |
 | 42 | `42_responsavel_pelo_cliente` | Coluna `responsavel_id`, a view `equipe` e a trava de repasse |
+| 43 | `43_fecha_rpc_dos_gatilhos_da_42` | Revoga EXECUTE dos dois gatilhos da 42 — testado antes, ao contrário da 30 |
 
 ## Baixar os arquivos de migration para cá
 
@@ -134,14 +135,20 @@ Três peças sustentam isso:
    cadastrou. Se não houver perfil ativo para o `auth.uid()`, a coluna fica
    nula e o insert PASSA: preencher às cegas estouraria a FK e derrubaria
    todo cadastro, que foi o estrago da 30.
+
+   No INSERT não há trava de dono: cadastrar um cliente já no nome de um
+   colega é repasse legítimo — não existe dono anterior para ser passado
+   por cima. A trava existe só no UPDATE, que é onde há o que tomar.
 2. **`clientes_protege_responsavel`** — repassar só vale para o responsável
    atual ou para quem tem `pode_editar('usuarios')`. Duas saídas evitam
    cliente travado: sem dono ainda, e dono **inativo** — funcionário que sai
    da empresa não tranca a carteira dele.
-3. **A view `equipe`** — `perfis` tem RLS de linha própria, então um
-   `<select>` de responsáveis viria com uma opção só. A view expõe `id`,
-   `nome`, `cargo` e `ativo`, e nada mais: e-mail e **nível** ficam de fora
-   de propósito.
+3. **A view `equipe`** — recorta COLUNA, que é o que o RLS não faz. A
+   policy `perfis_leitura` é `using (true)`: qualquer autenticado já lê
+   `perfis` inteira, então ler a tabela direto para montar o seletor
+   traria e-mail e **nível** de toda a equipe de carona. A view devolve
+   `id`, `nome`, `cargo` e `ativo`, e nada mais. É `security_invoker = on`
+   — respeita o RLS em vez de atravessá-lo.
 
 A tela espelha a regra de (2) para não oferecer um seletor que vai dar erro,
 mas o "não" que vale é o do Postgres — é ele que responde a quem chamar a
@@ -154,9 +161,12 @@ API REST direto.
 precisam ler dado que o usuário não alcança diretamente, e cada uma checa a
 permissão internamente antes de devolver qualquer coisa.
 
-A view `public.equipe` aparece pelo mesmo motivo: ela roda como dona e
-atravessa o RLS de `perfis` — é o ponto inteiro dela. O recorte de colunas é
-a contenção, e `anon` não a alcança.
+A migration 42 acrescenta duas, `preenche_responsavel_cliente()` e
+`protege_responsavel_do_cliente()`. Nenhuma das duas PRECISA ser DEFINER
+hoje — `perfis_leitura` é `using (true)`. São DEFINER para que o insert em
+`clientes` e a trava de repasse não dependam do RLS de outra tabela: se
+`perfis_leitura` for apertada um dia, a trava não pode passar a liberar a
+troca em silêncio por não conseguir ler o `ativo` do dono.
 
 ### Revogar EXECUTE quebra gatilho
 

@@ -53,6 +53,7 @@ import {
   type Cliente,
   type StatusCliente,
   type Orcamento,
+  type MembroEquipe,
 } from '@/lib/tipos';
 import { formatarBRL } from '@/lib/utils/formato';
 import PainelAnexos from '@/components/modulos/PainelAnexos';
@@ -78,6 +79,13 @@ const CLIENTE_VAZIO: Omit<Cliente, 'id' | 'codigo' | 'criadoEm' | 'anexos' | 'hi
   dataPrevista: '',
   observacoes: '',
   itens: '',
+  /*
+   * Nulo, e não o id de quem está logado: quem preenche é o gatilho
+   * `clientes_responsavel_padrao`, no banco. Chutar aqui faria o cadastro
+   * feito por fora da tela (import, API) nascer órfão enquanto o feito
+   * pela tela nasceria certo — duas regras para a mesma coisa.
+   */
+  responsavelId: null,
 };
 
 export default function PaginaClientes() {
@@ -90,6 +98,10 @@ export default function PaginaClientes() {
   const [busca, setBusca] = useState('');
   const [filtroStatus, setFiltroStatus] = useState('');
   const [filtroOrigem, setFiltroOrigem] = useState('');
+  /** '' = todos · 'eu' = meus clientes · id = de um colega · 'sem' = sem dono. */
+  const [filtroResponsavel, setFiltroResponsavel] = useState('');
+
+  const [equipe, setEquipe] = useState<MembroEquipe[]>([]);
 
   /**
    * O .txt escolhido no formulário, à espera de um id para onde subir.
@@ -110,6 +122,14 @@ export default function PaginaClientes() {
 
   const podeMexer = podeEditar(usuario.nivel, 'clientes');
   const podeExcluir = podeFazer(usuario.nivel, 'excluir');
+  /*
+   * Quem administra pessoas pode repassar o cliente de qualquer um.
+   *
+   * Amarrado em 'usuarios' e não no literal 'admin' porque a matriz é
+   * editável: se o Juliano delegar Usuários a alguém, essa pessoa passa a
+   * poder reatribuir carteira junto — é a mesma autoridade.
+   */
+  const podeAdministrarEquipe = podeEditar(usuario.nivel, 'usuarios');
 
   /*
    * O Operacional tem leitura em Clientes mas nenhum acesso a Orçamentos.
@@ -140,6 +160,25 @@ export default function PaginaClientes() {
   }, [recarregar]);
 
   /*
+   * A equipe carrega uma vez, junto da tela: é um punhado de linhas e
+   * alimenta o seletor, o filtro e o nome que aparece na etiqueta.
+   *
+   * Falhar aqui não derruba a página. A lista vazia só faz a etiqueta
+   * mostrar o id curto em vez do nome — a tela de clientes continua
+   * inteira, que é o que a pessoa veio fazer.
+   */
+  useEffect(() => {
+    let ativo = true;
+    api.equipe
+      .listar()
+      .then((lista) => ativo && setEquipe(lista))
+      .catch(() => ativo && setEquipe([]));
+    return () => {
+      ativo = false;
+    };
+  }, []);
+
+  /*
    * Busca sob demanda, ao abrir a aba — e não junto da lista de clientes.
    * A lista carrega todos os clientes de uma vez; puxar os orçamentos de
    * cada um ali seria uma consulta por cliente para um dado que quase
@@ -162,6 +201,38 @@ export default function PaginaClientes() {
     };
   }, [detalhe, abaDetalhe, podeVerOrcamentos]);
 
+  /* --- Responsável ------------------------------------------------------ */
+
+  const porId = useMemo(() => new Map(equipe.map((m) => [m.id, m])), [equipe]);
+
+  /**
+   * O nome na etiqueta.
+   *
+   * Sem dono devolve null, e quem desenha decide o que mostrar — "Sem
+   * responsável" na ficha, um botão de assumir na lista. Devolver um texto
+   * pronto aqui tiraria essa escolha de quem tem o contexto.
+   */
+  function nomeDoResponsavel(id: string | null): string | null {
+    if (!id) return null;
+    return porId.get(id)?.nome ?? 'Fora da equipe';
+  }
+
+  /**
+   * Espelha a trava `clientes_protege_responsavel` do banco.
+   *
+   * A trava é no banco porque é lá que ela vale contra quem chamar a API
+   * direto. Isto aqui só evita oferecer um seletor que vai dar erro — o
+   * "não" de verdade continua sendo o do Postgres.
+   */
+  function podeTrocarResponsavel(cliente: Cliente): boolean {
+    if (!podeMexer) return false;
+    if (podeAdministrarEquipe) return true;
+    if (!cliente.responsavelId) return true;
+    if (cliente.responsavelId === usuario.id) return true;
+    // Dono que saiu da empresa não tranca a carteira dele.
+    return porId.get(cliente.responsavelId)?.ativo === false;
+  }
+
   /* --- Filtro em memória ------------------------------------------------ */
   const filtrados = useMemo(() => {
     const termo = busca.toLowerCase().trim();
@@ -173,13 +244,22 @@ export default function PaginaClientes() {
         c.documento.includes(termo) ||
         c.email.toLowerCase().includes(termo) ||
         c.telefone.includes(termo);
+      const casaResponsavel =
+        !filtroResponsavel ||
+        (filtroResponsavel === 'eu'
+          ? c.responsavelId === usuario.id
+          : filtroResponsavel === 'sem'
+            ? !c.responsavelId
+            : c.responsavelId === filtroResponsavel);
+
       return (
         casaTermo &&
+        casaResponsavel &&
         (!filtroStatus || c.status === filtroStatus) &&
         (!filtroOrigem || c.origem === filtroOrigem)
       );
     });
-  }, [clientes, busca, filtroStatus, filtroOrigem]);
+  }, [clientes, busca, filtroStatus, filtroOrigem, filtroResponsavel, usuario.id]);
 
   /* --- Ações ------------------------------------------------------------ */
 
@@ -302,7 +382,13 @@ export default function PaginaClientes() {
   function abrirNovo() {
     setEditandoId(null);
     setArquivoItens(null);
-    setFormulario(CLIENTE_VAZIO);
+    /*
+     * Já vem no seu nome: o caso comum é cadastrar o cliente que é seu.
+     * O gatilho no banco faria o mesmo, mas preencher aqui também é o que
+     * mostra SEU nome no seletor antes de salvar — em vez de um campo
+     * vazio que a pessoa não sabe se vai virar o quê.
+     */
+    setFormulario({ ...CLIENTE_VAZIO, responsavelId: usuario.id });
     setFormAberto(true);
   }
 
@@ -312,6 +398,16 @@ export default function PaginaClientes() {
    */
   /** Conta pelo mesmo critério que a Ordem de Serviço usa para imprimir. */
   const quantosItens = linhasDeItens(formulario.itens).length;
+
+  /*
+   * O cliente como está GRAVADO, não como está no formulário: quem decide
+   * se a troca é permitida é o dono atual, e o formulário já pode ter o
+   * valor novo digitado dentro.
+   */
+  const clienteEmEdicao = editandoId
+    ? (clientes.find((c) => c.id === editandoId) ?? null)
+    : null;
+  const responsavelTravado = clienteEmEdicao !== null && !podeTrocarResponsavel(clienteEmEdicao);
 
   async function importarItens(evento: React.ChangeEvent<HTMLInputElement>) {
     const arquivo = evento.target.files?.[0];
@@ -369,6 +465,24 @@ export default function PaginaClientes() {
 
         await api.clientes.atualizar(editandoId, formulario);
         await api.clientes.registrarHistorico(editandoId, usuario.nome, 'Cadastro atualizado.');
+
+        /*
+         * Troca de responsável ganha linha própria no histórico.
+         *
+         * "Cadastro atualizado" não serve aqui: passagem de cliente é
+         * justamente o que alguém vai querer conferir depois — quem
+         * entregou, para quem, e quando.
+         */
+        if (formulario.responsavelId !== (anterior?.responsavelId ?? null)) {
+          await api.clientes.registrarHistorico(
+            editandoId,
+            usuario.nome,
+            `Responsável alterado de ${nomeDoResponsavel(anterior?.responsavelId ?? null) ?? 'ninguém'} para ${
+              nomeDoResponsavel(formulario.responsavelId) ?? 'ninguém'
+            }.`,
+          );
+        }
+
         await subirArquivoItens(editandoId);
 
         /*
@@ -499,6 +613,25 @@ export default function PaginaClientes() {
       render: (c) => (c.dataPrevista ? formatarData(c.dataPrevista) : 'A definir'),
     },
     {
+      chave: 'responsavelId',
+      rotulo: 'Responsável',
+      // Sem dono vai para o fim da ordenação: é o que precisa de ação.
+      ordenarPor: (c) => nomeDoResponsavel(c.responsavelId) ?? 'zzz',
+      render: (c) => {
+        const nome = nomeDoResponsavel(c.responsavelId);
+        if (!nome) return <span className="texto-secundario">Sem responsável</span>;
+        return (
+          <span
+            className={`${estilos.tagResponsavel} ${
+              c.responsavelId === usuario.id ? estilos.tagResponsavelEu : ''
+            }`}
+          >
+            {nome}
+          </span>
+        );
+      },
+    },
+    {
       chave: 'origem',
       rotulo: 'Origem',
       ordenarPor: (c) => c.origem,
@@ -603,6 +736,31 @@ export default function PaginaClientes() {
           </select>
         </CampoFiltro>
 
+        <CampoFiltro rotulo="Responsável">
+          <select
+            value={filtroResponsavel}
+            onChange={(e) => setFiltroResponsavel(e.target.value)}
+          >
+            <option value="">Todos</option>
+            <option value="eu">Meus clientes</option>
+            <option value="sem">Sem responsável</option>
+            {/* Inativo só aparece se houver cliente no nome dele — senão a
+                lista enche de gente que já saiu da empresa. */}
+            {equipe
+              .filter(
+                (m) =>
+                  m.id !== usuario.id &&
+                  (m.ativo || clientes.some((c) => c.responsavelId === m.id)),
+              )
+              .map((m) => (
+                <option key={m.id} value={m.id}>
+                  {m.nome}
+                  {m.ativo ? '' : ' (inativo)'}
+                </option>
+              ))}
+          </select>
+        </CampoFiltro>
+
         <AcoesFiltro>
           <button
             type="button"
@@ -611,6 +769,7 @@ export default function PaginaClientes() {
               setBusca('');
               setFiltroStatus('');
               setFiltroOrigem('');
+              setFiltroResponsavel('');
             }}
           >
             Limpar
@@ -697,6 +856,19 @@ export default function PaginaClientes() {
                 <Dado rotulo="E-mail">{detalhe.email || '—'}</Dado>
                 <Dado rotulo="Status">
                   <Badge texto={detalhe.status} tom={tomDoStatus(detalhe.status)} />
+                </Dado>
+                <Dado rotulo="Responsável">
+                  {nomeDoResponsavel(detalhe.responsavelId) ? (
+                    <span
+                      className={`${estilos.tagResponsavel} ${
+                        detalhe.responsavelId === usuario.id ? estilos.tagResponsavelEu : ''
+                      }`}
+                    >
+                      {nomeDoResponsavel(detalhe.responsavelId)}
+                    </span>
+                  ) : (
+                    <span className="texto-secundario">Sem responsável</span>
+                  )}
                 </Dado>
                 <Dado rotulo="Origem">
                   {detalhe.origem}
@@ -983,6 +1155,39 @@ export default function PaginaClientes() {
                 onChange={(e) => setFormulario({ ...formulario, dataPrevista: e.target.value })}
               />
             </div>
+          </div>
+
+          <div className="field" style={{ marginBottom: 20 }}>
+            <label htmlFor="responsavel">Responsável</label>
+            <select
+              id="responsavel"
+              value={formulario.responsavelId ?? ''}
+              disabled={responsavelTravado}
+              onChange={(e) =>
+                setFormulario({ ...formulario, responsavelId: e.target.value || null })
+              }
+            >
+              <option value="">Sem responsável</option>
+              {/* Inativo não é oferecido como escolha nova, mas continua na
+                  lista quando JÁ é o responsável — senão abrir a ficha para
+                  mudar o telefone apagaria calado o nome de quem conduziu. */}
+              {equipe
+                .filter((m) => m.ativo || m.id === formulario.responsavelId)
+                .map((m) => (
+                  <option key={m.id} value={m.id}>
+                    {m.nome}
+                    {m.id === usuario.id ? ' (você)' : ''}
+                    {m.ativo ? '' : ' — inativo'}
+                  </option>
+                ))}
+            </select>
+            <p className="field-hint">
+              {responsavelTravado
+                ? `Este cliente está com ${
+                    nomeDoResponsavel(clienteEmEdicao?.responsavelId ?? null) ?? 'outra pessoa'
+                  }. Só ele ou o administrador podem repassá-lo.`
+                : 'Quem mantém o contato e conduz o processo com este cliente.'}
+            </p>
           </div>
 
           <div className="field" style={{ marginBottom: 20 }}>

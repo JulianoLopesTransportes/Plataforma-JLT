@@ -31,7 +31,8 @@
       }
     ],
     "itens": "Piano de cauda\nSofá de 3 lugares\nRack da sala com TV 55\"\nMesa de jantar com 6 cadeiras\nGeladeira duplex\nCama box casal\n12 caixas de livros",
-    "codigo": "2026-0001"
+    "codigo": "2026-0001",
+    "responsavelId": null
   },
   {
     "id": "cli_002",
@@ -65,7 +66,8 @@
       }
     ],
     "itens": "18 estações de trabalho\n4 armários de aço\n2 servidores de rack\nMesa de reunião para 10\n30 cadeiras de escritório",
-    "codigo": "2026-0002"
+    "codigo": "2026-0002",
+    "responsavelId": null
   },
   {
     "id": "cli_003",
@@ -93,7 +95,8 @@
       }
     ],
     "itens": "",
-    "codigo": "2026-0003"
+    "codigo": "2026-0003",
+    "responsavelId": null
   },
   {
     "id": "cli_004",
@@ -121,7 +124,8 @@
       }
     ],
     "itens": "",
-    "codigo": "2026-0004"
+    "codigo": "2026-0004",
+    "responsavelId": null
   },
   {
     "id": "cli_005",
@@ -155,7 +159,8 @@
       }
     ],
     "itens": "",
-    "codigo": "2026-0005"
+    "codigo": "2026-0005",
+    "responsavelId": null
   },
   {
     "id": "cli_006",
@@ -183,7 +188,8 @@
       }
     ],
     "itens": "",
-    "codigo": "2026-0006"
+    "codigo": "2026-0006",
+    "responsavelId": null
   },
   {
     "id": "cli_007",
@@ -211,7 +217,8 @@
       }
     ],
     "itens": "",
-    "codigo": "2026-0007"
+    "codigo": "2026-0007",
+    "responsavelId": null
   },
   {
     "id": "cli_008",
@@ -239,7 +246,8 @@
       }
     ],
     "itens": "",
-    "codigo": "2026-0008"
+    "codigo": "2026-0008",
+    "responsavelId": null
   },
   {
     "id": "cli_009",
@@ -267,7 +275,8 @@
       }
     ],
     "itens": "",
-    "codigo": "2026-0009"
+    "codigo": "2026-0009",
+    "responsavelId": null
   },
   {
     "id": "cli_010",
@@ -301,7 +310,8 @@
       }
     ],
     "itens": "",
-    "codigo": "2026-0010"
+    "codigo": "2026-0010",
+    "responsavelId": null
   },
   {
     "id": "cli_011",
@@ -329,7 +339,8 @@
       }
     ],
     "itens": "",
-    "codigo": "2026-0011"
+    "codigo": "2026-0011",
+    "responsavelId": null
   },
   {
     "id": "cli_012",
@@ -357,6 +368,7 @@
       }
     ],
     "itens": "",
-    "codigo": "2026-0012"
+    "codigo": "2026-0012",
+    "responsavelId": null
   }
 ]

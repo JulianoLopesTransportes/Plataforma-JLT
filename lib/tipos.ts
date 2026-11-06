@@ -98,9 +98,34 @@ export type Cliente = {
    * inventário do módulo Documentos, que tem valor declarado e ambiente.
    */
   itens: string;
+  /**
+   * Quem mantém o contato e conduz o processo com este cliente.
+   *
+   * Referência a `perfis`, preenchida pelo banco com quem cadastrou. Nula
+   * nos clientes anteriores à migration 42 e quando o perfil do dono foi
+   * apagado — nos dois casos qualquer um pode assumir.
+   *
+   * Guarda só o id. O nome sai da view `equipe`, que a tela carrega uma
+   * vez: desnormalizar o nome aqui o deixaria velho no dia em que alguém
+   * corrigisse a grafia do próprio cadastro, e um join em `perfis` volta
+   * vazio porque o RLS de lá só deixa cada um ver a própria linha.
+   */
+  responsavelId: string | null;
   criadoEm: string;
   anexos: Anexo[];
   historico: EventoHistorico[];
+};
+
+/**
+ * Um integrante da equipe, como o seletor de responsável precisa dele.
+ *
+ * Vem da view `equipe`, que expõe só isto. E-mail e nível ficam no banco.
+ */
+export type MembroEquipe = {
+  id: string;
+  nome: string;
+  cargo: string;
+  ativo: boolean;
 };
 
 /* ==========================================================================

@@ -286,3 +286,34 @@
   font-weight: 600;
   color: var(--color-gray-600);
 }
+
+/* ==========================================================================
+   Etiqueta de responsável
+   ========================================================================== */
+
+/*
+ * Pastilha discreta: a etiqueta identifica, não chama atenção. A coluna
+ * fica entre Data prevista e Origem, e um destaque forte aqui competiria
+ * com o seletor de status, que é o que a pessoa vem clicar.
+ */
+.tagResponsavel {
+  display: inline-block;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  border-radius: 20px;
+  padding: 2px 10px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--color-gray-600);
+}
+
+/* Os seus clientes se distinguem num relance, sem precisar ler nome por nome. */
+.tagResponsavelEu {
+  background: color-mix(in srgb, var(--color-primary) 10%, transparent);
+  border-color: color-mix(in srgb, var(--color-primary) 35%, transparent);
+  color: var(--color-primary);
+}

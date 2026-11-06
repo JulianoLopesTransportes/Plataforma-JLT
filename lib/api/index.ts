@@ -41,6 +41,7 @@ import type {
   FaixaVolume,
   Adicional,
   Filtros,
+  MembroEquipe,
 } from '../tipos';
 
 import clientesJson from '@/mock/clientes.json';
@@ -145,6 +146,12 @@ const clientes = {
         data_prevista: cliente.dataPrevista || null,
         observacoes: cliente.observacoes,
         itens: cliente.itens,
+        /*
+         * Null aqui não é "sem dono": o gatilho `clientes_responsavel_padrao`
+         * preenche com quem está logado. Mandar null de propósito é o
+         * caminho normal de quem cadastra para si mesmo.
+         */
+        responsavel_id: cliente.responsavelId,
       })
       .select('*, cliente_anexos(*), cliente_historico(*)')
       .single();
@@ -168,6 +175,13 @@ const clientes = {
     if (mudancas.enderecoEntrega !== undefined) campos.endereco_entrega = mudancas.enderecoEntrega;
     if (mudancas.observacoes !== undefined) campos.observacoes = mudancas.observacoes;
     if (mudancas.itens !== undefined) campos.itens = mudancas.itens;
+    /*
+     * Só vai no UPDATE quando a tela realmente mexeu nisto. A trava
+     * `clientes_protege_responsavel` é um `before update of responsavel_id`:
+     * mandar a coluna em toda edição faria o gatilho rodar à toa em cada
+     * salvamento de telefone.
+     */
+    if (mudancas.responsavelId !== undefined) campos.responsavel_id = mudancas.responsavelId;
 
     const { error } = await supabase().from('clientes').update(campos).eq('id', id);
     if (error) throw new Error(traduzir(error));
@@ -1073,11 +1087,45 @@ function traduzir(erro: { code?: string; message: string }): string {
 }
 
 /* ==========================================================================
+   Equipe
+   ========================================================================== */
+
+const equipe = {
+  /**
+   * Os nomes que o seletor de responsável oferece.
+   *
+   * Lê a view `equipe`, não `perfis`: a tabela tem RLS de linha própria e
+   * voltaria com uma opção só — a do próprio usuário.
+   *
+   * Devolve os INATIVOS também. Eles não entram como escolha nova, mas um
+   * cliente antigo pode estar no nome de quem já saiu, e sem a linha dele
+   * a ficha mostraria "—" em vez do nome de quem conduziu o processo.
+   */
+  async listar(): Promise<MembroEquipe[]> {
+    if (!usandoBanco()) return [];
+
+    const { data, error } = await supabase()
+      .from('equipe')
+      .select('id, nome, cargo, ativo')
+      .order('nome');
+
+    if (error) throw new Error(traduzir(error));
+    return (data ?? []).map((l) => ({
+      id: l.id as string,
+      nome: (l.nome as string) ?? '',
+      cargo: (l.cargo as string) ?? '',
+      ativo: l.ativo === true,
+    }));
+  },
+};
+
+/* ==========================================================================
    Export
    ========================================================================== */
 
 export const api = {
   clientes,
+  equipe,
   veiculos,
   motoristas,
   financeiro,

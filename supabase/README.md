@@ -44,6 +44,7 @@ O schema está **aplicado no projeto remoto**. As migrations abaixo já rodaram:
 | 39 | `39_compromisso_automatico_do_cliente` | Coluna `automatico` + índice parcial: um por cliente |
 | 40 | `40_agendar_cliente` | `agendar_cliente()` — o upsert do PostgREST não casa com índice parcial |
 | 41 | `41_apagar_cliente_leva_o_automatico` | Apagar o cliente remove o automático; o manual sobrevive |
+| 42 | `42_responsavel_pelo_cliente` | Coluna `responsavel_id`, a view `equipe` e a trava de repasse |
 
 ## Baixar os arquivos de migration para cá
 
@@ -120,12 +121,42 @@ coluna foram resolvidos assim:
   como `NULL` para quem não tem `ver_custos`. `NULL` e não zero: zero seria uma
   afirmação falsa sobre o dado.
 
+## De quem é cada cliente
+
+`clientes.responsavel_id` aponta para `perfis`. É etiqueta de
+**identificação, não de acesso**: todo mundo continua vendo todos os
+clientes, e a tela só ganhou um filtro "Meus clientes". Decisão do Juliano,
+contra a alternativa de esconder a carteira de cada um dos outros.
+
+Três peças sustentam isso:
+
+1. **`clientes_responsavel_padrao`** — cliente novo nasce no nome de quem
+   cadastrou. Se não houver perfil ativo para o `auth.uid()`, a coluna fica
+   nula e o insert PASSA: preencher às cegas estouraria a FK e derrubaria
+   todo cadastro, que foi o estrago da 30.
+2. **`clientes_protege_responsavel`** — repassar só vale para o responsável
+   atual ou para quem tem `pode_editar('usuarios')`. Duas saídas evitam
+   cliente travado: sem dono ainda, e dono **inativo** — funcionário que sai
+   da empresa não tranca a carteira dele.
+3. **A view `equipe`** — `perfis` tem RLS de linha própria, então um
+   `<select>` de responsáveis viria com uma opção só. A view expõe `id`,
+   `nome`, `cargo` e `ativo`, e nada mais: e-mail e **nível** ficam de fora
+   de propósito.
+
+A tela espelha a regra de (2) para não oferecer um seletor que vai dar erro,
+mas o "não" que vale é o do Postgres — é ele que responde a quem chamar a
+API REST direto.
+
 ## Avisos do linter que são intencionais
 
 `get_advisors` aponta 8 funções `SECURITY DEFINER` executáveis por
 `authenticated`. É o desenho, não descuido: são justamente as funções que
 precisam ler dado que o usuário não alcança diretamente, e cada uma checa a
 permissão internamente antes de devolver qualquer coisa.
+
+A view `public.equipe` aparece pelo mesmo motivo: ela roda como dona e
+atravessa o RLS de `perfis` — é o ponto inteiro dela. O recorte de colunas é
+a contenção, e `anon` não a alcança.
 
 ### Revogar EXECUTE quebra gatilho
 

@@ -64,6 +64,7 @@ export function paraCliente(linha: any): Cliente {
     dataPrevista: txt(linha.data_prevista),
     observacoes: txt(linha.observacoes),
     itens: txt(linha.itens),
+    responsavelId: linha.responsavel_id ?? null,
     criadoEm: txt(linha.criado_em),
     anexos: (linha.cliente_anexos ?? []).map(paraAnexo),
     historico: (linha.cliente_historico ?? []).map(paraEvento),

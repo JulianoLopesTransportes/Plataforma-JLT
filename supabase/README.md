@@ -46,6 +46,7 @@ O schema está **aplicado no projeto remoto**. As migrations abaixo já rodaram:
 | 41 | `41_apagar_cliente_leva_o_automatico` | Apagar o cliente remove o automático; o manual sobrevive |
 | 42 | `42_responsavel_pelo_cliente` | Coluna `responsavel_id`, a view `equipe` e a trava de repasse |
 | 43 | `43_fecha_rpc_dos_gatilhos_da_42` | Revoga EXECUTE dos dois gatilhos da 42 — testado antes, ao contrário da 30 |
+| 44 | `44_so_o_admin_troca_o_responsavel` | Só o admin reatribui; quem não é admin cadastra sempre no próprio nome |
 
 ## Baixar os arquivos de migration para cá
 
@@ -131,18 +132,25 @@ contra a alternativa de esconder a carteira de cada um dos outros.
 
 Três peças sustentam isso:
 
-1. **`clientes_responsavel_padrao`** — cliente novo nasce no nome de quem
-   cadastrou. Se não houver perfil ativo para o `auth.uid()`, a coluna fica
-   nula e o insert PASSA: preencher às cegas estouraria a FK e derrubaria
-   todo cadastro, que foi o estrago da 30.
+1. **`clientes_responsavel_padrao`** — quem não tem `pode_editar('usuarios')`
+   fica com o próprio id, **venha o que vier no insert**. O admin escolhe de
+   quem é. Se não houver perfil ativo para o `auth.uid()`, a coluna fica nula
+   e o insert PASSA: preencher às cegas estouraria a FK e derrubaria todo
+   cadastro, que foi o estrago da 30.
+2. **`clientes_protege_responsavel`** — desde a migration 44, **só quem tem
+   `pode_editar('usuarios')` troca**. Nem o próprio responsável entrega o
+   cliente: passagem de bastão passa pelo admin.
 
-   No INSERT não há trava de dono: cadastrar um cliente já no nome de um
-   colega é repasse legítimo — não existe dono anterior para ser passado
-   por cima. A trava existe só no UPDATE, que é onde há o que tomar.
-2. **`clientes_protege_responsavel`** — repassar só vale para o responsável
-   atual ou para quem tem `pode_editar('usuarios')`. Duas saídas evitam
-   cliente travado: sem dono ainda, e dono **inativo** — funcionário que sai
-   da empresa não tranca a carteira dele.
+   A 42 permitia dono atual, cliente sem dono e dono inativo. O Juliano
+   reviu e apertou. Consequência que ele conhece: cliente órfão só é
+   atribuído por ele — ninguém assume por conta própria.
+
+Os dois gatilhos escapam cedo quando `auth.uid()` é nulo, e aí **não mexem
+em nada**. É o caminho de quem escreve sem sessão de usuário: seed, carga em
+lote, correção pelo dono do banco. Sem essa saída, um insert como `postgres`
+com responsável escolhido teria o campo zerado, porque `pode_editar` é falso
+sem perfil por trás; e nem o dono do banco consertaria um responsável errado.
+`anon` não aproveita a brecha — o RLS de `clientes` o barra antes.
 3. **A view `equipe`** — recorta COLUNA, que é o que o RLS não faz. A
    policy `perfis_leitura` é `using (true)`: qualquer autenticado já lê
    `perfis` inteira, então ler a tabela direto para montar o seletor

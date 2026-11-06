@@ -218,20 +218,16 @@ export default function PaginaClientes() {
   }
 
   /**
-   * Espelha a trava `clientes_protege_responsavel` do banco.
+   * Espelha a trava `clientes_protege_responsavel` do banco: só o admin.
    *
    * A trava é no banco porque é lá que ela vale contra quem chamar a API
    * direto. Isto aqui só evita oferecer um seletor que vai dar erro — o
    * "não" de verdade continua sendo o do Postgres.
+   *
+   * Não recebe mais o cliente como argumento porque a resposta não
+   * depende dele: nem ser o próprio dono libera a troca.
    */
-  function podeTrocarResponsavel(cliente: Cliente): boolean {
-    if (!podeMexer) return false;
-    if (podeAdministrarEquipe) return true;
-    if (!cliente.responsavelId) return true;
-    if (cliente.responsavelId === usuario.id) return true;
-    // Dono que saiu da empresa não tranca a carteira dele.
-    return porId.get(cliente.responsavelId)?.ativo === false;
-  }
+  const podeTrocarResponsavel = podeMexer && podeAdministrarEquipe;
 
   /* --- Filtro em memória ------------------------------------------------ */
   const filtrados = useMemo(() => {
@@ -399,15 +395,20 @@ export default function PaginaClientes() {
   /** Conta pelo mesmo critério que a Ordem de Serviço usa para imprimir. */
   const quantosItens = linhasDeItens(formulario.itens).length;
 
-  /*
-   * O cliente como está GRAVADO, não como está no formulário: quem decide
-   * se a troca é permitida é o dono atual, e o formulário já pode ter o
-   * valor novo digitado dentro.
-   */
+  /* O cliente como está GRAVADO — o formulário já pode ter valor novo. */
   const clienteEmEdicao = editandoId
     ? (clientes.find((c) => c.id === editandoId) ?? null)
     : null;
-  const responsavelTravado = clienteEmEdicao !== null && !podeTrocarResponsavel(clienteEmEdicao);
+
+  /*
+   * Travado inclusive ao CADASTRAR, e não só ao editar.
+   *
+   * O banco impõe o próprio id a quem não é admin no insert, em silêncio.
+   * Se a tela deixasse escolher o colega, a pessoa salvaria achando que
+   * passou o cliente adiante e descobriria o contrário depois — pior do
+   * que um campo visivelmente travado.
+   */
+  const responsavelTravado = !podeTrocarResponsavel;
 
   async function importarItens(evento: React.ChangeEvent<HTMLInputElement>) {
     const arquivo = evento.target.files?.[0];
@@ -1182,11 +1183,11 @@ export default function PaginaClientes() {
                 ))}
             </select>
             <p className="field-hint">
-              {responsavelTravado
-                ? `Este cliente está com ${
-                    nomeDoResponsavel(clienteEmEdicao?.responsavelId ?? null) ?? 'outra pessoa'
-                  }. Só ele ou o administrador podem repassá-lo.`
-                : 'Quem mantém o contato e conduz o processo com este cliente.'}
+              {!responsavelTravado
+                ? 'Quem mantém o contato e conduz o processo com este cliente.'
+                : clienteEmEdicao
+                  ? 'Só o administrador pode alterar o responsável por um cliente.'
+                  : 'O cliente entra no seu nome. Se for de outro atendente, o administrador reatribui depois.'}
             </p>
           </div>
 

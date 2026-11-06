@@ -38,7 +38,15 @@ import {
 } from '@/components/ui';
 import Grafico from '@/components/ui/Grafico';
 import { ORIGENS_CLIENTE } from '@/lib/tipos';
-import type { Lancamento, Cliente, Veiculo, Motorista, Rota, Orcamento } from '@/lib/tipos';
+import type {
+  Lancamento,
+  Cliente,
+  Veiculo,
+  Motorista,
+  Rota,
+  Orcamento,
+  MembroEquipe,
+} from '@/lib/tipos';
 import estilos from './relatorios.module.css';
 
 /** Linha consolidada do relatório — uma operação de transporte. */
@@ -71,6 +79,7 @@ export default function PaginaRelatorios() {
   const [motoristas, setMotoristas] = useState<Motorista[]>([]);
   const [lancamentos, setLancamentos] = useState<Lancamento[]>([]);
   const [orcamentos, setOrcamentos] = useState<Orcamento[]>([]);
+  const [equipe, setEquipe] = useState<MembroEquipe[]>([]);
   const [carregando, setCarregando] = useState(true);
 
   const [de, setDe] = useState('');
@@ -93,13 +102,18 @@ export default function PaginaRelatorios() {
       api.motoristas.listar(),
       api.financeiro.listar(),
       api.orcamentos.listar(),
-    ]).then(([r, c, v, m, l, o]) => {
+      /* A equipe traduz responsavel_id em nome. Falhar aqui não pode
+         derrubar o relatório inteiro, então cai para lista vazia e o
+         quadro de carteira mostra "Fora da equipe" em vez de sumir. */
+      api.equipe.listar().catch(() => [] as MembroEquipe[]),
+    ]).then(([r, c, v, m, l, o, e]) => {
       setRotas(r);
       setClientes(c);
       setVeiculos(v);
       setMotoristas(m);
       setLancamentos(l);
       setOrcamentos(o);
+      setEquipe(e);
       setCarregando(false);
     });
   }, []);
@@ -223,6 +237,63 @@ export default function PaginaRelatorios() {
     }
     return [...mapa.entries()].sort((a, b) => b[1] - a[1]);
   }, [filtradas]);
+
+  /* ======================================================================
+     Carteira por responsável
+     ======================================================================
+
+     Conta CLIENTES, não operações, e por isso fica fora de `filtradas` e
+     do bloco de gráficos: aquele bloco só desenha quando há rota no
+     filtro, e um quadro de carteira que some porque ninguém rodou rota
+     no mês não serviria para nada.
+
+     Respeita o De/Até pela data de CADASTRO do cliente — é quando ele
+     entrou para a carteira de alguém. */
+  const porResponsavel = useMemo(() => {
+    const dentroDoFiltro = clientes.filter((c) => {
+      const dia = (c.criadoEm || '').slice(0, 10);
+      return (!de || dia >= de) && (!ate || dia <= ate);
+    });
+
+    const SEM_DONO = 'Sem responsável';
+    const mapa = new Map<string, { total: number; fechados: number }>();
+
+    for (const c of dentroDoFiltro) {
+      const chave = c.responsavelId
+        ? (equipe.find((m) => m.id === c.responsavelId)?.nome ?? 'Fora da equipe')
+        : SEM_DONO;
+      const atual = mapa.get(chave) ?? { total: 0, fechados: 0 };
+      atual.total += 1;
+      // "Fechou" = chegou em Fechada ou passou dela. Novo e Em andamento
+      // ainda são promessa, e contá-los como resultado inflaria todo mundo.
+      if (c.status === 'Fechada' || c.status === 'Finalizada') atual.fechados += 1;
+      mapa.set(chave, atual);
+    }
+
+    const total = dentroDoFiltro.length;
+    const totalFechados = dentroDoFiltro.filter(
+      (c) => c.status === 'Fechada' || c.status === 'Finalizada',
+    ).length;
+
+    const linhas = [...mapa.entries()]
+      .map(([nome, d]) => ({
+        nome,
+        total: d.total,
+        fechados: d.fechados,
+        /* Percentuais sobre bases DIFERENTES, de propósito: "% da
+           carteira" é fatia do bolo todo, "% dos fechamentos" é fatia de
+           quem fechou. Dividir os dois pelo mesmo total faria a segunda
+           coluna responder a uma pergunta que ninguém fez. */
+        pctCarteira: total > 0 ? (d.total / total) * 100 : 0,
+        pctFechados: totalFechados > 0 ? (d.fechados / totalFechados) * 100 : 0,
+      }))
+      // Sem responsável por último: é pendência, não pessoa.
+      .sort((a, b) =>
+        a.nome === SEM_DONO ? 1 : b.nome === SEM_DONO ? -1 : b.total - a.total,
+      );
+
+    return { linhas, total, totalFechados };
+  }, [clientes, equipe, de, ate]);
 
   /* ======================================================================
      Totais
@@ -492,6 +563,70 @@ export default function PaginaRelatorios() {
           />
         )}
       </GradeMetricas>
+
+      {/* ---------- Carteira por responsável ----------
+           Fora do bloco de gráficos de propósito: aquele só desenha
+           quando há ROTA no filtro, e este quadro é sobre clientes. */}
+      <div className="card" style={{ marginBottom: 20 }}>
+        <h2 className="card-title">Clientes por responsável</h2>
+
+        {porResponsavel.total === 0 ? (
+          <div className="estado-vazio">
+            <strong>Nenhum cliente no período</strong>
+            {de || ate
+              ? 'Ajuste as datas — o filtro conta pela data de cadastro do cliente.'
+              : 'Cadastre clientes para ver a divisão da carteira.'}
+          </div>
+        ) : (
+          <div className={estilos.carteira}>
+            <Grafico
+              tipo="doughnut"
+              rotulos={porResponsavel.linhas.map((l) => l.nome)}
+              series={[
+                { rotulo: 'Clientes', dados: porResponsavel.linhas.map((l) => l.total) },
+              ]}
+              corPorItem
+              altura={260}
+            />
+
+            <table className={estilos.tabelaCarteira}>
+              <thead>
+                <tr>
+                  <th>Responsável</th>
+                  <th>Clientes</th>
+                  <th>% da carteira</th>
+                  <th>Fechados</th>
+                  <th>% dos fechamentos</th>
+                </tr>
+              </thead>
+              <tbody>
+                {porResponsavel.linhas.map((l) => (
+                  <tr key={l.nome}>
+                    <td>{l.nome}</td>
+                    <td>{l.total}</td>
+                    <td>{l.pctCarteira.toFixed(1).replace('.', ',')}%</td>
+                    <td>{l.fechados}</td>
+                    <td>
+                      {porResponsavel.totalFechados > 0
+                        ? `${l.pctFechados.toFixed(1).replace('.', ',')}%`
+                        : '—'}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+              <tfoot>
+                <tr>
+                  <td>Total</td>
+                  <td>{porResponsavel.total}</td>
+                  <td>100,0%</td>
+                  <td>{porResponsavel.totalFechados}</td>
+                  <td>{porResponsavel.totalFechados > 0 ? '100,0%' : '—'}</td>
+                </tr>
+              </tfoot>
+            </table>
+          </div>
+        )}
+      </div>
 
       {/* ---------- Visualizações ---------- */}
       <div className="card" style={{ marginBottom: 20 }}>

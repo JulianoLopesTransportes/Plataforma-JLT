@@ -117,6 +117,24 @@ export type Cliente = {
 };
 
 /**
+ * O que a tela edita num cliente — tudo menos o que ela não escreve.
+ *
+ * `id` e `criadoEm` são do banco; `codigo` sai de um gatilho e é imutável;
+ * `anexos` e `historico` têm tabelas próprias.
+ *
+ * Existe para ser a FONTE de `COLUNA_CLIENTE` em lib/api: aquele mapa é um
+ * Record sobre estas chaves, então acrescentar campo aqui sem mapear a
+ * coluna lá não compila. Antes disso a conversão era lista branca escrita
+ * à mão, e `origem`, `origemDetalhe` e `tipo` ficaram de fora dela desde o
+ * primeiro commit da camada de dados: a tela dizia que salvava e o UPDATE
+ * saía sem os campos.
+ */
+export type CamposCliente = Omit<
+  Cliente,
+  'id' | 'codigo' | 'criadoEm' | 'anexos' | 'historico'
+>;
+
+/**
  * Um integrante da equipe, como o seletor de responsável precisa dele.
  *
  * Vem da view `equipe`, que expõe só isto. E-mail e nível ficam no banco.

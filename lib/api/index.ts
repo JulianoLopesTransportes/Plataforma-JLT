@@ -20,6 +20,7 @@
 
 import { supabase, supabaseConfigurado } from '../supabase/cliente';
 import { lerMock, casaBusca } from './cliente-http';
+import { camposDeCliente } from './campos-cliente';
 import { dentroDoPeriodo } from '../utils/formato';
 import {
   paraCliente,
@@ -67,6 +68,7 @@ function verificar<T>(resposta: { data: T | null; error: { message: string } | n
 /* ==========================================================================
    Clientes
    ========================================================================== */
+
 
 const clientes = {
   /** TODO(removível): o ramo de mock some quando a migração terminar. */
@@ -163,27 +165,10 @@ const clientes = {
   async atualizar(id: string, mudancas: Partial<Cliente>): Promise<void> {
     if (!usandoBanco()) throw new Error('Edição exige o banco de dados configurado.');
 
-    const campos: Record<string, unknown> = {};
-    if (mudancas.nome !== undefined) campos.nome = mudancas.nome;
-    if (mudancas.status !== undefined) campos.status = mudancas.status;
-    if (mudancas.telefone !== undefined) campos.telefone = mudancas.telefone;
-    if (mudancas.email !== undefined) campos.email = mudancas.email;
-    if (mudancas.documento !== undefined) campos.documento = mudancas.documento;
-    if (mudancas.volumeM3 !== undefined) campos.volume_m3 = mudancas.volumeM3;
-    if (mudancas.dataPrevista !== undefined) campos.data_prevista = mudancas.dataPrevista || null;
-    if (mudancas.enderecoColeta !== undefined) campos.endereco_coleta = mudancas.enderecoColeta;
-    if (mudancas.enderecoEntrega !== undefined) campos.endereco_entrega = mudancas.enderecoEntrega;
-    if (mudancas.observacoes !== undefined) campos.observacoes = mudancas.observacoes;
-    if (mudancas.itens !== undefined) campos.itens = mudancas.itens;
-    /*
-     * Só vai no UPDATE quando a tela realmente mexeu nisto. A trava
-     * `clientes_protege_responsavel` é um `before update of responsavel_id`:
-     * mandar a coluna em toda edição faria o gatilho rodar à toa em cada
-     * salvamento de telefone.
-     */
-    if (mudancas.responsavelId !== undefined) campos.responsavel_id = mudancas.responsavelId;
-
-    const { error } = await supabase().from('clientes').update(campos).eq('id', id);
+    const { error } = await supabase()
+      .from('clientes')
+      .update(camposDeCliente(mudancas))
+      .eq('id', id);
     if (error) throw new Error(traduzir(error));
   },
 

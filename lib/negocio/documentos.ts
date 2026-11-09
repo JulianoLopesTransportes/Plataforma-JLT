@@ -1138,6 +1138,18 @@ export type EntradaOrdemServico = {
   itens: string;
   /** Código curto do cliente (2026-0001), para achar o cadastro depois. */
   codigo: string;
+  /**
+   * Nome de quem é responsável pelo cliente dentro da JLT — já resolvido.
+   *
+   * Recebe NOME, não id: documento é papel, e resolver id aqui obrigaria
+   * este módulo, que é puro, a conhecer a lista de funcionários.
+   *
+   * "Responsável" e não "cadastrado por": começa sendo quem cadastrou,
+   * mas o admin reatribui, e aí a segunda etiqueta mentiria no papel.
+   * Vazio sai como '—' — 40 dos clientes ainda não têm dono, e uma linha
+   * que desaparecesse esconderia exatamente isso.
+   */
+  responsavel: string;
 };
 
 export function gerarOrdemServico(e: EntradaOrdemServico): BlocoDocumento[] {
@@ -1153,6 +1165,9 @@ export function gerarOrdemServico(e: EntradaOrdemServico): BlocoDocumento[] {
         '\n',
         { b: 'Data:' },
         ` ${dataOuLinha(e.data)}${e.diaInteiro ? ' — dia inteiro' : e.horario ? ` às ${e.horario}` : ''}`,
+        '\n',
+        { b: 'Responsável:' },
+        ` ${ou(e.responsavel, '—')}`,
       ],
     },
 

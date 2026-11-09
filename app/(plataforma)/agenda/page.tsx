@@ -36,7 +36,14 @@ import {
   TITULO_DOCUMENTO,
   NOME_ARQUIVO,
 } from '@/lib/negocio/documentos';
-import type { Compromisso, Cliente, Veiculo, Motorista, TipoCompromisso } from '@/lib/tipos';
+import type {
+  Compromisso,
+  Cliente,
+  Veiculo,
+  Motorista,
+  TipoCompromisso,
+  MembroEquipe,
+} from '@/lib/tipos';
 import estilos from './agenda.module.css';
 
 const ROTULO_TIPO: Record<TipoCompromisso, string> = {
@@ -128,6 +135,7 @@ export default function PaginaAgenda() {
   const [clientes, setClientes] = useState<Cliente[]>([]);
   const [veiculos, setVeiculos] = useState<Veiculo[]>([]);
   const [motoristas, setMotoristas] = useState<Motorista[]>([]);
+  const [equipe, setEquipe] = useState<MembroEquipe[]>([]);
   const [carregando, setCarregando] = useState(true);
 
   const hoje = hojeISO();
@@ -155,13 +163,20 @@ export default function PaginaAgenda() {
   }, []);
 
   useEffect(() => {
-    Promise.all([api.clientes.listar(), api.veiculos.listar(), api.motoristas.listar()]).then(
-      ([c, v, m]) => {
-        setClientes(c);
-        setVeiculos(v);
-        setMotoristas(m);
-      },
-    );
+    Promise.all([
+      api.clientes.listar(),
+      api.veiculos.listar(),
+      api.motoristas.listar(),
+      /* A equipe traduz responsavel_id em nome para a Ordem de Serviço.
+         Falhar aqui não pode derrubar a agenda, que é a tela do dia a
+         dia: cai para lista vazia e a OS sai com '—' no responsável. */
+      api.equipe.listar().catch(() => [] as MembroEquipe[]),
+    ]).then(([c, v, m, e]) => {
+      setClientes(c);
+      setVeiculos(v);
+      setMotoristas(m);
+      setEquipe(e);
+    });
     recarregar();
   }, [recarregar]);
 
@@ -172,6 +187,10 @@ export default function PaginaAgenda() {
     return v ? `${v.placa} — ${v.modelo}` : undefined;
   };
   const nomeMotorista = (id: string | null) => motoristas.find((m) => m.id === id)?.nome;
+  /* Vazio — não 'Fora da equipe' — quando o id não está na lista: quem
+     monta o documento decide o texto, e aqui ele vira '—'. */
+  const nomeResponsavel = (id: string | null | undefined) =>
+    id ? (equipe.find((m) => m.id === id)?.nome ?? '') : '';
 
   /* --- Montagem do calendário ------------------------------------------- */
   const filtrados = useMemo(
@@ -397,6 +416,9 @@ export default function PaginaAgenda() {
         // compromisso: é a mesma lista para toda mudança dele.
         itens: clienteDaOrdem?.itens ?? '',
         codigo: clienteDaOrdem?.codigo ?? '',
+        // Do CADASTRO do cliente, não do compromisso: o responsável é de
+        // quem é o cliente, e segue o mesmo em toda mudança dele.
+        responsavel: nomeResponsavel(clienteDaOrdem?.responsavelId),
       })
     : [];
 

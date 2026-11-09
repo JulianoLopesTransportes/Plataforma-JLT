@@ -2,7 +2,7 @@
  * REGRAS DE CLIENTE — portadas de 01-cadastro-clientes.
  */
 
-import { STATUS_CLIENTE, type StatusCliente } from '../tipos';
+import { FUNIL_CLIENTE, type StatusCliente } from '../tipos';
 import type { TomBadge } from '@/components/ui';
 
 /**
@@ -27,28 +27,47 @@ export function descreverVolume(volumeM3: number | null): string {
 }
 
 /**
- * Próximo status no funil. O último status não avança — o funil termina
- * em Finalizada e não volta ao início sozinho.
+ * Próximo degrau do funil, ou `null` quando não há para onde avançar.
+ *
+ * Devolve null em dois casos: o cliente está no último degrau
+ * ("Finalizada"), ou está numa SAÍDA ("Sem resposta", "Perdida"), que não
+ * faz parte do caminho linear. Daí sair de uma saída ser escolha explícita
+ * no seletor, e não um "avançar".
+ *
+ * Caminha por FUNIL_CLIENTE, não por STATUS_CLIENTE. Andar por índice do
+ * array completo era o que fazia um cliente Finalizada oferecer "Avançar
+ * para Sem resposta" quando os dois status novos entraram.
  */
-export function proximoStatus(atual: StatusCliente): StatusCliente {
-  const indice = STATUS_CLIENTE.indexOf(atual);
-  return STATUS_CLIENTE[Math.min(indice + 1, STATUS_CLIENTE.length - 1)];
+export function proximoStatus(atual: StatusCliente): StatusCliente | null {
+  const indice = FUNIL_CLIENTE.indexOf(atual as (typeof FUNIL_CLIENTE)[number]);
+  if (indice < 0 || indice === FUNIL_CLIENTE.length - 1) return null;
+  return FUNIL_CLIENTE[indice + 1];
 }
 
-/** O status já está no fim do funil? */
+/** Não há para onde avançar — fim do funil, ou cliente numa saída. */
 export function statusFinal(status: StatusCliente): boolean {
-  return status === STATUS_CLIENTE[STATUS_CLIENTE.length - 1];
+  return proximoStatus(status) === null;
 }
 
-/** Cor do badge de status. */
+/**
+ * Cor do badge de status.
+ *
+ * O Record é obrigatório de propósito: status novo sem cor definida não
+ * compila, em vez de cair num `undefined` que a tela desenha sem estilo.
+ *
+ * A paleta é a que o Juliano escolheu, e ela junta três status no vermelho
+ * — Fechada, Sem resposta e Perdida. Eu apontei que isso põe "ganhei o
+ * contrato" e "perdi o cliente" na mesma cor; ele decidiu assim. Na lista,
+ * quem distingue é o texto, não a cor.
+ */
 export function tomDoStatus(status: StatusCliente): TomBadge {
   const mapa: Record<StatusCliente, TomBadge> = {
     Novo: 'info',
     'Em andamento': 'warning',
-    // Fechada em dourado: é o momento que importa no funil — o serviço
-    // foi contratado e entrou na agenda. Finalizada em verde fecha o ciclo.
     Fechada: 'danger',
-    Finalizada: 'success',
+    Finalizada: 'branco',
+    'Sem resposta': 'danger',
+    Perdida: 'danger',
   };
   return mapa[status];
 }

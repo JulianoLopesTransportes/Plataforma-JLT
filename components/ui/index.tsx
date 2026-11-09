@@ -91,7 +91,13 @@ export function GradeMetricas({ children }: { children: React.ReactNode }) {
    Badge de status
    ========================================================================== */
 
-export type TomBadge = 'success' | 'warning' | 'danger' | 'info' | 'neutro';
+/**
+ * 'branco' é fundo branco de verdade, não o off-white de 'neutro'.
+ *
+ * Como os cards e as tabelas também são brancos, ele é o único tom com
+ * borda — sem ela a etiqueta desapareceria dentro da linha.
+ */
+export type TomBadge = 'success' | 'warning' | 'danger' | 'info' | 'neutro' | 'branco';
 
 export function Badge({ texto, tom = 'neutro' }: { texto: string; tom?: TomBadge }) {
   return <span className={`badge badge-${tom}`}>{texto}</span>;

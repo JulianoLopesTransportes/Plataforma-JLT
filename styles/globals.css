@@ -289,6 +289,13 @@ tbody tr:hover td {
 .badge-danger { background: var(--color-danger-bg); color: var(--color-danger); }
 .badge-info { background: var(--color-info-bg); color: var(--color-info); }
 .badge-neutro { background: var(--color-bg); color: var(--color-gray-600); }
+/* Único tom com borda: card e tabela também são brancos, e sem ela a
+   etiqueta desaparece dentro da linha. */
+.badge-branco {
+  background: var(--color-white);
+  color: var(--color-text);
+  border: 1px solid var(--color-border);
+}
 
 /* --------------------------------------------------------------------------
    Estado vazio

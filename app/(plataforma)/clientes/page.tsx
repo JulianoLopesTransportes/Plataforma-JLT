@@ -45,6 +45,7 @@ import {
   CardMetrica,
   useToast,
   type Coluna,
+  type TomBadge,
 } from '@/components/ui';
 import {
   STATUS_CLIENTE,
@@ -64,6 +65,24 @@ import estilos from './clientes.module.css';
  * é imutável depois. Deixá-lo aqui abriria a porta para a tela mandar um
  * código e furar a sequência.
  */
+/**
+ * Tom do status para a classe do seletor na tabela.
+ *
+ * Record, e não `estilos[`status_${tom}`]`: busca por template string num
+ * CSS Module devolve `undefined` em silêncio quando a classe não existe, e
+ * o seletor sai sem estilo sem ninguém perceber. Foi exatamente assim que
+ * as bolinhas do calendário sumiram quando um tipo de compromisso foi
+ * renomeado. Aqui, tom novo sem classe não compila.
+ */
+const CLASSE_DO_TOM: Record<TomBadge, string> = {
+  info: estilos.status_info,
+  warning: estilos.status_warning,
+  success: estilos.status_success,
+  danger: estilos.status_danger,
+  neutro: estilos.status_neutro,
+  branco: estilos.status_branco,
+};
+
 const CLIENTE_VAZIO: Omit<Cliente, 'id' | 'codigo' | 'criadoEm' | 'anexos' | 'historico'> = {
   tipo: 'PF',
   nome: '',
@@ -320,6 +339,15 @@ export default function PaginaClientes() {
 
   async function avancarStatus(cliente: Cliente) {
     const novo = proximoStatus(cliente.status);
+    /*
+     * Sem próximo degrau não há o que avançar: cliente em "Finalizada", ou
+     * numa das saídas ("Sem resposta", "Perdida"), que não estão no caminho
+     * linear. O botão nem aparece nesses casos — `statusFinal` o esconde —,
+     * mas sair aqui também é o que impede gravar status nulo se alguém
+     * chamar esta função por outro caminho.
+     */
+    if (novo === null) return;
+
     const descricao = `Status alterado de ${cliente.status} para ${novo}.`;
 
     try {
@@ -644,7 +672,7 @@ export default function PaginaClientes() {
       render: (c) =>
         podeMexer ? (
           <select
-            className={`${estilos.seletorStatus} ${estilos[`status_${tomDoStatus(c.status)}`]}`}
+            className={`${estilos.seletorStatus} ${CLASSE_DO_TOM[tomDoStatus(c.status)]}`}
             value={c.status}
             // Sem isto, o clique no menu abriria o detalhe do cliente.
             onClick={(e) => e.stopPropagation()}
@@ -1123,6 +1151,32 @@ export default function PaginaClientes() {
                 ))}
               </select>
             </div>
+          </div>
+
+          {/*
+            Este campo existia no banco e aparecia na ficha, mas nunca teve
+            onde digitar: escolher "Indicação" e não poder dizer de quem veio.
+            Sempre visível, porque o detalhe serve para qualquer origem — qual
+            anúncio do Instagram, qual parceiro repassou —, com a ajuda
+            mudando quando a origem é de alguém.
+          */}
+          <div className="field" style={{ marginBottom: 20 }}>
+            <label htmlFor="origemDetalhe">Detalhe da origem</label>
+            <input
+              id="origemDetalhe"
+              value={formulario.origemDetalhe ?? ''}
+              onChange={(e) => setFormulario({ ...formulario, origemDetalhe: e.target.value })}
+              placeholder={
+                formulario.origem === 'Indicação' || formulario.origem === 'Repasse'
+                  ? 'Nome de quem indicou'
+                  : 'Opcional — ex.: qual anúncio, qual parceiro'
+              }
+            />
+            <p className="field-hint">
+              {formulario.origem === 'Indicação' || formulario.origem === 'Repasse'
+                ? `Quem trouxe este cliente por ${formulario.origem.toLowerCase()}.`
+                : 'Some na ficha ao lado da origem. Pode ficar em branco.'}
+            </p>
           </div>
 
           <div className="form-row">

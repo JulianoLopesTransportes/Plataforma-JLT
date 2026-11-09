@@ -17,15 +17,41 @@
 export type TipoPessoa = 'PF' | 'PJ';
 
 /**
- * Funil comercial do cliente. A ordem do array É a ordem do funil, e
- * espelha a ordem do enum `status_cliente` no Postgres.
+ * Todos os status que um cliente pode ter. A ordem do array é a ordem do
+ * seletor na tela, e espelha a ordem do enum `status_cliente` no Postgres:
+ * os quatro degraus do funil primeiro, as duas saídas agrupadas no fim.
  *
  * "Fechada" é o ponto em que o serviço está contratado — é ela que
  * alimenta a agenda. "Finalizada" é o serviço já executado.
  */
-export const STATUS_CLIENTE = ['Novo', 'Em andamento', 'Fechada', 'Finalizada'] as const;
+export const STATUS_CLIENTE = [
+  'Novo',
+  'Em andamento',
+  'Fechada',
+  'Finalizada',
+  'Sem resposta',
+  'Perdida',
+] as const;
 
 export type StatusCliente = (typeof STATUS_CLIENTE)[number];
+
+/**
+ * O caminho LINEAR do funil — a ordem em que o botão "Avançar" caminha.
+ *
+ * Separado de STATUS_CLIENTE porque "Sem resposta" e "Perdida" são saídas,
+ * não degraus: ninguém avança PARA elas, você as escolhe no seletor.
+ *
+ * Não é preciosismo. Até a migration 45, `proximoStatus()` andava por
+ * ÍNDICE do array de status, e os dois novos valores no fim fariam um
+ * cliente "Finalizada" exibir o botão "Avançar para Sem resposta" e deixar
+ * de ser o fim do funil.
+ */
+export const FUNIL_CLIENTE = [
+  'Novo',
+  'Em andamento',
+  'Fechada',
+  'Finalizada',
+] as const satisfies readonly StatusCliente[];
 
 /** O status a partir do qual o cliente aparece na agenda. */
 export const STATUS_QUE_AGENDA: StatusCliente = 'Fechada';

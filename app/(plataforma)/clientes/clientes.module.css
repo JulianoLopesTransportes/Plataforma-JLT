@@ -140,6 +140,13 @@
 .status_success { background: var(--color-success-bg); color: var(--color-success); }
 .status_danger { background: var(--color-danger-bg); color: var(--color-danger); }
 .status_neutro { background: var(--color-bg); color: var(--color-gray-600); }
+/* Acompanha .badge-branco: fundo branco de verdade, e por isso com borda —
+   a linha da tabela também é branca. */
+.status_branco {
+  background: var(--color-white);
+  color: var(--color-text);
+  border: 1px solid var(--color-border);
+}
 
 /* ==========================================================================
    Campo Itens — a relação de bens da mudança

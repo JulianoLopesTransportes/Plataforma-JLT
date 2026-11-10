@@ -238,6 +238,28 @@ export type Lancamento = {
   clienteId: string | null;
 };
 
+/** O que a tela edita num lançamento. Fonte de `COLUNA_LANCAMENTO`. */
+export type CamposLancamento = Omit<Lancamento, 'id'>;
+
+/** Onde a categoria pode ser usada. */
+export const APLICA_A = ['gasto', 'ganho', 'ambos'] as const;
+export type AplicaA = (typeof APLICA_A)[number];
+
+/**
+ * Categoria de lançamento — dado editável desde a migration 46.
+ *
+ * O `nome` é a chave no banco, e a FK em `lancamentos.categoria` é
+ * `on update cascade`: renomear arrasta o histórico junto. Por isso não há
+ * id separado — e por isso renomear não é operação inocente.
+ */
+export type CategoriaLancamento = {
+  nome: string;
+  aplicaA: AplicaA;
+  /** Inativa sai do seletor, mas o histórico que a usa continua legível. */
+  ativo: boolean;
+  ordem: number;
+};
+
 /* ==========================================================================
    Agenda
    ========================================================================== */

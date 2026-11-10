@@ -21,6 +21,7 @@
 import { supabase, supabaseConfigurado } from '../supabase/cliente';
 import { lerMock, casaBusca } from './cliente-http';
 import { camposDeCliente } from './campos-cliente';
+import { camposDeLancamento } from './campos-lancamento';
 import { dentroDoPeriodo } from '../utils/formato';
 import {
   paraCliente,
@@ -43,6 +44,7 @@ import type {
   Adicional,
   Filtros,
   MembroEquipe,
+  CategoriaLancamento,
 } from '../tipos';
 
 import clientesJson from '@/mock/clientes.json';
@@ -390,16 +392,92 @@ const financeiro = {
     return verificar(await consulta).map(paraLancamento);
   },
 
-  async categorias(): Promise<string[]> {
+  /**
+   * As categorias cadastradas, na ordem que o dono da empresa definiu.
+   *
+   * Lê `categorias_lancamento`, não mais `select distinct categoria` dos
+   * próprios lançamentos. Aquilo fazia a lista ser consequência do que
+   * alguém já tinha digitado — e foi assim que "Combustivel" sem acento
+   * passou a conviver com "Diesel" no banco dele.
+   *
+   * Devolve INATIVAS também: a tela precisa delas para desenhar o
+   * histórico e para o gerenciador poder reativá-las. Quem filtra para o
+   * seletor é a tela, que sabe o tipo do lançamento em edição.
+   */
+  async categorias(): Promise<CategoriaLancamento[]> {
     if (!usandoBanco()) {
       const dados = (await lerMock(lancamentosJson)) as Lancamento[];
-      return [...new Set(dados.map((l) => l.categoria))].sort((a, b) => a.localeCompare(b, 'pt-BR'));
+      return [...new Set(dados.map((l) => l.categoria))]
+        .sort((a, b) => a.localeCompare(b, 'pt-BR'))
+        .map((nome, i) => ({ nome, aplicaA: 'ambos' as const, ativo: true, ordem: i * 10 }));
     }
 
-    const dados = verificar(await supabase().from('lancamentos').select('categoria'));
-    return [...new Set((dados as { categoria: string }[]).map((l) => l.categoria))].sort((a, b) =>
-      a.localeCompare(b, 'pt-BR'),
+    const dados = verificar(
+      await supabase()
+        .from('categorias_lancamento')
+        .select('nome, aplica_a, ativo, ordem')
+        .order('ordem')
+        .order('nome'),
     );
+
+    return (dados as Record<string, unknown>[]).map((c) => ({
+      nome: c.nome as string,
+      aplicaA: c.aplica_a as CategoriaLancamento['aplicaA'],
+      ativo: c.ativo === true,
+      ordem: Number(c.ordem ?? 0),
+    }));
+  },
+
+  async criarCategoria(categoria: CategoriaLancamento): Promise<void> {
+    if (!usandoBanco()) throw new Error('Categorias exigem o banco de dados configurado.');
+    const { error } = await supabase().from('categorias_lancamento').insert({
+      nome: categoria.nome,
+      aplica_a: categoria.aplicaA,
+      ativo: categoria.ativo,
+      ordem: categoria.ordem,
+    });
+    if (error) throw new Error(traduzir(error));
+  },
+
+  /**
+   * Altera uma categoria. `nome` novo RENOMEIA.
+   *
+   * A FK `lancamentos_categoria_fk` é `on update cascade`, então o rename
+   * propaga para todo o histórico dentro da mesma transação do Postgres —
+   * não há passo de migração de dado aqui, e não há janela em que um
+   * lançamento aponte para categoria que não existe.
+   */
+  async atualizarCategoria(
+    nomeAtual: string,
+    mudancas: Partial<CategoriaLancamento>,
+  ): Promise<void> {
+    if (!usandoBanco()) throw new Error('Categorias exigem o banco de dados configurado.');
+
+    const campos: Record<string, unknown> = {};
+    if (mudancas.nome !== undefined) campos.nome = mudancas.nome;
+    if (mudancas.aplicaA !== undefined) campos.aplica_a = mudancas.aplicaA;
+    if (mudancas.ativo !== undefined) campos.ativo = mudancas.ativo;
+    if (mudancas.ordem !== undefined) campos.ordem = mudancas.ordem;
+    if (Object.keys(campos).length === 0) return;
+
+    const { error } = await supabase()
+      .from('categorias_lancamento')
+      .update(campos)
+      .eq('nome', nomeAtual);
+    if (error) throw new Error(traduzir(error));
+  },
+
+  /**
+   * Apaga uma categoria.
+   *
+   * O banco RECUSA se houver lançamento usando (`on delete restrict`), e
+   * `traduzir()` transforma o 23503 em recado legível. Para tirar de
+   * circulação uma categoria com histórico, o caminho é `ativo: false`.
+   */
+  async excluirCategoria(nome: string): Promise<void> {
+    if (!usandoBanco()) throw new Error('Categorias exigem o banco de dados configurado.');
+    const { error } = await supabase().from('categorias_lancamento').delete().eq('nome', nome);
+    if (error) throw new Error(traduzir(error));
   },
 
   async criar(lancamento: Omit<Lancamento, 'id'>): Promise<Lancamento> {
@@ -422,6 +500,24 @@ const financeiro = {
 
     if (error) throw new Error(traduzir(error));
     return paraLancamento(data);
+  },
+
+  /**
+   * Corrige um lançamento já gravado.
+   *
+   * Não existia: a tela só oferecia Excluir, e consertar um valor digitado
+   * errado significava apagar e lançar de novo — perdendo `criado_em` e
+   * quem lançou. `atualizado_em` é mantido pelo gatilho
+   * `lancamentos_atualizado_em`, então a correção fica datada sozinha.
+   */
+  async atualizar(id: string, mudancas: Partial<Lancamento>): Promise<void> {
+    if (!usandoBanco()) throw new Error('Edição exige o banco de dados configurado.');
+
+    const campos = camposDeLancamento(mudancas);
+    if (Object.keys(campos).length === 0) return;
+
+    const { error } = await supabase().from('lancamentos').update(campos).eq('id', id);
+    if (error) throw new Error(traduzir(error));
   },
 
   async excluir(id: string): Promise<void> {

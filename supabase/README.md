@@ -48,6 +48,7 @@ O schema está **aplicado no projeto remoto**. As migrations abaixo já rodaram:
 | 43 | `43_fecha_rpc_dos_gatilhos_da_42` | Revoga EXECUTE dos dois gatilhos da 42 — testado antes, ao contrário da 30 |
 | 44 | `44_so_o_admin_troca_o_responsavel` | Só o admin reatribui; quem não é admin cadastra sempre no próprio nome |
 | 45 | `45_status_sem_resposta_e_perdida` | Duas saídas no funil: `Sem resposta` e `Perdida` |
+| 46 | `46_categorias_de_lancamento` | Categorias viram tabela editável; a FK renomeia o histórico em cascata |
 
 ## Baixar os arquivos de migration para cá
 

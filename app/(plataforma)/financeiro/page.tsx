@@ -31,7 +31,15 @@ import {
   type Coluna,
 } from '@/components/ui';
 import Grafico from '@/components/ui/Grafico';
-import type { Lancamento, Cliente, Veiculo, Motorista, TipoLancamento } from '@/lib/tipos';
+import type {
+  Lancamento,
+  Cliente,
+  Veiculo,
+  Motorista,
+  TipoLancamento,
+  CategoriaLancamento,
+  AplicaA,
+} from '@/lib/tipos';
 import estilos from './financeiro.module.css';
 
 /** Primeiro dia do mês corrente, em ISO. */
@@ -67,7 +75,7 @@ export default function PaginaFinanceiro() {
   const [clientes, setClientes] = useState<Cliente[]>([]);
   const [veiculos, setVeiculos] = useState<Veiculo[]>([]);
   const [motoristas, setMotoristas] = useState<Motorista[]>([]);
-  const [categorias, setCategorias] = useState<string[]>([]);
+  const [categorias, setCategorias] = useState<CategoriaLancamento[]>([]);
   const [carregando, setCarregando] = useState(true);
 
   const [de, setDe] = useState('');
@@ -78,8 +86,30 @@ export default function PaginaFinanceiro() {
 
   const [formAberto, setFormAberto] = useState(false);
   const [formulario, setFormulario] = useState(LANCAMENTO_VAZIO);
+  /** null = lançamento novo; id = corrigindo um que já está gravado. */
+  const [editandoId, setEditandoId] = useState<string | null>(null);
   const [salvando, setSalvando] = useState(false);
   const [erroCarga, setErroCarga] = useState('');
+
+  /* Gerenciador de categorias — modal próprio, sobre a mesma tela. */
+  const [gerenciarAberto, setGerenciarAberto] = useState(false);
+
+  /**
+   * As categorias que podem ser escolhidas para o tipo em edição.
+   *
+   * Inativa não entra: ela sai de circulação mas continua no histórico.
+   * A exceção é a já gravada no lançamento que está aberto — sem ela o
+   * seletor viria vazio e salvar trocaria a categoria sem querer.
+   */
+  const categoriasDoTipo = useMemo(
+    () =>
+      categorias.filter(
+        (c) =>
+          (c.ativo || c.nome === formulario.categoria) &&
+          (c.aplicaA === 'ambos' || c.aplicaA === formulario.tipo),
+      ),
+    [categorias, formulario.tipo, formulario.categoria],
+  );
 
   const podeMexer = podeEditar(usuario.nivel, 'financeiro');
   const podeExcluir = podeFazer(usuario.nivel, 'excluir');
@@ -186,6 +216,29 @@ export default function PaginaFinanceiro() {
     }
   }
 
+  function abrirNovo() {
+    setEditandoId(null);
+    setFormulario(LANCAMENTO_VAZIO);
+    setFormAberto(true);
+  }
+
+  /** Abre o mesmo modal com o lançamento gravado dentro. */
+  function abrirEdicao(l: Lancamento) {
+    setEditandoId(l.id);
+    setFormulario({
+      tipo: l.tipo,
+      data: l.data,
+      // O formulário trabalha com texto; o número só volta no salvar.
+      valor: String(l.valor).replace('.', ','),
+      categoria: l.categoria,
+      descricao: l.descricao,
+      veiculoId: l.veiculoId ?? '',
+      motoristaId: l.motoristaId ?? '',
+      clienteId: l.clienteId ?? '',
+    });
+    setFormAberto(true);
+  }
+
   async function salvar(evento: React.FormEvent) {
     evento.preventDefault();
 
@@ -210,25 +263,130 @@ export default function PaginaFinanceiro() {
 
     try {
       if (usandoBanco()) {
-        await api.financeiro.criar(dados);
+        if (editandoId) {
+          await api.financeiro.atualizar(editandoId, dados);
+        } else {
+          await api.financeiro.criar(dados);
+        }
         await recarregar();
+      } else if (editandoId) {
+        setLancamentos((lista) =>
+          lista.map((x) => (x.id === editandoId ? { ...dados, id: editandoId } : x)),
+        );
       } else {
         const lancamento: Lancamento = { ...dados, id: novoId('lan') };
         setLancamentos((lista) => [lancamento, ...lista]);
-        if (!categorias.includes(lancamento.categoria)) {
-          setCategorias((c) =>
-            [...c, lancamento.categoria].sort((a, b) => a.localeCompare(b, 'pt-BR')),
-          );
-        }
       }
 
       setFormAberto(false);
       setFormulario(LANCAMENTO_VAZIO);
-      mostrar('Lançamento registrado.', 'sucesso');
+      mostrar(editandoId ? 'Lançamento corrigido.' : 'Lançamento registrado.', 'sucesso');
+      setEditandoId(null);
     } catch (e) {
       mostrar(e instanceof Error ? e.message : 'Falha ao registrar.', 'erro');
     } finally {
       setSalvando(false);
+    }
+  }
+
+  /* --- Categorias ------------------------------------------------------- */
+
+  async function recarregarCategorias() {
+    setCategorias(await api.financeiro.categorias());
+  }
+
+  async function criarCategoria(nome: string, aplicaA: AplicaA) {
+    const limpo = nome.trim();
+    if (!limpo) {
+      mostrar('Dê um nome à categoria.', 'erro');
+      return;
+    }
+    if (categorias.some((c) => c.nome.toLowerCase() === limpo.toLowerCase())) {
+      mostrar(`"${limpo}" já existe.`, 'erro');
+      return;
+    }
+
+    try {
+      // Entra no fim da lista: a ordem das seis originais é a que o
+      // Juliano ditou, e empurrar a nova para o meio mexeria nela.
+      const ordem = Math.max(0, ...categorias.map((c) => c.ordem)) + 10;
+      await api.financeiro.criarCategoria({ nome: limpo, aplicaA, ativo: true, ordem });
+      await recarregarCategorias();
+      mostrar(`Categoria "${limpo}" criada.`, 'sucesso');
+    } catch (e) {
+      mostrar(e instanceof Error ? e.message : 'Falha ao criar a categoria.', 'erro');
+    }
+  }
+
+  /**
+   * Renomear mexe no HISTÓRICO, e o aviso é explícito por isso.
+   *
+   * A FK é `on update cascade`: todo lançamento passado passa a mostrar o
+   * nome novo. É o que faz "editável" valer, mas não é operação inocente —
+   * um relatório tirado ontem não vai bater com um tirado depois.
+   */
+  async function renomearCategoria(c: CategoriaLancamento) {
+    const novo = prompt(`Renomear "${c.nome}" para:`, c.nome)?.trim();
+    if (!novo || novo === c.nome) return;
+
+    const emUso = lancamentos.filter((l) => l.categoria === c.nome).length;
+    if (
+      emUso > 0 &&
+      !confirm(
+        `${emUso} lançamento(s) estão em "${c.nome}".\n\n` +
+          `Renomear passa todos eles para "${novo}" — inclusive os antigos.\n\nContinuar?`,
+      )
+    ) {
+      return;
+    }
+
+    try {
+      await api.financeiro.atualizarCategoria(c.nome, { nome: novo });
+      await Promise.all([recarregarCategorias(), recarregar()]);
+      mostrar(`"${c.nome}" agora é "${novo}".`, 'sucesso');
+    } catch (e) {
+      mostrar(e instanceof Error ? e.message : 'Falha ao renomear.', 'erro');
+    }
+  }
+
+  async function alternarCategoria(c: CategoriaLancamento) {
+    try {
+      await api.financeiro.atualizarCategoria(c.nome, { ativo: !c.ativo });
+      await recarregarCategorias();
+      mostrar(c.ativo ? `"${c.nome}" desativada.` : `"${c.nome}" reativada.`, 'sucesso');
+    } catch (e) {
+      mostrar(e instanceof Error ? e.message : 'Falha ao alterar.', 'erro');
+    }
+  }
+
+  async function mudarAplicacao(c: CategoriaLancamento, aplicaA: AplicaA) {
+    try {
+      await api.financeiro.atualizarCategoria(c.nome, { aplicaA });
+      await recarregarCategorias();
+    } catch (e) {
+      mostrar(e instanceof Error ? e.message : 'Falha ao alterar.', 'erro');
+    }
+  }
+
+  async function excluirCategoria(c: CategoriaLancamento) {
+    const emUso = lancamentos.filter((l) => l.categoria === c.nome).length;
+    if (emUso > 0) {
+      // O banco recusaria de qualquer forma (on delete restrict). Dizer
+      // isso aqui, com o número, é melhor que deixar vir o erro cru.
+      mostrar(
+        `"${c.nome}" tem ${emUso} lançamento(s) e não pode ser apagada. Desative-a.`,
+        'erro',
+      );
+      return;
+    }
+    if (!confirm(`Apagar a categoria "${c.nome}"?`)) return;
+
+    try {
+      await api.financeiro.excluirCategoria(c.nome);
+      await recarregarCategorias();
+      mostrar(`Categoria "${c.nome}" apagada.`, 'sucesso');
+    } catch (e) {
+      mostrar(e instanceof Error ? e.message : 'Falha ao apagar.', 'erro');
     }
   }
 
@@ -288,19 +446,34 @@ export default function PaginaFinanceiro() {
     {
       chave: 'acoes',
       rotulo: '',
-      render: (l) =>
-        podeExcluir ? (
-          <button
-            type="button"
-            className="btn btn-ghost btn-sm"
-            onClick={(e) => {
-              e.stopPropagation();
-              excluirLancamento(l);
-            }}
-          >
-            Excluir
-          </button>
-        ) : null,
+      render: (l) => (
+        <span className={estilos.acoesLinha}>
+          {podeMexer && (
+            <button
+              type="button"
+              className="btn btn-ghost btn-sm"
+              onClick={(e) => {
+                e.stopPropagation();
+                abrirEdicao(l);
+              }}
+            >
+              Editar
+            </button>
+          )}
+          {podeExcluir && (
+            <button
+              type="button"
+              className="btn btn-ghost btn-sm"
+              onClick={(e) => {
+                e.stopPropagation();
+                excluirLancamento(l);
+              }}
+            >
+              Excluir
+            </button>
+          )}
+        </span>
+      ),
     },
   ];
 
@@ -321,8 +494,16 @@ export default function PaginaFinanceiro() {
             </button>
             <button
               type="button"
+              className="btn btn-outline"
+              onClick={() => setGerenciarAberto(true)}
+              disabled={!podeMexer}
+            >
+              Categorias
+            </button>
+            <button
+              type="button"
               className="btn btn-primary"
-              onClick={() => setFormAberto(true)}
+              onClick={abrirNovo}
               disabled={!podeMexer}
             >
               Novo lançamento
@@ -382,9 +563,12 @@ export default function PaginaFinanceiro() {
         <CampoFiltro rotulo="Categoria">
           <select value={filtroCategoria} onChange={(e) => setFiltroCategoria(e.target.value)}>
             <option value="">Todas</option>
+            {/* Inativa continua no filtro: o histórico dela existe e você
+                precisa conseguir achá-lo. */}
             {categorias.map((c) => (
-              <option key={c} value={c}>
-                {c}
+              <option key={c.nome} value={c.nome}>
+                {c.nome}
+                {c.ativo ? '' : ' (inativa)'}
               </option>
             ))}
           </select>
@@ -472,13 +656,23 @@ export default function PaginaFinanceiro() {
 
       {/* ---------- Modal de lançamento ---------- */}
       <Modal
-        titulo="Novo lançamento"
+        titulo={editandoId ? 'Corrigir lançamento' : 'Novo lançamento'}
         aberto={formAberto}
-        aoFechar={() => setFormAberto(false)}
+        aoFechar={() => {
+          setFormAberto(false);
+          setEditandoId(null);
+        }}
         largo
         rodape={
           <>
-            <button type="button" className="btn btn-ghost" onClick={() => setFormAberto(false)}>
+            <button
+              type="button"
+              className="btn btn-ghost"
+              onClick={() => {
+                setFormAberto(false);
+                setEditandoId(null);
+              }}
+            >
               Cancelar
             </button>
             <button
@@ -487,7 +681,7 @@ export default function PaginaFinanceiro() {
               className="btn btn-primary"
               disabled={salvando}
             >
-              {salvando ? 'Salvando…' : 'Salvar lançamento'}
+              {salvando ? 'Salvando…' : editandoId ? 'Salvar correção' : 'Salvar lançamento'}
             </button>
           </>
         }
@@ -499,9 +693,25 @@ export default function PaginaFinanceiro() {
               <select
                 id="tipoLan"
                 value={formulario.tipo}
-                onChange={(e) =>
-                  setFormulario({ ...formulario, tipo: e.target.value as 'gasto' | 'ganho' })
-                }
+                onChange={(e) => {
+                  const tipo = e.target.value as 'gasto' | 'ganho';
+                  /*
+                   * Trocar o tipo limpa a categoria que não vale no novo.
+                   * Sem isto o campo ficaria exibindo "Combustível" num
+                   * ganho — e o seletor, que não tem essa opção, mandaria
+                   * o valor antigo no submit.
+                   */
+                  const vale = categorias.some(
+                    (c) =>
+                      c.nome === formulario.categoria &&
+                      (c.aplicaA === 'ambos' || c.aplicaA === tipo),
+                  );
+                  setFormulario({
+                    ...formulario,
+                    tipo,
+                    categoria: vale ? formulario.categoria : '',
+                  });
+                }}
               >
                 <option value="gasto">Gasto</option>
                 <option value="ganho">Ganho</option>
@@ -535,20 +745,31 @@ export default function PaginaFinanceiro() {
           <div className="form-row">
             <div className="field">
               <label htmlFor="categoriaLan">Categoria</label>
-              <input
+              {/*
+                Era campo de texto livre com sugestões, e foi assim que
+                "Combustivel" sem acento entrou no banco ao lado de
+                "Diesel". Seletor fechado é o conserto: categoria nova se
+                cria no gerenciador, de propósito, uma vez.
+              */}
+              <select
                 id="categoriaLan"
-                list="lista-categorias"
                 value={formulario.categoria}
                 onChange={(e) => setFormulario({ ...formulario, categoria: e.target.value })}
-                placeholder="Combustível, Manutenção, Frete…"
                 required
-              />
-              <datalist id="lista-categorias">
-                {categorias.map((c) => (
-                  <option key={c} value={c} />
+              >
+                <option value="">Selecione…</option>
+                {categoriasDoTipo.map((c) => (
+                  <option key={c.nome} value={c.nome}>
+                    {c.nome}
+                    {c.ativo ? '' : ' (inativa)'}
+                  </option>
                 ))}
-              </datalist>
-              <p className="field-hint">Categoria livre — escolha uma existente ou crie outra.</p>
+              </select>
+              <p className="field-hint">
+                {categoriasDoTipo.length === 0
+                  ? `Nenhuma categoria vale para ${formulario.tipo}. Crie uma em "Categorias".`
+                  : 'Para criar ou renomear, use o botão "Categorias" no topo da tela.'}
+              </p>
             </div>
 
             <div className="field">
@@ -615,6 +836,124 @@ export default function PaginaFinanceiro() {
             </div>
           </div>
         </form>
+      </Modal>
+
+      {/* ---------- Gerenciador de categorias ---------- */}
+      <Modal
+        titulo="Categorias de lançamento"
+        aberto={gerenciarAberto}
+        aoFechar={() => setGerenciarAberto(false)}
+        largo
+        rodape={
+          <button
+            type="button"
+            className="btn btn-primary"
+            onClick={() => setGerenciarAberto(false)}
+          >
+            Fechar
+          </button>
+        }
+      >
+        <form
+          className={estilos.novaCategoria}
+          onSubmit={async (e) => {
+            e.preventDefault();
+            const form = e.currentTarget;
+            const nome = (form.elements.namedItem('novoNome') as HTMLInputElement).value;
+            const aplicaA = (form.elements.namedItem('novoAplicaA') as HTMLSelectElement)
+              .value as AplicaA;
+            await criarCategoria(nome, aplicaA);
+            form.reset();
+          }}
+        >
+          <div className="field">
+            <label htmlFor="novoNome">Nova categoria</label>
+            <input id="novoNome" name="novoNome" placeholder="Ex.: Pedágio" />
+          </div>
+          <div className="field">
+            <label htmlFor="novoAplicaA">Vale para</label>
+            <select id="novoAplicaA" name="novoAplicaA" defaultValue="gasto">
+              <option value="gasto">Gasto</option>
+              <option value="ganho">Ganho</option>
+              <option value="ambos">Os dois</option>
+            </select>
+          </div>
+          <button type="submit" className="btn btn-primary">
+            Adicionar
+          </button>
+        </form>
+
+        <table className={estilos.tabelaCategorias}>
+          <thead>
+            <tr>
+              <th>Categoria</th>
+              <th>Vale para</th>
+              <th>Lançamentos</th>
+              <th />
+            </tr>
+          </thead>
+          <tbody>
+            {categorias.map((c) => {
+              const emUso = lancamentos.filter((l) => l.categoria === c.nome).length;
+              return (
+                <tr key={c.nome} className={c.ativo ? '' : estilos.categoriaInativa}>
+                  <td>
+                    {c.nome}
+                    {c.ativo ? '' : ' (inativa)'}
+                  </td>
+                  <td>
+                    <select
+                      value={c.aplicaA}
+                      onChange={(e) => mudarAplicacao(c, e.target.value as AplicaA)}
+                      aria-label={`Onde "${c.nome}" vale`}
+                    >
+                      <option value="gasto">Gasto</option>
+                      <option value="ganho">Ganho</option>
+                      <option value="ambos">Os dois</option>
+                    </select>
+                  </td>
+                  <td>{emUso}</td>
+                  <td className={estilos.acoesCategoria}>
+                    <button
+                      type="button"
+                      className="btn btn-ghost btn-sm"
+                      onClick={() => renomearCategoria(c)}
+                    >
+                      Renomear
+                    </button>
+                    <button
+                      type="button"
+                      className="btn btn-ghost btn-sm"
+                      onClick={() => alternarCategoria(c)}
+                    >
+                      {c.ativo ? 'Desativar' : 'Reativar'}
+                    </button>
+                    {/*
+                      Apagar só aparece sem histórico. O banco recusaria de
+                      qualquer forma — on delete restrict —, e oferecer um
+                      botão que sempre dá erro é pior que não oferecer.
+                    */}
+                    {emUso === 0 && (
+                      <button
+                        type="button"
+                        className="btn btn-ghost btn-sm"
+                        onClick={() => excluirCategoria(c)}
+                      >
+                        Apagar
+                      </button>
+                    )}
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+
+        <p className="field-hint" style={{ marginTop: 12 }}>
+          Renomear alcança o histórico: os lançamentos antigos passam a
+          mostrar o nome novo. Categoria com lançamento não pode ser apagada —
+          desative-a para tirá-la do seletor sem perder o histórico.
+        </p>
       </Modal>
     </>
   );

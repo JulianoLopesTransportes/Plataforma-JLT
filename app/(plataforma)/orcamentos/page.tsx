@@ -27,6 +27,9 @@ import {
 import PainelPrecificacao from '@/components/modulos/PainelPrecificacao';
 import estilos from './orcamentos.module.css';
 
+/** Onde fica, por aparelho, a escolha de deixar a lista aberta. */
+const CHAVE_LISTA_ABERTA = 'jlt.orcamentos.listaAberta';
+
 /** Rótulo legível do status. Record: status novo sem rótulo não compila. */
 const ROTULO_ORCAMENTO: Record<StatusOrcamento, string> = {
   rascunho: 'Rascunho',
@@ -89,6 +92,35 @@ export default function PaginaOrcamentos() {
   const [carregandoLista, setCarregandoLista] = useState(true);
   const [filtroStatus, setFiltroStatus] = useState('');
   const [filtroCliente, setFiltroCliente] = useState('');
+
+  /*
+   * A lista começa FECHADA, e a escolha de cada um fica no aparelho dele.
+   *
+   * Começa fechada no servidor de propósito: ler o localStorage no estado
+   * inicial faria o HTML do servidor divergir do primeiro desenho no
+   * navegador, e o React reclamaria de hidratação. O efeito abaixo
+   * restaura a preferência depois, o que no pior caso pisca uma vez.
+   */
+  const [listaAberta, setListaAberta] = useState(false);
+
+  useEffect(() => {
+    try {
+      if (localStorage.getItem(CHAVE_LISTA_ABERTA) === 'sim') setListaAberta(true);
+    } catch {
+      /* Aba privada, cookies bloqueados, captura de miniatura: o padrão
+         fechado continua valendo e a tela funciona igual. */
+    }
+  }, []);
+
+  function alternarLista() {
+    const proximo = !listaAberta;
+    setListaAberta(proximo);
+    try {
+      localStorage.setItem(CHAVE_LISTA_ABERTA, proximo ? 'sim' : 'nao');
+    } catch {
+      /* Não poder lembrar não impede abrir. */
+    }
+  }
 
   const verCustos = podeFazer(usuario.nivel, 'ver_custos');
   const editarParametros = podeFazer(usuario.nivel, 'editar_parametros_precificacao');
@@ -733,10 +765,35 @@ export default function PaginaOrcamentos() {
 
       {/* ---------- Os orçamentos gravados ----------
            Esta tela só calculava e gravava: nunca mostrou um orçamento.
-           Os 33 que existiam no banco só apareciam na ficha do cliente. */}
-      <div className="card" style={{ marginTop: 20 }}>
-        <h2 className="card-title">Orçamentos gravados</h2>
+           Os 33 que existiam no banco só apareciam na ficha do cliente.
 
+           FECHADO por padrão: quem abre esta tela quase sempre vem orçar,
+           não consultar. A lista inteira acima da dobra empurrava a
+           calculadora para fora da tela no celular. */}
+      <div className="card" style={{ marginTop: 20 }}>
+        <button
+          type="button"
+          className={estilos.barraLista}
+          onClick={alternarLista}
+          aria-expanded={listaAberta}
+          aria-controls="lista-orcamentos"
+        >
+          <span className={estilos.setaLista} aria-hidden="true">
+            {listaAberta ? '▾' : '▸'}
+          </span>
+          <span className="card-title" style={{ margin: 0 }}>
+            Orçamentos gravados
+          </span>
+          {/* A contagem aparece FECHADO também: é a informação que faz
+              alguém decidir abrir. */}
+          <span className={estilos.contagemLista}>
+            {carregandoLista ? '…' : lista.length}
+          </span>
+        </button>
+
+        {/* `hidden` em vez de não renderizar: os filtros guardam o que a
+            pessoa escolheu, e desmontar perderia isso a cada fechada. */}
+        <div id="lista-orcamentos" hidden={!listaAberta}>
         <div className={estilos.filtrosLista}>
           <div className="field">
             <label htmlFor="filtroStatusOrc">Status</label>
@@ -857,6 +914,7 @@ export default function PaginaOrcamentos() {
             ))}
           </ul>
         )}
+        </div>
       </div>
 
       {editarParametros && (

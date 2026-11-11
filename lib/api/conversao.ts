@@ -241,11 +241,6 @@ export function paraOrcamento(linha: any): Orcamento {
       quantidade: num(a.quantidade),
     })),
     valorFinal: num(linha.valor_final),
-    // num() devolveria 0, e zero é um preço — "fechei de graça". Aqui o
-    // nulo tem significado próprio: não houve negociação.
-    valorNegociado: numOuNulo(linha.valor_negociado),
-    aprovadoPor: linha.aprovado_por ?? null,
-    aprovadoEm: txt(linha.aprovado_em),
     observacoes: txt(linha.observacoes),
   };
 }

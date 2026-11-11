@@ -1,12 +1,10 @@
 'use client';
 
-import { useEffect, useState, useMemo, useCallback } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useEffect, useState, useMemo } from 'react';
 import { api, type ParametrosPrecificacao } from '@/lib/api';
 import { useUsuario } from '@/components/layout/SessaoProvider';
 import { podeFazer } from '@/lib/permissoes';
-import { formatarBRL, formatarData } from '@/lib/utils/formato';
-import { ordenarPorNome } from '@/lib/negocio/clientes';
+import { formatarBRL } from '@/lib/utils/formato';
 import {
   calcularOrcamento,
   margemDoFator,
@@ -18,32 +16,13 @@ import {
   type ResultadoOrcamento,
 } from '@/lib/negocio/precificacao';
 import { TituloPagina, useToast } from '@/components/ui';
-import {
-  valorDoOrcamento,
-  STATUS_ORCAMENTO,
-  type Cliente,
-  type Orcamento,
-  type StatusOrcamento,
-} from '@/lib/tipos';
+import type { Cliente } from '@/lib/tipos';
 import PainelPrecificacao from '@/components/modulos/PainelPrecificacao';
 import estilos from './orcamentos.module.css';
-
-/** Onde fica, por aparelho, a escolha de deixar a lista aberta. */
-const CHAVE_LISTA_ABERTA = 'jlt.orcamentos.listaAberta';
-
-/** Rótulo legível do status. Record: status novo sem rótulo não compila. */
-const ROTULO_ORCAMENTO: Record<StatusOrcamento, string> = {
-  rascunho: 'Rascunho',
-  enviado: 'Enviado',
-  aprovado: 'Aprovado',
-  recusado: 'Recusado',
-};
 
 export default function PaginaOrcamentos() {
   const usuario = useUsuario();
   const { mostrar } = useToast();
-  const router = useRouter();
-  const parametrosUrl = useSearchParams();
 
   const [parametros, setParametros] = useState<ParametrosPrecificacao | null>(null);
   const [carregando, setCarregando] = useState(true);
@@ -80,52 +59,8 @@ export default function PaginaOrcamentos() {
   const [clienteId, setClienteId] = useState('');
   const [vinculando, setVinculando] = useState(false);
 
-  /** null = calculando um orçamento novo; id = corrigindo um gravado. */
-  const [editandoId, setEditandoId] = useState<string | null>(null);
-  /*
-   * Valor negociado como TEXTO, pelo mesmo motivo das quantidades: o campo
-   * precisa nascer vazio, e vazio significa "não houve negociação" — que é
-   * diferente de zero.
-   */
-  const [valorNegociado, setValorNegociado] = useState('');
-
-  const [lista, setLista] = useState<Orcamento[]>([]);
-  const [carregandoLista, setCarregandoLista] = useState(true);
-  const [filtroStatus, setFiltroStatus] = useState('');
-  const [filtroCliente, setFiltroCliente] = useState('');
-
-  /*
-   * A lista começa FECHADA, e a escolha de cada um fica no aparelho dele.
-   *
-   * Começa fechada no servidor de propósito: ler o localStorage no estado
-   * inicial faria o HTML do servidor divergir do primeiro desenho no
-   * navegador, e o React reclamaria de hidratação. O efeito abaixo
-   * restaura a preferência depois, o que no pior caso pisca uma vez.
-   */
-  const [listaAberta, setListaAberta] = useState(false);
-
-  useEffect(() => {
-    try {
-      if (localStorage.getItem(CHAVE_LISTA_ABERTA) === 'sim') setListaAberta(true);
-    } catch {
-      /* Aba privada, cookies bloqueados, captura de miniatura: o padrão
-         fechado continua valendo e a tela funciona igual. */
-    }
-  }, []);
-
-  function alternarLista() {
-    const proximo = !listaAberta;
-    setListaAberta(proximo);
-    try {
-      localStorage.setItem(CHAVE_LISTA_ABERTA, proximo ? 'sim' : 'nao');
-    } catch {
-      /* Não poder lembrar não impede abrir. */
-    }
-  }
-
   const verCustos = podeFazer(usuario.nivel, 'ver_custos');
   const editarParametros = podeFazer(usuario.nivel, 'editar_parametros_precificacao');
-  const podeExcluirOrcamento = podeFazer(usuario.nivel, 'excluir');
 
   useEffect(() => {
     api.clientes.listar().then(setClientes).catch(() => setClientes([]));
@@ -138,63 +73,6 @@ export default function PaginaOrcamentos() {
       setCarregando(false);
     });
   }, []);
-
-  const recarregarLista = useCallback(async () => {
-    try {
-      setLista(await api.orcamentos.listar());
-    } catch {
-      setLista([]);
-    } finally {
-      setCarregandoLista(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    recarregarLista();
-  }, [recarregarLista]);
-
-  /*
-   * Carrega um orçamento na calculadora quando a ficha do cliente manda
-   * `?editar=<id>`.
-   *
-   * Espera `parametros`: o fator é derivado da margem gravada pela faixa
-   * mínima/máxima, e sem a faixa a régua cairia num lugar errado — um
-   * preço diferente do que foi orçado, sem nada avisando.
-   */
-  useEffect(() => {
-    const id = parametrosUrl.get('editar');
-    if (!id || !parametros || editandoId === id) return;
-
-    api.orcamentos
-      .obter(id)
-      .then((o) => {
-        if (!o) {
-          mostrar('Orçamento não encontrado.', 'erro');
-          return;
-        }
-        setEditandoId(o.id);
-        setClienteId(o.clienteId);
-        setVolume(String(o.volumeM3));
-        setDistancia(String(o.distanciaKm));
-        setValorNegociado(o.valorNegociado === null ? '' : String(o.valorNegociado));
-        setQuantidades(
-          Object.fromEntries(o.adicionais.map((a) => [a.id, String(a.quantidade)])),
-        );
-        /*
-         * Sem ver_custos a margem volta nula da visão, e derivar o fator
-         * dela jogaria a régua para o extremo. Nesse caso a régua fica
-         * onde está e a tela diz que ela não foi restaurada.
-         */
-        if (verCustos && o.margemPercentual) {
-          setFator(
-            fatorDaMargem(o.margemPercentual, parametros.margemMinima, parametros.margemMaxima),
-          );
-        }
-        setResultado(null);
-        setPrecoSemCusto(null);
-      })
-      .catch((e) => mostrar(e instanceof Error ? e.message : 'Falha ao abrir o orçamento.', 'erro'));
-  }, [parametrosUrl, parametros, editandoId, verCustos, mostrar]);
 
   const margem = parametros
     ? margemDoFator(fator, parametros.margemMinima, parametros.margemMaxima)
@@ -217,132 +95,40 @@ export default function PaginaOrcamentos() {
   }
 
   /**
-   * Grava o cálculo: cria um orçamento novo, ou corrige o que está aberto.
+   * Grava o cálculo no cadastro do cliente.
    *
-   * Orçamento novo nasce 'rascunho' — vincular é registrar o que foi
-   * calculado, não afirmar que o cliente aceitou. Corrigir NÃO mexe no
-   * status: um orçamento aprovado que teve o valor ajustado continua
-   * aprovado, e rebaixá-lo em silêncio tiraria a venda do faturamento.
+   * O status nasce 'rascunho': vincular é registrar o que foi calculado,
+   * não afirmar que o cliente aceitou.
    */
-  async function salvarOrcamento() {
+  async function vincularAoCliente() {
     if (!resultado || !clienteEscolhido) return;
-
-    const adicionais = Object.keys(quantidades).map((adicionalId) => ({
-      adicionalId,
-      quantidade: quantidadeDe(adicionalId),
-    }));
-
-    /* Campo vazio = sem negociação, e isso é `null`, não zero. */
-    const negociado = valorNegociado.trim()
-      ? Number(valorNegociado.replace(',', '.')) || null
-      : null;
 
     setVinculando(true);
     try {
-      if (editandoId) {
-        await api.orcamentos.atualizar({
-          id: editandoId,
-          volumeM3: Number(volume) || 0,
-          distanciaKm: Number(distancia) || 0,
-          custoBase: resultado.custoTotal,
-          margemPercentual: resultado.margemPercentual,
-          valorFinal: resultado.precoRedondo,
-          valorNegociado: negociado,
-          adicionais,
-        });
-        mostrar(`Orçamento de ${clienteEscolhido.nome} corrigido.`, 'sucesso');
-      } else {
-        const id = await api.orcamentos.criar({
-          clienteId: clienteEscolhido.id,
-          volumeM3: Number(volume) || 0,
-          distanciaKm: Number(distancia) || 0,
-          custoBase: resultado.custoTotal,
-          margemPercentual: resultado.margemPercentual,
-          valorFinal: resultado.precoRedondo,
-          observacoes: '',
-          adicionais,
-        });
+      await api.orcamentos.criar({
+        clienteId: clienteEscolhido.id,
+        volumeM3: Number(volume) || 0,
+        distanciaKm: Number(distancia) || 0,
+        custoBase: resultado.custoTotal,
+        margemPercentual: resultado.margemPercentual,
+        valorFinal: resultado.precoRedondo,
+        observacoes: '',
+        adicionais: Object.keys(quantidades).map((adicionalId) => ({
+          adicionalId,
+          quantidade: quantidadeDe(adicionalId),
+        })),
+      });
 
-        /* O negociado não cabe no criar_orcamento da migration 29; quando
-           preenchido, entra num segundo passo pela função de correção. */
-        if (negociado !== null) {
-          await api.orcamentos.atualizar({ id, valorNegociado: negociado });
-        }
-
-        mostrar(
-          `Orçamento vinculado a ${clienteEscolhido.nome}. Está na ficha dele, em Clientes.`,
-          'sucesso',
-        );
-      }
-
-      await recarregarLista();
+      mostrar(
+        `Orçamento vinculado a ${clienteEscolhido.nome}. Está na ficha dele, em Clientes.`,
+        'sucesso',
+      );
     } catch (e) {
-      mostrar(e instanceof Error ? e.message : 'Falha ao gravar o orçamento.', 'erro');
+      mostrar(e instanceof Error ? e.message : 'Falha ao vincular o orçamento.', 'erro');
     } finally {
       setVinculando(false);
     }
   }
-
-  /** Abandona a correção e devolve a tela ao estado de orçamento novo. */
-  function sairDaEdicao() {
-    setEditandoId(null);
-    setValorNegociado('');
-    setQuantidades({});
-    setVolume('');
-    setDistancia('');
-    setResultado(null);
-    setPrecoSemCusto(null);
-    router.replace('/orcamentos');
-  }
-
-  async function mudarStatus(o: Orcamento, status: StatusOrcamento) {
-    if (status === 'aprovado') {
-      const outro = lista.find(
-        (x) => x.status === 'aprovado' && x.clienteId === o.clienteId && x.id !== o.id,
-      );
-      if (
-        outro &&
-        !confirm(
-          `${o.clienteNome} já tem um orçamento aprovado de ${formatarBRL(valorDoOrcamento(outro))}.\n\n` +
-            'Aprovar este vai RECUSAR aquele — um cliente só pode ter um aprovado, senão o ' +
-            'faturamento conta a receita duas vezes.\n\nContinuar?',
-        )
-      ) {
-        return;
-      }
-    }
-
-    try {
-      await api.orcamentos.mudarStatus(o.id, status);
-      await recarregarLista();
-      mostrar(`Orçamento marcado como ${status}.`, 'sucesso');
-    } catch (e) {
-      mostrar(e instanceof Error ? e.message : 'Falha ao mudar o status.', 'erro');
-    }
-  }
-
-  async function excluirOrcamento(o: Orcamento) {
-    if (!confirm(`Excluir o orçamento de ${o.clienteNome}, ${formatarBRL(valorDoOrcamento(o))}?`))
-      return;
-    try {
-      await api.orcamentos.excluir(o.id);
-      if (editandoId === o.id) sairDaEdicao();
-      await recarregarLista();
-      mostrar('Orçamento excluído.', 'sucesso');
-    } catch (e) {
-      mostrar(e instanceof Error ? e.message : 'Falha ao excluir.', 'erro');
-    }
-  }
-
-  const listaFiltrada = useMemo(
-    () =>
-      lista.filter(
-        (o) =>
-          (!filtroStatus || o.status === filtroStatus) &&
-          (!filtroCliente || o.clienteId === filtroCliente),
-      ),
-    [lista, filtroStatus, filtroCliente],
-  );
 
   function alternarAdicional(id: string) {
     setQuantidades((atual) => {
@@ -478,7 +264,7 @@ export default function PaginaOrcamentos() {
               onChange={(e) => escolherCliente(e.target.value)}
             >
               <option value="">Nenhum — só calcular</option>
-              {ordenarPorNome(clientes).map((c) => (
+              {clientes.map((c) => (
                 <option key={c.id} value={c.id}>
                   {c.codigo} — {c.nome}
                 </option>
@@ -703,34 +489,12 @@ export default function PaginaOrcamentos() {
                 />
               </div>
 
-              {/*
-                Valor negociado: o desconto de telefone sem mentir sobre a
-                margem. Vazio significa "não houve negociação" e o preço
-                vale o calculado — por isso o campo nasce vazio e não com
-                o valor sugerido dentro.
-              */}
-              <div className="field" style={{ marginTop: 16, marginBottom: 4 }}>
-                <label htmlFor="valorNegociado">Valor negociado (opcional)</label>
-                <input
-                  id="valorNegociado"
-                  inputMode="decimal"
-                  value={valorNegociado}
-                  onChange={(e) => setValorNegociado(e.target.value)}
-                  placeholder={`Deixe vazio para cobrar ${formatarBRL(resultado.precoRedondo)}`}
-                />
-                <p className="field-hint">
-                  Preencha só se você fechou por um valor diferente do calculado. O
-                  relatório guarda os dois, então a sua margem continua dizendo a
-                  verdade.
-                </p>
-              </div>
-
               {/* Guardar o cálculo na ficha do cliente. */}
               <div className={estilos.vinculo}>
                 <button
                   type="button"
                   className="btn btn-primary"
-                  onClick={salvarOrcamento}
+                  onClick={vincularAoCliente}
                   disabled={!clienteEscolhido || vinculando}
                   title={
                     clienteEscolhido
@@ -738,183 +502,17 @@ export default function PaginaOrcamentos() {
                       : 'Escolha um cliente no topo para poder vincular'
                   }
                 >
-                  {vinculando
-                    ? 'Salvando…'
-                    : editandoId
-                      ? 'Salvar correção'
-                      : 'Vincular valor ao cliente'}
+                  {vinculando ? 'Vinculando…' : 'Vincular valor ao cliente'}
                 </button>
 
-                {editandoId && (
-                  <button type="button" className="btn btn-ghost" onClick={sairDaEdicao}>
-                    Cancelar correção
-                  </button>
-                )}
-
                 <span className={estilos.explicacaoVinculo}>
-                  {editandoId
-                    ? 'Corrigindo um orçamento já gravado. O status dele não muda.'
-                    : clienteEscolhido
-                      ? `Guarda este cálculo na ficha de ${clienteEscolhido.nome}, com tudo que entrou na conta.`
-                      : 'Sem cliente escolhido, o cálculo não é gravado em lugar nenhum.'}
+                  {clienteEscolhido
+                    ? `Guarda este cálculo na ficha de ${clienteEscolhido.nome}, com tudo que entrou na conta.`
+                    : 'Sem cliente escolhido, o cálculo não é gravado em lugar nenhum.'}
                 </span>
               </div>
             </>
           ) : null}
-        </div>
-      </div>
-
-      {/* ---------- Os orçamentos gravados ----------
-           Esta tela só calculava e gravava: nunca mostrou um orçamento.
-           Os 33 que existiam no banco só apareciam na ficha do cliente.
-
-           FECHADO por padrão: quem abre esta tela quase sempre vem orçar,
-           não consultar. A lista inteira acima da dobra empurrava a
-           calculadora para fora da tela no celular. */}
-      <div className="card" style={{ marginTop: 20 }}>
-        <button
-          type="button"
-          className={estilos.barraLista}
-          onClick={alternarLista}
-          aria-expanded={listaAberta}
-          aria-controls="lista-orcamentos"
-        >
-          <span className={estilos.setaLista} aria-hidden="true">
-            {listaAberta ? '▾' : '▸'}
-          </span>
-          <span className="card-title" style={{ margin: 0 }}>
-            Orçamentos gravados
-          </span>
-          {/* A contagem aparece FECHADO também: é a informação que faz
-              alguém decidir abrir. */}
-          <span className={estilos.contagemLista}>
-            {carregandoLista ? '…' : lista.length}
-          </span>
-        </button>
-
-        {/* `hidden` em vez de não renderizar: os filtros guardam o que a
-            pessoa escolheu, e desmontar perderia isso a cada fechada. */}
-        <div id="lista-orcamentos" hidden={!listaAberta}>
-        <div className={estilos.filtrosLista}>
-          <div className="field">
-            <label htmlFor="filtroStatusOrc">Status</label>
-            <select
-              id="filtroStatusOrc"
-              value={filtroStatus}
-              onChange={(e) => setFiltroStatus(e.target.value)}
-            >
-              <option value="">Todos</option>
-              {STATUS_ORCAMENTO.map((s) => (
-                <option key={s} value={s}>
-                  {ROTULO_ORCAMENTO[s]}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <div className="field">
-            <label htmlFor="filtroClienteOrc">Cliente</label>
-            <select
-              id="filtroClienteOrc"
-              value={filtroCliente}
-              onChange={(e) => setFiltroCliente(e.target.value)}
-            >
-              <option value="">Todos</option>
-              {ordenarPorNome(clientes).map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.nome}
-                </option>
-              ))}
-            </select>
-          </div>
-        </div>
-
-        {carregandoLista ? (
-          <div className="estado-vazio">Carregando orçamentos…</div>
-        ) : listaFiltrada.length === 0 ? (
-          <div className="estado-vazio">
-            <strong>Nenhum orçamento no filtro</strong>
-            {lista.length === 0
-              ? 'Calcule acima e use "Vincular valor ao cliente".'
-              : `Há ${lista.length} gravado(s) fora deste filtro.`}
-          </div>
-        ) : (
-          <ul className={estilos.listaOrcamentos}>
-            {listaFiltrada.map((o) => (
-              <li
-                key={o.id}
-                className={`${estilos.itemOrcamento} ${
-                  editandoId === o.id ? estilos.itemEmEdicao : ''
-                }`}
-              >
-                <div className={estilos.linhaTopo}>
-                  <strong className={estilos.valorItem}>{formatarBRL(valorDoOrcamento(o))}</strong>
-                  {o.valorNegociado !== null && (
-                    <span className={estilos.calculadoItem}>
-                      negociado · calculado {formatarBRL(o.valorFinal)}
-                    </span>
-                  )}
-                  <span className={`${estilos.pastilhaStatus} ${estilos[o.status]}`}>
-                    {ROTULO_ORCAMENTO[o.status]}
-                  </span>
-                </div>
-
-                <div className={estilos.linhaDados}>
-                  <span>{o.clienteNome}</span>
-                  <span className="texto-secundario">
-                    {o.volumeM3} m³ · {o.distanciaKm} km · {formatarData(o.data)}
-                  </span>
-                </div>
-
-                <div className={estilos.acoesItem}>
-                  {o.status !== 'enviado' && o.status !== 'aprovado' && (
-                    <button
-                      type="button"
-                      className="btn btn-ghost btn-sm"
-                      onClick={() => mudarStatus(o, 'enviado')}
-                    >
-                      Marcar enviado
-                    </button>
-                  )}
-                  {o.status !== 'aprovado' && (
-                    <button
-                      type="button"
-                      className="btn btn-primary btn-sm"
-                      onClick={() => mudarStatus(o, 'aprovado')}
-                    >
-                      Aprovar
-                    </button>
-                  )}
-                  {o.status !== 'recusado' && (
-                    <button
-                      type="button"
-                      className="btn btn-ghost btn-sm"
-                      onClick={() => mudarStatus(o, 'recusado')}
-                    >
-                      Recusar
-                    </button>
-                  )}
-                  <button
-                    type="button"
-                    className="btn btn-outline btn-sm"
-                    onClick={() => router.push(`/orcamentos?editar=${o.id}`)}
-                  >
-                    Editar
-                  </button>
-                  {podeExcluirOrcamento && (
-                    <button
-                      type="button"
-                      className="btn btn-ghost btn-sm"
-                      onClick={() => excluirOrcamento(o)}
-                    >
-                      Excluir
-                    </button>
-                  )}
-                </div>
-              </li>
-            ))}
-          </ul>
-        )}
         </div>
       </div>
 

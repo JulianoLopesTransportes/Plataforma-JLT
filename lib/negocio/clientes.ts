@@ -6,26 +6,6 @@ import { FUNIL_CLIENTE, type StatusCliente } from '../tipos';
 import type { TomBadge } from '@/components/ui';
 
 /**
- * Qualquer lista com nome, em ordem alfabética — para seletor.
- *
- * `clientes.listar()` devolve por data de cadastro, o que está certo para
- * a TABELA de Clientes, onde o recém-cadastrado é o que interessa. Num
- * `<select>` de 60 nomes está errado: procurar pela ordem de cadastro é
- * percorrer um por um.
- *
- * `localeCompare` com 'pt-BR', e não comparação crua de string: sem isso
- * "Álvaro" vai para depois de "Zuleica", porque o código de Á é maior
- * que o de Z. Com nome brasileiro isso aparece na primeira tela.
- *
- * Devolve CÓPIA. `sort` ordena no lugar, e ordenar o array que veio do
- * estado do React é mutar estado — o React não veria a mudança e a lista
- * ficaria meio ordenada até o próximo redesenho.
- */
-export function ordenarPorNome<T extends { nome: string }>(lista: T[]): T[] {
-  return [...lista].sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'));
-}
-
-/**
  * Classificação do porte da mudança pelo volume em m³.
  * Os seis degraus vêm do módulo original e refletem como a operação
  * dimensiona equipe e veículo.

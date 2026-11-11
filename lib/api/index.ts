@@ -848,40 +848,6 @@ export type ParametrosPrecificacao = {
   margemMaxima: number;
 };
 
-/**
- * Junta os adicionais às linhas da visão de orçamentos.
- *
- * Em consulta separada, e não por embed do PostgREST: `orcamentos_visao` é
- * VIEW, e view não tem chave estrangeira para o PostgREST seguir. Ler a
- * tabela crua em vez da visão resolveria o join e quebraria a máscara de
- * custo — o remédio seria pior.
- *
- * Falhar aqui NÃO derruba a lista: valor e data são o essencial, e a
- * composição é detalhe. Devolve o orçamento sem adicionais em vez de nada.
- */
-async function comAdicionais(linhas: Record<string, unknown>[]): Promise<Orcamento[]> {
-  if (linhas.length === 0) return [];
-
-  const { data: adicionais } = await supabase()
-    .from('orcamento_adicionais')
-    .select('orcamento_id, adicional_id, quantidade, nome')
-    .in(
-      'orcamento_id',
-      linhas.map((l) => l.id as string),
-    );
-
-  const porOrcamento = new Map<string, unknown[]>();
-  for (const a of adicionais ?? []) {
-    const atual = porOrcamento.get(a.orcamento_id) ?? [];
-    atual.push(a);
-    porOrcamento.set(a.orcamento_id, atual);
-  }
-
-  return linhas.map((l) =>
-    paraOrcamento({ ...l, orcamento_adicionais: porOrcamento.get(l.id as string) ?? [] }),
-  );
-}
-
 const orcamentos = {
   async listar(filtros: Filtros = {}): Promise<Orcamento[]> {
     if (!usandoBanco()) {
@@ -909,10 +875,7 @@ const orcamentos = {
     if (filtros.de) consulta = consulta.gte('data', filtros.de);
     if (filtros.ate) consulta = consulta.lte('data', filtros.ate);
 
-    // Com os adicionais, e não mais sem: a lista agora é o ponto de
-    // partida para EDITAR o orçamento, e editar sem saber quais serviços
-    // estavam marcados apagaria todos eles no primeiro salvamento.
-    return comAdicionais(verificar(await consulta) as Record<string, unknown>[]);
+    return verificar(await consulta).map(paraOrcamento);
   },
 
   async obter(id: string): Promise<Orcamento | null> {
@@ -974,13 +937,11 @@ const orcamentos = {
     return data === null ? null : Number(data);
   },
 
-  /*
-   * `aprovar()` foi REMOVIDA aqui. Ela gravava `status='aprovado'` com um
-   * UPDATE direto, sem trava de quem pode aprovar e sem recusar o
-   * orçamento aprovado anterior do mesmo cliente — e nunca foi chamada por
-   * botão nenhum. Quem faz isso agora é `mudarStatus()`, que passa pela
-   * função do banco. Ver migration 47.
-   */
+  async aprovar(id: string): Promise<void> {
+    if (!usandoBanco()) throw new Error('Aprovação exige o banco de dados configurado.');
+    const { error } = await supabase().from('orcamentos').update({ status: 'aprovado' }).eq('id', id);
+    if (error) throw new Error(traduzir(error));
+  },
 
   /**
    * Orçamentos de um cliente, com os adicionais aplicados.
@@ -1011,78 +972,26 @@ const orcamentos = {
     if (error) throw new Error(error.message);
     if (!linhas || linhas.length === 0) return [];
 
-    return comAdicionais(linhas);
-  },
+    const { data: adicionais } = await cliente
+      .from('orcamento_adicionais')
+      .select('orcamento_id, adicional_id, quantidade, nome')
+      .in(
+        'orcamento_id',
+        linhas.map((l) => l.id),
+      );
 
-  /**
-   * Corrige um orçamento já gravado, recalculado na tela.
-   *
-   * Vai por função do banco porque os adicionais vivem em tabela filha:
-   * dois UPDATEs do navegador deixariam, numa falha no meio, um preço novo
-   * com a composição antiga — a incoerência exata que "editar" deveria
-   * evitar.
-   *
-   * `valorNegociado` tem três estados, e os três importam: um número grava
-   * o valor fechado; `null` DESFAZ a negociação; ausente (undefined)
-   * mantém o que estava. Sem essa distinção não haveria como desfazer.
-   */
-  async atualizar(entrada: {
-    id: string;
-    volumeM3?: number;
-    distanciaKm?: number;
-    custoBase?: number;
-    margemPercentual?: number;
-    valorFinal?: number;
-    valorNegociado?: number | null;
-    observacoes?: string;
-    adicionais?: { adicionalId: string; quantidade: number }[];
-  }): Promise<void> {
-    if (!usandoBanco()) throw new Error('Edição exige o banco de dados configurado.');
-
-    const corpo: Record<string, unknown> = { id: entrada.id };
-    if (entrada.volumeM3 !== undefined) corpo.volume_m3 = entrada.volumeM3;
-    if (entrada.distanciaKm !== undefined) corpo.distancia_km = entrada.distanciaKm;
-    if (entrada.custoBase !== undefined) corpo.custo_base = entrada.custoBase;
-    if (entrada.margemPercentual !== undefined) corpo.margem_percentual = entrada.margemPercentual;
-    if (entrada.valorFinal !== undefined) corpo.valor_final = entrada.valorFinal;
-    if (entrada.valorNegociado !== undefined) corpo.valor_negociado = entrada.valorNegociado;
-    if (entrada.observacoes !== undefined) corpo.observacoes = entrada.observacoes;
-    if (entrada.adicionais !== undefined) {
-      corpo.adicionais = entrada.adicionais.map((a) => ({
-        adicional_id: a.adicionalId,
-        quantidade: a.quantidade,
-      }));
+    // Falha ao ler os adicionais não derruba a lista: o valor final e a
+    // data são o essencial, e a composição é detalhe.
+    const porOrcamento = new Map<string, unknown[]>();
+    for (const a of adicionais ?? []) {
+      const atual = porOrcamento.get(a.orcamento_id) ?? [];
+      atual.push(a);
+      porOrcamento.set(a.orcamento_id, atual);
     }
 
-    const { error } = await supabase().rpc('atualizar_orcamento', { p_orcamento: corpo });
-    if (error) throw new Error(traduzir(error));
-  },
-
-  /**
-   * Move o orçamento no ciclo: rascunho → enviado → aprovado | recusado.
-   *
-   * Substitui `aprovar()`, que existia na API e nunca foi chamada por
-   * nenhum botão — era por isso que os 33 orçamentos do Juliano estavam
-   * todos em rascunho e o faturamento nascia zero.
-   *
-   * APROVAR é o único passo restrito, e a trava vive no banco: quem tem a
-   * capacidade `aprovar`, ou o responsável pelo cliente. Aprovar um
-   * segundo orçamento do mesmo cliente recusa o anterior na mesma
-   * transação — senão a receita contaria duas vezes.
-   */
-  async mudarStatus(id: string, status: Orcamento['status']): Promise<void> {
-    if (!usandoBanco()) throw new Error('Mudar status exige o banco de dados configurado.');
-    const { error } = await supabase().rpc('mudar_status_orcamento', {
-      p_id: id,
-      p_status: status,
-    });
-    if (error) throw new Error(traduzir(error));
-  },
-
-  async excluir(id: string): Promise<void> {
-    if (!usandoBanco()) throw new Error('Exclusão exige o banco de dados configurado.');
-    const { error } = await supabase().from('orcamentos').delete().eq('id', id);
-    if (error) throw new Error(traduzir(error));
+    return linhas.map((l) =>
+      paraOrcamento({ ...l, orcamento_adicionais: porOrcamento.get(l.id) ?? [] }),
+    );
   },
 
   /**

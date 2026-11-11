@@ -10,9 +10,6 @@
     "custoBase": 4200,
     "margemPercentual": 38,
     "valorFinal": 8900,
-    "valorNegociado": null,
-    "aprovadoPor": null,
-    "aprovadoEm": "",
     "observacoes": "Içamento de piano incluso.",
     "adicionais": [
       {
@@ -43,9 +40,6 @@
     "custoBase": 5600,
     "margemPercentual": 35,
     "valorFinal": 11500,
-    "valorNegociado": null,
-    "aprovadoPor": null,
-    "aprovadoEm": "",
     "observacoes": "Seguro adicional para equipamentos médicos.",
     "adicionais": [
       {
@@ -71,9 +65,6 @@
     "custoBase": 9800,
     "margemPercentual": 32,
     "valorFinal": 17900,
-    "valorNegociado": null,
-    "aprovadoPor": null,
-    "aprovadoEm": "",
     "observacoes": "Versão com seguro. Cliente pediu também versão sem.",
     "adicionais": [
       {
@@ -99,9 +90,6 @@
     "custoBase": 3100,
     "margemPercentual": 40,
     "valorFinal": 5900,
-    "valorNegociado": null,
-    "aprovadoPor": null,
-    "aprovadoEm": "",
     "observacoes": "Aguardando data de entrega das chaves.",
     "adicionais": [
       {
@@ -122,9 +110,6 @@
     "custoBase": 9200,
     "margemPercentual": 42,
     "valorFinal": 18500,
-    "valorNegociado": null,
-    "aprovadoPor": null,
-    "aprovadoEm": "",
     "observacoes": "Desmontagem de 14 estações de trabalho.",
     "adicionais": [
       {
@@ -155,9 +140,6 @@
     "custoBase": 5100,
     "margemPercentual": 36,
     "valorFinal": 9800,
-    "valorNegociado": null,
-    "aprovadoPor": null,
-    "aprovadoEm": "",
     "observacoes": "Adicional de acesso difícil por causa da ladeira.",
     "adicionais": [
       {
@@ -188,9 +170,6 @@
     "custoBase": 7400,
     "margemPercentual": 30,
     "valorFinal": 12400,
-    "valorNegociado": null,
-    "aprovadoPor": null,
-    "aprovadoEm": "",
     "observacoes": "Peso elevado para o volume — conferir limite de kg do veículo.",
     "adicionais": [
       {
@@ -211,9 +190,6 @@
     "custoBase": 1900,
     "margemPercentual": 45,
     "valorFinal": 3500,
-    "valorNegociado": null,
-    "aprovadoPor": null,
-    "aprovadoEm": "",
     "observacoes": "Cliente faz o próprio empacotamento — sem adicional de embalagem.",
     "adicionais": []
   },
@@ -228,9 +204,6 @@
     "custoBase": 18400,
     "margemPercentual": 28,
     "valorFinal": 32000,
-    "valorNegociado": null,
-    "aprovadoPor": null,
-    "aprovadoEm": "",
     "observacoes": "Contrato recorrente. Margem menor negociada por volume.",
     "adicionais": [
       {
@@ -251,9 +224,6 @@
     "custoBase": 14200,
     "margemPercentual": 34,
     "valorFinal": 24800,
-    "valorNegociado": null,
-    "aprovadoPor": null,
-    "aprovadoEm": "",
     "observacoes": "Cliente fechou com concorrente nesta operação. Renegociado depois.",
     "adicionais": [
       {

@@ -14,7 +14,6 @@
  */
 
 import { useEffect, useState, useMemo, useCallback } from 'react';
-import { useRouter } from 'next/navigation';
 import { api, usandoBanco } from '@/lib/api';
 import { anexos as apiAnexos, categoriaValida } from '@/lib/api/anexos';
 import { linhasDeItens } from '@/lib/negocio/documentos';
@@ -55,8 +54,6 @@ import {
   type Cliente,
   type StatusCliente,
   type Orcamento,
-  type StatusOrcamento,
-  valorDoOrcamento,
   type MembroEquipe,
 } from '@/lib/tipos';
 import { formatarBRL } from '@/lib/utils/formato';
@@ -86,17 +83,6 @@ const CLASSE_DO_TOM: Record<TomBadge, string> = {
   branco: estilos.status_branco,
 };
 
-/**
- * Cor do status do orçamento. Record obrigatório: status novo sem cor não
- * compila, em vez de cair num `undefined` que a tela desenha sem estilo.
- */
-const TOM_DO_ORCAMENTO: Record<StatusOrcamento, TomBadge> = {
-  rascunho: 'neutro',
-  enviado: 'info',
-  aprovado: 'success',
-  recusado: 'danger',
-};
-
 const CLIENTE_VAZIO: Omit<Cliente, 'id' | 'codigo' | 'criadoEm' | 'anexos' | 'historico'> = {
   tipo: 'PF',
   nome: '',
@@ -123,7 +109,6 @@ const CLIENTE_VAZIO: Omit<Cliente, 'id' | 'codigo' | 'criadoEm' | 'anexos' | 'hi
 
 export default function PaginaClientes() {
   const usuario = useUsuario();
-  const router = useRouter();
   const { mostrar } = useToast();
 
   const [clientes, setClientes] = useState<Cliente[]>([]);
@@ -262,89 +247,6 @@ export default function PaginaClientes() {
    * depende dele: nem ser o próprio dono libera a troca.
    */
   const podeTrocarResponsavel = podeMexer && podeAdministrarEquipe;
-
-  /* --- Orçamentos na ficha ---------------------------------------------- */
-
-  const podeMexerOrcamento = podeEditar(usuario.nivel, 'orcamentos');
-
-  async function recarregarOrcamentos(clienteId: string) {
-    setOrcamentos(await api.orcamentos.doCliente(clienteId));
-  }
-
-  /**
-   * Move o orçamento no ciclo e, ao APROVAR, oferece fechar o cliente.
-   *
-   * A trava de quem pode aprovar vive no banco; aqui o erro dela só é
-   * mostrado. Aprovar um segundo orçamento recusa o anterior do mesmo
-   * cliente, também no banco — então o aviso vem antes, porque é o tipo de
-   * efeito que ninguém quer descobrir depois.
-   */
-  async function mudarStatusOrcamento(o: Orcamento, status: StatusOrcamento) {
-    if (!detalhe) return;
-
-    if (status === 'aprovado') {
-      const outroAprovado = orcamentos.find((x) => x.status === 'aprovado' && x.id !== o.id);
-      if (
-        outroAprovado &&
-        !confirm(
-          `${detalhe.nome} já tem um orçamento aprovado de ${formatarBRL(
-            valorDoOrcamento(outroAprovado),
-          )}.\n\n` +
-            'Aprovar este vai RECUSAR aquele — um cliente só pode ter um orçamento aprovado, ' +
-            'senão o faturamento conta a receita duas vezes.\n\nContinuar?',
-        )
-      ) {
-        return;
-      }
-    }
-
-    try {
-      await api.orcamentos.mudarStatus(o.id, status);
-      await api.clientes.registrarHistorico(
-        detalhe.id,
-        usuario.nome,
-        `Orçamento de ${formatarBRL(valorDoOrcamento(o))} marcado como ${status}.`,
-      );
-      await recarregarOrcamentos(detalhe.id);
-      mostrar(`Orçamento marcado como ${status}.`, 'sucesso');
-
-      /*
-       * Orçamento aprovado é o cliente fechando. Pergunta antes de mexer
-       * no funil: o status do cliente é dele, não consequência automática
-       * de outro módulo. Quem move é `mudarStatus`, que já cuida da agenda.
-       */
-      if (status === 'aprovado' && detalhe.status !== STATUS_QUE_AGENDA) {
-        if (
-          confirm(
-            `Orçamento aprovado.\n\nPassar ${detalhe.nome} para "${STATUS_QUE_AGENDA}"? ` +
-              'Isso também lança a mudança na agenda.',
-          )
-        ) {
-          await mudarStatus(detalhe, STATUS_QUE_AGENDA);
-        }
-      }
-    } catch (e) {
-      mostrar(e instanceof Error ? e.message : 'Falha ao mudar o status.', 'erro');
-    }
-  }
-
-  async function excluirOrcamento(o: Orcamento) {
-    if (!detalhe) return;
-    if (!confirm(`Excluir o orçamento de ${formatarBRL(valorDoOrcamento(o))}?`)) return;
-
-    try {
-      await api.orcamentos.excluir(o.id);
-      await recarregarOrcamentos(detalhe.id);
-      mostrar('Orçamento excluído.', 'sucesso');
-    } catch (e) {
-      mostrar(e instanceof Error ? e.message : 'Falha ao excluir.', 'erro');
-    }
-  }
-
-  /* Abre a calculadora com este orçamento carregado para recalcular. */
-  function abrirOrcamentoParaEditar(o: Orcamento) {
-    router.push(`/orcamentos?editar=${o.id}`);
-  }
 
   /* --- Filtro em memória ------------------------------------------------ */
   const filtrados = useMemo(() => {
@@ -1073,16 +975,10 @@ export default function PaginaClientes() {
                     {orcamentos.map((o) => (
                       <li key={o.id} className={estilos.orcamento}>
                         <div className={estilos.cabecalhoOrcamento}>
-                          {/* O que o cliente paga: o negociado quando há. */}
                           <strong className={estilos.valorOrcamento}>
-                            {formatarBRL(valorDoOrcamento(o))}
+                            {formatarBRL(o.valorFinal)}
                           </strong>
-                          {o.valorNegociado !== null && (
-                            <span className={estilos.valorCalculado}>
-                              negociado · calculado {formatarBRL(o.valorFinal)}
-                            </span>
-                          )}
-                          <Badge texto={o.status} tom={TOM_DO_ORCAMENTO[o.status]} />
+                          <Badge texto={o.status} tom={o.status === 'aprovado' ? 'success' : 'neutro'} />
                           <span className="texto-secundario">{formatarData(o.data)}</span>
                         </div>
 
@@ -1120,59 +1016,6 @@ export default function PaginaClientes() {
                                 {a.quantidade > 1 && ` ×${a.quantidade}`}
                               </span>
                             ))}
-                          </div>
-                        )}
-
-                        {podeMexerOrcamento && (
-                          <div className={estilos.acoesOrcamento}>
-                            {/*
-                              Só os passos que fazem sentido a partir do
-                              status atual. Um botão "Aprovar" num orçamento
-                              já aprovado só serviria para confundir.
-                            */}
-                            {o.status !== 'enviado' && o.status !== 'aprovado' && (
-                              <button
-                                type="button"
-                                className="btn btn-ghost btn-sm"
-                                onClick={() => mudarStatusOrcamento(o, 'enviado')}
-                              >
-                                Marcar enviado
-                              </button>
-                            )}
-                            {o.status !== 'aprovado' && (
-                              <button
-                                type="button"
-                                className="btn btn-primary btn-sm"
-                                onClick={() => mudarStatusOrcamento(o, 'aprovado')}
-                              >
-                                Aprovar
-                              </button>
-                            )}
-                            {o.status !== 'recusado' && (
-                              <button
-                                type="button"
-                                className="btn btn-ghost btn-sm"
-                                onClick={() => mudarStatusOrcamento(o, 'recusado')}
-                              >
-                                Recusar
-                              </button>
-                            )}
-                            <button
-                              type="button"
-                              className="btn btn-outline btn-sm"
-                              onClick={() => abrirOrcamentoParaEditar(o)}
-                            >
-                              Editar
-                            </button>
-                            {podeExcluir && (
-                              <button
-                                type="button"
-                                className="btn btn-ghost btn-sm"
-                                onClick={() => excluirOrcamento(o)}
-                              >
-                                Excluir
-                              </button>
-                            )}
                           </div>
                         )}
                       </li>

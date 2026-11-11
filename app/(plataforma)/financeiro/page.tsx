@@ -16,7 +16,6 @@ import { api, usandoBanco } from '@/lib/api';
 import { useUsuario } from '@/components/layout/SessaoProvider';
 import { podeEditar, podeFazer } from '@/lib/permissoes';
 import { formatarBRL, formatarData, hojeISO, novoId, paraNumero } from '@/lib/utils/formato';
-import { ordenarPorNome } from '@/lib/negocio/clientes';
 import { baixarCSV, numeroParaCSV } from '@/lib/utils/csv';
 import {
   TituloPagina,
@@ -828,7 +827,7 @@ export default function PaginaFinanceiro() {
                 onChange={(e) => setFormulario({ ...formulario, clienteId: e.target.value })}
               >
                 <option value="">Nenhum</option>
-                {ordenarPorNome(clientes).map((c) => (
+                {clientes.map((c) => (
                   <option key={c.id} value={c.id}>
                     {c.nome}
                   </option>

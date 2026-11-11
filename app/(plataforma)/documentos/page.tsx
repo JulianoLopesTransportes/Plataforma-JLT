@@ -16,6 +16,7 @@ import { api } from '@/lib/api';
 import { useUsuario } from '@/components/layout/SessaoProvider';
 import { podeEditar } from '@/lib/permissoes';
 import { formatarBRL, hojeISO, paraNumero } from '@/lib/utils/formato';
+import { ordenarPorNome } from '@/lib/negocio/clientes';
 import {
   TIPOS_DOCUMENTO,
   TITULO_DOCUMENTO,
@@ -359,7 +360,7 @@ export default function PaginaDocumentos() {
           <CampoFiltro rotulo="Cliente">
             <select value={clienteId} onChange={(e) => setClienteId(e.target.value)}>
               <option value="">Selecione um cliente…</option>
-              {clientes.map((c) => (
+              {ordenarPorNome(clientes).map((c) => (
                 <option key={c.id} value={c.id}>
                   {c.codigo} — {c.nome}
                 </option>

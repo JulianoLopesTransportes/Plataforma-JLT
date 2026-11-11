@@ -30,6 +30,7 @@ import { useState, useMemo } from 'react';
 import { api } from '@/lib/api';
 import { calcularOcupacao, detectarAlertas } from '@/lib/negocio/rotas';
 import { hojeISO, novoId, mascararTelefone, mascararDocumento } from '@/lib/utils/formato';
+import { ordenarPorNome } from '@/lib/negocio/clientes';
 import { Modal, useToast } from '@/components/ui';
 import Icone from '@/components/layout/Icone';
 import type { Cliente, Veiculo, Motorista, Rota, TipoParada } from '@/lib/tipos';
@@ -788,7 +789,7 @@ export default function FormularioRota({
                         }}
                       >
                         <option value="">+ Coletar mudança…</option>
-                        {clientes.map((cl) => (
+                        {ordenarPorNome(clientes).map((cl) => (
                           <option key={cl.id} value={cl.id}>
                             {cl.nome}
                           </option>

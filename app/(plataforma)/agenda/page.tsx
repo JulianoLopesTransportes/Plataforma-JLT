@@ -18,6 +18,7 @@ import { api, usandoBanco } from '@/lib/api';
 import { useUsuario } from '@/components/layout/SessaoProvider';
 import { podeEditar, podeVer } from '@/lib/permissoes';
 import { formatarData, hojeISO, nomeDoMes, paraISO } from '@/lib/utils/formato';
+import { ordenarPorNome } from '@/lib/negocio/clientes';
 import {
   TituloPagina,
   Modal,
@@ -873,7 +874,7 @@ export default function PaginaAgenda() {
                   onChange={(e) => escolherCliente(e.target.value || null)}
                 >
                   <option value="">Nenhum</option>
-                  {clientes.map((c) => (
+                  {ordenarPorNome(clientes).map((c) => (
                     <option key={c.id} value={c.id}>
                       {c.codigo} — {c.nome}
                     </option>

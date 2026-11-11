@@ -6,6 +6,7 @@ import { api, type ParametrosPrecificacao } from '@/lib/api';
 import { useUsuario } from '@/components/layout/SessaoProvider';
 import { podeFazer } from '@/lib/permissoes';
 import { formatarBRL, formatarData } from '@/lib/utils/formato';
+import { ordenarPorNome } from '@/lib/negocio/clientes';
 import {
   calcularOrcamento,
   margemDoFator,
@@ -477,7 +478,7 @@ export default function PaginaOrcamentos() {
               onChange={(e) => escolherCliente(e.target.value)}
             >
               <option value="">Nenhum — só calcular</option>
-              {clientes.map((c) => (
+              {ordenarPorNome(clientes).map((c) => (
                 <option key={c.id} value={c.id}>
                   {c.codigo} — {c.nome}
                 </option>
@@ -819,7 +820,7 @@ export default function PaginaOrcamentos() {
               onChange={(e) => setFiltroCliente(e.target.value)}
             >
               <option value="">Todos</option>
-              {clientes.map((c) => (
+              {ordenarPorNome(clientes).map((c) => (
                 <option key={c.id} value={c.id}>
                   {c.nome}
                 </option>

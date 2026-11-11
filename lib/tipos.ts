@@ -408,7 +408,20 @@ export type Adicional = {
   unidade?: string;
 };
 
-export type StatusOrcamento = 'rascunho' | 'enviado' | 'aprovado' | 'recusado';
+/**
+ * Ciclo de vida do orçamento, na ordem em que ele costuma andar.
+ *
+ * Lista e não união solta, para a tela poder montar o filtro iterando — e
+ * para um status novo aparecer no filtro sem ninguém ter de lembrar.
+ * Espelha o enum `status_orcamento` no Postgres.
+ *
+ * `aprovado` é o único passo restrito, e é o que alimenta o faturamento:
+ * até a migration 47 nada podia chegar nele, e por isso o faturamento era
+ * zero por construção.
+ */
+export const STATUS_ORCAMENTO = ['rascunho', 'enviado', 'aprovado', 'recusado'] as const;
+
+export type StatusOrcamento = (typeof STATUS_ORCAMENTO)[number];
 
 export type AdicionalAplicado = {
   id: string;
@@ -440,8 +453,26 @@ export type Orcamento = {
   adicionais: AdicionalAplicado[];
   /** Preço final apresentado ao cliente. Comercial vê apenas este. */
   valorFinal: number;
+  /**
+   * Preço efetivamente fechado, quando diferente do calculado.
+   *
+   * NULO quando não houve negociação — e aí vale `valorFinal`. Nulo e não
+   * zero: zero é um preço, e significaria serviço de graça.
+   *
+   * Existe para o desconto de telefone não ter de virar margem falsa: o
+   * relatório consegue separar o que a conta deu do que foi fechado.
+   */
+  valorNegociado: number | null;
+  /** Quem aprovou, e quando. Nulos enquanto não aprovado. */
+  aprovadoPor: string | null;
+  aprovadoEm: string;
   observacoes: string;
 };
+
+/** O que o cliente vai pagar: o negociado, se houver; senão o calculado. */
+export function valorDoOrcamento(o: Orcamento): number {
+  return o.valorNegociado ?? o.valorFinal;
+}
 
 /* ==========================================================================
    Utilitários de consulta

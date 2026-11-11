@@ -324,3 +324,31 @@
   border-color: color-mix(in srgb, var(--color-primary) 35%, transparent);
   color: var(--color-primary);
 }
+
+/* ==========================================================================
+   Ações e valor negociado nos cartões de orçamento
+   ========================================================================== */
+
+/*
+ * Os botões embrulham: no celular são até cinco (enviado, aprovar,
+ * recusar, editar, excluir) e numa linha só estourariam o cartão.
+ */
+.acoesOrcamento {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: var(--space-3);
+  padding-top: var(--space-3);
+  border-top: 1px dashed var(--color-border);
+}
+
+/*
+ * O valor calculado ao lado do negociado. Pequeno de propósito: o número
+ * que importa é o que foi fechado, e este é a referência de como ele se
+ * compara com a conta.
+ */
+.valorCalculado {
+  font-size: 11.5px;
+  color: var(--color-gray-600);
+  font-variant-numeric: tabular-nums;
+}

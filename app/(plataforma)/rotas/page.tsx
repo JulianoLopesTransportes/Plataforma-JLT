@@ -38,7 +38,7 @@ import {
 } from '@/components/ui';
 import Icone from '@/components/layout/Icone';
 import FormularioRota from '@/components/modulos/FormularioRota';
-import type { Rota, Veiculo, Motorista, Cliente } from '@/lib/tipos';
+import type { Rota, Veiculo, Motorista, Cliente, TipoParada } from '@/lib/tipos';
 import estilos from './rotas.module.css';
 
 const TOM_STATUS: Record<Rota['status'], TomBadge> = {
@@ -52,6 +52,25 @@ const ICONE_ALERTA: Record<Alerta['nivel'], string> = {
   danger: 'alerta',
   warning: 'alerta',
   info: 'guia',
+};
+
+/*
+ * Classes do CSS Module em Record, e não `estilos[\`alerta_${nivel}\`]`.
+ *
+ * Busca por template string devolve `undefined` em silêncio quando a classe
+ * não existe: o alerta sairia sem cor nenhuma e ninguém notaria. Foi assim
+ * que as bolinhas do calendário sumiram em 27/08/2026.
+ */
+const CLASSE_ALERTA: Record<Alerta['nivel'], string> = {
+  danger: estilos.alerta_danger,
+  warning: estilos.alerta_warning,
+  info: estilos.alerta_info,
+};
+
+const CLASSE_MARCADOR: Record<TipoParada, string> = {
+  coleta: estilos.marcador_coleta,
+  entrega: estilos.marcador_entrega,
+  mista: estilos.marcador_mista,
 };
 
 export default function PaginaRotas() {
@@ -451,7 +470,7 @@ function DetalheRota({
           <h3 className={estilos.subtitulo}>Alertas da operação</h3>
           <ul className={estilos.listaAlertas}>
             {alertas.map((a, i) => (
-              <li key={i} className={`${estilos.alerta} ${estilos[`alerta_${a.nivel}`]}`}>
+              <li key={i} className={`${estilos.alerta} ${CLASSE_ALERTA[a.nivel]}`}>
                 <Icone nome={ICONE_ALERTA[a.nivel]} tamanho={17} />
                 <span>{a.texto}</span>
               </li>
@@ -480,7 +499,7 @@ function DetalheRota({
 
           return (
             <li key={parada.id} className={estilos.parada}>
-              <div className={`${estilos.marcador} ${estilos[`marcador_${parada.tipo}`]}`} />
+              <div className={`${estilos.marcador} ${CLASSE_MARCADOR[parada.tipo]}`} />
 
               <div className={estilos.corpoParada}>
                 <div className={estilos.cabecalhoParada}>

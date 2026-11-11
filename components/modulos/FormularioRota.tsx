@@ -33,7 +33,21 @@ import { hojeISO, novoId, mascararTelefone, mascararDocumento } from '@/lib/util
 import { Modal, useToast } from '@/components/ui';
 import Icone from '@/components/layout/Icone';
 import type { Cliente, Veiculo, Motorista, Rota, TipoParada } from '@/lib/tipos';
+import type { NivelAlerta } from '@/lib/negocio/rotas';
 import estilos from './formulario-rota.module.css';
+
+/*
+ * Classes do CSS Module em Record, não `estilos[\`alerta_${nivel}\`]`.
+ *
+ * Template string num CSS Module devolve `undefined` em silêncio quando a
+ * classe não existe — o alerta sai sem cor e ninguém nota. Com o Record,
+ * nível sem classe não compila.
+ */
+const CLASSE_ALERTA: Record<NivelAlerta, string> = {
+  danger: estilos.alerta_danger,
+  warning: estilos.alerta_warning,
+  info: estilos.alerta_info,
+};
 
 type CargaForm = {
   tempId: string;
@@ -865,7 +879,7 @@ export default function FormularioRota({
             {previa.alertas.length > 0 && (
               <ul className={estilos.alertas}>
                 {previa.alertas.map((a, i) => (
-                  <li key={i} className={estilos[`alerta_${a.nivel}`]}>
+                  <li key={i} className={CLASSE_ALERTA[a.nivel]}>
                     {a.texto}
                   </li>
                 ))}

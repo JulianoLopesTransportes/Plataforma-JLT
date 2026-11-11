@@ -86,7 +86,9 @@ const TIPOS_DE_MUDANCA: TipoCompromisso[] = ['coleta_mudanca', 'entrega_mudanca'
  * Coleta em azul e entrega em verde repetem o que as Rotas já usam para os
  * mesmos dois conceitos.
  */
-const COR_PONTO: Record<TipoCompromisso, string> = {
+type CorPonto = 'info' | 'success' | 'warning' | 'danger' | 'gold' | 'neutro' | 'primary';
+
+const COR_PONTO: Record<TipoCompromisso, CorPonto> = {
   coleta_mudanca: 'info',
   entrega_mudanca: 'success',
   visita: 'warning',
@@ -94,6 +96,27 @@ const COR_PONTO: Record<TipoCompromisso, string> = {
   equipe: 'gold',
   pessoal: 'neutro',
   outro: 'primary',
+};
+
+/**
+ * A classe CSS de cada cor.
+ *
+ * O Record acima resolveu metade do problema: tipo sem cor não compila.
+ * Faltava a outra metade — a classe era montada por texto,
+ * `estilos[\`ponto_${cor}\`]`, e busca por template string num CSS Module
+ * devolve `undefined` em SILÊNCIO quando a classe não existe. A bolinha
+ * voltaria a sumir se alguém renomeasse uma classe no .module.css.
+ *
+ * Agora as duas pontas são travadas: cor sem classe também não compila.
+ */
+const CLASSE_PONTO: Record<CorPonto, string> = {
+  info: estilos.ponto_info,
+  success: estilos.ponto_success,
+  warning: estilos.ponto_warning,
+  danger: estilos.ponto_danger,
+  gold: estilos.ponto_gold,
+  neutro: estilos.ponto_neutro,
+  primary: estilos.ponto_primary,
 };
 
 /** Serviços que um compromisso de mudança pode incluir. */
@@ -559,7 +582,7 @@ export default function PaginaAgenda() {
                       {eventos.slice(0, 3).map((e) => (
                         <span
                           key={e.id}
-                          className={`${estilos.ponto} ${estilos[`ponto_${COR_PONTO[e.tipo]}`]}`}
+                          className={`${estilos.ponto} ${CLASSE_PONTO[COR_PONTO[e.tipo]]}`}
                         />
                       ))}
                       {eventos.length > 3 && (
@@ -576,7 +599,7 @@ export default function PaginaAgenda() {
             {Object.entries(ROTULO_TIPO).map(([tipo, rotulo]) => (
               <span key={tipo} className={estilos.itemLegenda}>
                 <span
-                  className={`${estilos.ponto} ${estilos[`ponto_${COR_PONTO[tipo as TipoCompromisso]}`]}`}
+                  className={`${estilos.ponto} ${CLASSE_PONTO[COR_PONTO[tipo as TipoCompromisso]]}`}
                 />
                 {rotulo}
               </span>

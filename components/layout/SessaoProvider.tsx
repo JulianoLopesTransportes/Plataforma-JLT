@@ -96,8 +96,21 @@ export function SessaoProvider({ children }: { children: React.ReactNode }) {
 
     try {
       hidratarPermissoes(await lerPermissoes());
-    } catch {
-      // Segue com a semente.
+    } catch (e) {
+      /*
+       * Segue com a semente — mas DEIXA RASTRO.
+       *
+       * Engolir isto em silêncio era o único dos quatro `catch` vazios do
+       * projeto que escondia algo que importa: a pessoa continua usando a
+       * plataforma com a matriz de FÁBRICA, que pode conceder ou negar
+       * diferente do que o Juliano configurou, e nada na tela diz isso.
+       * Sem o aviso, "o acesso dele está errado" não tem como ser
+       * investigado depois.
+       */
+      console.warn(
+        'Permissões não carregaram do banco; a sessão está usando a matriz de fábrica.',
+        e instanceof Error ? e.message : e,
+      );
     } finally {
       setVersaoPermissoes((v) => v + 1);
     }

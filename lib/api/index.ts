@@ -20,8 +20,13 @@
 
 import { supabase, supabaseConfigurado } from '../supabase/cliente';
 import { lerMock, casaBusca } from './cliente-http';
-import { camposDeCliente } from './campos-cliente';
-import { camposDeLancamento } from './campos-lancamento';
+import {
+  camposDeCliente,
+  camposDeLancamento,
+  camposDeVeiculo,
+  camposDeMotorista,
+  camposDeCompromisso,
+} from './campos';
 import { dentroDoPeriodo } from '../utils/formato';
 import {
   paraCliente,
@@ -238,7 +243,7 @@ const veiculos = {
 
     const { data, error } = await supabase()
       .from('veiculos')
-      .insert(paraLinhaVeiculo(veiculo))
+      .insert(camposDeVeiculo(veiculo))
       .select('*, veiculo_anexos(*)')
       .single();
 
@@ -250,7 +255,7 @@ const veiculos = {
     if (!usandoBanco()) throw new Error('Edição exige o banco de dados configurado.');
     const { error } = await supabase()
       .from('veiculos')
-      .update(paraLinhaVeiculo(mudancas))
+      .update(camposDeVeiculo(mudancas))
       .eq('id', id);
     if (error) throw new Error(traduzir(error));
   },
@@ -263,20 +268,6 @@ const veiculos = {
 };
 
 /** Converte o veículo do formato do front para o do banco. */
-function paraLinhaVeiculo(v: Partial<Veiculo>): Record<string, unknown> {
-  const linha: Record<string, unknown> = {};
-  if (v.placa !== undefined) linha.placa = v.placa.toUpperCase();
-  if (v.modelo !== undefined) linha.modelo = v.modelo;
-  if (v.marca !== undefined) linha.marca = v.marca;
-  if (v.ano !== undefined) linha.ano = v.ano || null;
-  if (v.capacidadeM3 !== undefined) linha.capacidade_m3 = v.capacidadeM3;
-  if (v.capacidadeKg !== undefined) linha.capacidade_kg = v.capacidadeKg;
-  if (v.status !== undefined) linha.status = v.status;
-  if (v.proximaManutencao !== undefined) linha.proxima_manutencao = v.proximaManutencao || null;
-  if (v.observacoes !== undefined) linha.observacoes = v.observacoes;
-  return linha;
-}
-
 const motoristas = {
   async listar(filtros: Filtros = {}): Promise<Motorista[]> {
     if (!usandoBanco()) {
@@ -321,7 +312,7 @@ const motoristas = {
 
     const { data, error } = await supabase()
       .from('motoristas')
-      .insert(paraLinhaMotorista(motorista))
+      .insert(camposDeMotorista(motorista))
       .select('*, motorista_anexos(*)')
       .single();
 
@@ -333,7 +324,7 @@ const motoristas = {
     if (!usandoBanco()) throw new Error('Edição exige o banco de dados configurado.');
     const { error } = await supabase()
       .from('motoristas')
-      .update(paraLinhaMotorista(mudancas))
+      .update(camposDeMotorista(mudancas))
       .eq('id', id);
     if (error) throw new Error(traduzir(error));
   },
@@ -346,21 +337,6 @@ const motoristas = {
 };
 
 /** Converte o motorista do formato do front para o do banco. */
-function paraLinhaMotorista(m: Partial<Motorista>): Record<string, unknown> {
-  const linha: Record<string, unknown> = {};
-  if (m.nome !== undefined) linha.nome = m.nome;
-  if (m.cpf !== undefined) linha.cpf = m.cpf;
-  if (m.telefone !== undefined) linha.telefone = m.telefone;
-  if (m.cnh !== undefined) linha.cnh = m.cnh;
-  if (m.categoriaCnh !== undefined) linha.categoria_cnh = m.categoriaCnh || null;
-  if (m.validadeCnh !== undefined) linha.validade_cnh = m.validadeCnh || null;
-  if (m.status !== undefined) linha.status = m.status;
-  if (m.veiculoId !== undefined) linha.veiculo_id = m.veiculoId;
-  if (m.admissao !== undefined) linha.admissao = m.admissao || null;
-  if (m.observacoes !== undefined) linha.observacoes = m.observacoes;
-  return linha;
-}
-
 /* ==========================================================================
    Financeiro
    ========================================================================== */
@@ -583,7 +559,7 @@ const agenda = {
 
     const { data, error } = await supabase()
       .from('compromissos')
-      .insert(paraLinhaCompromisso(compromisso))
+      .insert(camposDeCompromisso(compromisso))
       .select()
       .single();
 
@@ -595,7 +571,7 @@ const agenda = {
     if (!usandoBanco()) throw new Error('Edição exige o banco de dados configurado.');
     const { error } = await supabase()
       .from('compromissos')
-      .update(paraLinhaCompromisso(mudancas))
+      .update(camposDeCompromisso(mudancas))
       .eq('id', id);
     if (error) throw new Error(traduzir(error));
   },
@@ -671,28 +647,6 @@ const agenda = {
 };
 
 /** Converte o compromisso do formato do front para o do banco. */
-function paraLinhaCompromisso(c: Partial<Compromisso>): Record<string, unknown> {
-  const linha: Record<string, unknown> = {};
-  if (c.automatico !== undefined) linha.automatico = c.automatico;
-  if (c.tipo !== undefined) linha.tipo = c.tipo;
-  if (c.titulo !== undefined) linha.titulo = c.titulo;
-  if (c.data !== undefined) linha.data = c.data;
-  if (c.diaInteiro !== undefined) linha.dia_inteiro = c.diaInteiro;
-  // A constraint horario_coerente exige horário quando não é dia inteiro.
-  if (c.horario !== undefined || c.diaInteiro !== undefined) {
-    linha.horario = c.diaInteiro ? null : c.horario || null;
-  }
-  if (c.clienteId !== undefined) linha.cliente_id = c.clienteId;
-  if (c.veiculoId !== undefined) linha.veiculo_id = c.veiculoId;
-  if (c.motoristaId !== undefined) linha.motorista_id = c.motoristaId;
-  if (c.rotaId !== undefined) linha.rota_id = c.rotaId;
-  if (c.enderecoColeta !== undefined) linha.endereco_coleta = c.enderecoColeta;
-  if (c.enderecoEntrega !== undefined) linha.endereco_entrega = c.enderecoEntrega;
-  if (c.caracteristicas !== undefined) linha.caracteristicas = c.caracteristicas;
-  if (c.observacoes !== undefined) linha.observacoes = c.observacoes;
-  return linha;
-}
-
 /* ==========================================================================
    Rotas
    ========================================================================== */

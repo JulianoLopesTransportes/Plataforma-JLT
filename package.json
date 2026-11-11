@@ -5,6 +5,7 @@
   "description": "Plataforma interna da Juliano Lopes Transportes",
   "scripts": {
     "dev": "next dev",
+    "conferir": "node scripts/conferir-classes-css.mjs",
     "build": "next build",
     "start": "next start",
     "lint": "next lint"

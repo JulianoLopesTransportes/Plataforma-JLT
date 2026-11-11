@@ -459,3 +459,17 @@ export type Filtros = {
   veiculoId?: string;
   motoristaId?: string;
 };
+
+/* ==========================================================================
+   Campos editáveis — a fonte dos mapas em lib/api/campos.ts
+   ==========================================================================
+
+   Cada um destes tipos existe para virar `Record<keyof …, Regra>` naquele
+   arquivo. É o que faz o compilador cobrar uma coluna para cada campo novo,
+   em vez de deixar o UPDATE sair sem ele — que foi o que aconteceu com
+   `origem`, `origemDetalhe` e `tipo` do cliente desde o primeiro commit da
+   camada de dados até 09/11/2026. */
+
+export type CamposVeiculo = Omit<Veiculo, 'id' | 'anexos'>;
+export type CamposMotorista = Omit<Motorista, 'id' | 'anexos'>;
+export type CamposCompromisso = Omit<Compromisso, 'id'>;

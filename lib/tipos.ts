@@ -492,3 +492,26 @@ export type Filtros = {
 export type CamposVeiculo = Omit<Veiculo, 'id' | 'anexos'>;
 export type CamposMotorista = Omit<Motorista, 'id' | 'anexos'>;
 export type CamposCompromisso = Omit<Compromisso, 'id'>;
+
+/* ==========================================================================
+   Eventos de status — a trilha que o funil mede
+   ========================================================================== */
+
+/**
+ * Uma transição de etapa do cliente, gravada por gatilho no banco.
+ *
+ * `de` nulo marca a ENTRADA no funil. `retroativo` marca a carga inicial
+ * dos clientes que já existiam quando a tabela nasceu: deles sabe-se o
+ * status de hoje e a data de cadastro, e nada do caminho entre os dois.
+ * Cálculo que dependa de QUANDO a mudança ocorreu precisa ignorá-los.
+ */
+export type EventoStatus = {
+  id: string;
+  clienteId: string;
+  de: StatusCliente | null;
+  para: StatusCliente;
+  /** ISO 8601 com hora. */
+  em: string;
+  autorNome: string;
+  retroativo: boolean;
+};

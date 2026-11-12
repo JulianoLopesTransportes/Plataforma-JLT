@@ -50,6 +50,7 @@ import type {
   Filtros,
   MembroEquipe,
   CategoriaLancamento,
+  EventoStatus,
 } from '../tipos';
 
 import clientesJson from '@/mock/clientes.json';
@@ -819,9 +820,21 @@ const orcamentos = {
 
     // A VIEW, não a tabela: é ela que mascara custo e margem para quem não
     // tem a capacidade ver_custos. Ver migration 04.
+    //
+    /*
+     * SÓ AS VERSÕES VIGENTES, e isto é um conserto de um bug que eu mesmo
+     * criei na migration 48.
+     *
+     * Antes dela, uma linha por orçamento. Depois, uma linha por VERSÃO —
+     * e esta função alimenta o Relatórios. Um orçamento revisado duas vezes
+     * entraria três vezes na soma de faturamento, inflando o número sem
+     * nada na tela indicando o erro. Exatamente o tipo de falha silenciosa
+     * que eu vinha caçando no resto do projeto.
+     */
     let consulta = supabase()
       .from('orcamentos_visao')
       .select('*')
+      .eq('vigente', true)
       .order('data', { ascending: false });
 
     if (filtros.status) consulta = consulta.eq('status', filtros.status);
@@ -1148,6 +1161,35 @@ export type LinhaRelatorioDb = {
 };
 
 const relatorios = {
+  /**
+   * A trilha de transições de etapa, para o funil.
+   *
+   * Lida inteira e agregada na tela, não no banco: são dezenas de linhas
+   * por cliente no pior caso, e manter a conta em TypeScript deixa o
+   * denominador de cada taxa visível ao lado do número que a tela mostra —
+   * que é exatamente onde todo relatório de funil mente.
+   */
+  async eventosDeStatus(): Promise<EventoStatus[]> {
+    if (!usandoBanco()) return [];
+
+    const { data, error } = await supabase()
+      .from('cliente_status_eventos')
+      .select('id, cliente_id, de, para, em, autor_nome, retroativo')
+      .order('em');
+
+    if (error) throw new Error(traduzir(error));
+
+    return (data ?? []).map((e: Record<string, unknown>) => ({
+      id: e.id as string,
+      clienteId: e.cliente_id as string,
+      de: (e.de as EventoStatus['de']) ?? null,
+      para: e.para as EventoStatus['para'],
+      em: (e.em as string) ?? '',
+      autorNome: (e.autor_nome as string) ?? '',
+      retroativo: e.retroativo === true,
+    }));
+  },
+
   /**
    * Consolidação por rota, direto do banco.
    *

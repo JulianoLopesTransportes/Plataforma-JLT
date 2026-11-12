@@ -135,7 +135,7 @@ export default function FormularioRota({
   clientes,
   veiculos,
   motoristas,
-  rota = null,
+  rota,
 }: {
   aberto: boolean;
   aoFechar: () => void;
@@ -143,8 +143,18 @@ export default function FormularioRota({
   clientes: Cliente[];
   veiculos: Veiculo[];
   motoristas: Motorista[];
-  /** Presente = editando esta rota. Ausente = rota nova. */
-  rota?: Rota | null;
+  /**
+   * A rota sendo editada, ou `null` para criar uma nova.
+   *
+   * OBRIGATÓRIA, e não opcional com padrão `null`. Era opcional, e eu
+   * esqueci de passá-la na tela de rotas: o formulário recebia `undefined`,
+   * entendia "rota nova" e CRIAVA uma cópia a cada edição. O compilador
+   * ficou calado porque prop opcional ausente é legítima.
+   *
+   * Exigir o `null` explícito faz quem chama declarar a intenção, e faz
+   * esquecer virar erro de compilação em vez de rota duplicada no banco.
+   */
+  rota: Rota | null;
 }) {
   const { mostrar } = useToast();
   const { confirmar } = useDialogo();

@@ -354,10 +354,22 @@ function ConteudoRotas() {
 
       <FormularioRota
         aberto={formAberto}
-        aoFechar={() => setFormAberto(false)}
+        /*
+         * SEM esta prop, o formulário não sabe que está editando e cai no
+         * ramo de CRIAR — foi exatamente o bug que o Juliano reportou em
+         * 12/11/2026: clicar em Editar gerava uma rota nova com o mesmo
+         * conteúdo. O estado existia, os botões o preenchiam, e ele nunca
+         * chegava aqui.
+         */
+        rota={rotaEditando}
+        aoFechar={() => {
+          setFormAberto(false);
+          setRotaEditando(null);
+        }}
         aoSalvar={async () => {
           await recarregar();
           setFormAberto(false);
+          setRotaEditando(null);
         }}
         clientes={clientes}
         veiculos={veiculos}

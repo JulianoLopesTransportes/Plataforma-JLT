@@ -30,7 +30,7 @@ import { useState, useMemo } from 'react';
 import { api } from '@/lib/api';
 import { calcularOcupacao, detectarAlertas } from '@/lib/negocio/rotas';
 import { hojeISO, novoId, mascararTelefone, mascararDocumento } from '@/lib/utils/formato';
-import { Modal, useToast } from '@/components/ui';
+import { Modal, useToast, useDialogo } from '@/components/ui';
 import Icone from '@/components/layout/Icone';
 import type { Cliente, Veiculo, Motorista, Rota, TipoParada } from '@/lib/tipos';
 import type { NivelAlerta } from '@/lib/negocio/rotas';
@@ -106,6 +106,7 @@ export default function FormularioRota({
   motoristas: Motorista[];
 }) {
   const { mostrar } = useToast();
+  const { confirmar } = useDialogo();
 
   const [nome, setNome] = useState('');
   const [dataSaida, setDataSaida] = useState(hojeISO());
@@ -405,9 +406,12 @@ export default function FormularioRota({
     // Erro grave de montagem barra o salvamento; aviso apenas alerta.
     const graves = previa.alertas.filter((a) => a.nivel === 'danger');
     if (graves.length > 0) {
-      const seguir = confirm(
-        `Esta rota tem ${graves.length} problema(s):\n\n${graves.map((a) => `• ${a.texto}`).join('\n')}\n\nSalvar mesmo assim?`,
-      );
+      const seguir = await confirmar({
+        titulo: graves.length === 1 ? 'Um problema na rota' : `${graves.length} problemas na rota`,
+        mensagem: `${graves.map((a) => `• ${a.texto}`).join('\n')}\n\nSalvar mesmo assim?`,
+        textoConfirmar: 'Salvar assim',
+        // Não é destrutivo: é seguir apesar do aviso.
+      });
       if (!seguir) return;
     }
 

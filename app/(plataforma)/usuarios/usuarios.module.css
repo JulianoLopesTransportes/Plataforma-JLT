@@ -14,7 +14,11 @@
   width: 52px;
   height: 52px;
   border-radius: 50%;
-  background: linear-gradient(140deg, var(--color-primary-dark), var(--color-primary));
+  background: linear-gradient(
+    140deg,
+    var(--color-primary-dark),
+    var(--color-primary)
+  );
   color: var(--color-white);
   display: flex;
   align-items: center;
@@ -89,7 +93,6 @@
   overflow-x: auto;
   border-radius: var(--radius-md);
 }
-
 
 .erro {
   background: var(--color-danger-bg);
@@ -273,8 +276,10 @@
   padding: 4px 12px;
 }
 
-.excluirNivel:hover {
-  border-color: var(--color-danger);
-  background: var(--color-danger-bg);
-  color: var(--color-danger);
+@media (hover: hover) {
+  .excluirNivel:hover {
+    border-color: var(--color-danger);
+    background: var(--color-danger-bg);
+    color: var(--color-danger);
+  }
 }

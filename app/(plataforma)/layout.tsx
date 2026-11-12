@@ -1,4 +1,4 @@
-'use client';
+"use client";
 
 /**
  * MOLDURA DA PLATAFORMA
@@ -11,23 +11,27 @@
  * módulo apareça por um instante antes da guarda de acesso agir.
  */
 
-import { useState, useEffect } from 'react';
-import Sidebar from '@/components/layout/Sidebar';
-import Header from '@/components/layout/Header';
-import { useSessao } from '@/components/layout/SessaoProvider';
-import { ProvedorToast } from '@/components/ui';
-import estilos from '@/components/layout/layout.module.css';
+import { useState, useEffect } from "react";
+import Sidebar from "@/components/layout/Sidebar";
+import Header from "@/components/layout/Header";
+import { useSessao } from "@/components/layout/SessaoProvider";
+import { ProvedorToast, ProvedorDialogo } from "@/components/ui";
+import estilos from "@/components/layout/layout.module.css";
 
-const CHAVE_COLAPSO = 'jlt.sidebarColapsada';
+const CHAVE_COLAPSO = "jlt.sidebarColapsada";
 
-export default function LayoutPlataforma({ children }: { children: React.ReactNode }) {
+export default function LayoutPlataforma({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   const { usuario, carregando, sair } = useSessao();
   const [colapsada, setColapsada] = useState(false);
   const [drawerAberto, setDrawerAberto] = useState(false);
 
   // Preferência de sidebar recolhida sobrevive à navegação.
   useEffect(() => {
-    setColapsada(localStorage.getItem(CHAVE_COLAPSO) === 'true');
+    setColapsada(localStorage.getItem(CHAVE_COLAPSO) === "true");
   }, []);
 
   function alternarColapso() {
@@ -46,28 +50,34 @@ export default function LayoutPlataforma({ children }: { children: React.ReactNo
 
   return (
     <ProvedorToast>
-      <div className={estilos.app}>
-        <Sidebar
-          nivel={usuario.nivel}
-          colapsada={colapsada}
-          aberta={drawerAberto}
-          aoAlternarColapso={alternarColapso}
-          aoNavegar={() => setDrawerAberto(false)}
-        />
-
-        {drawerAberto && (
-          <div
-            className={estilos.backdrop}
-            onClick={() => setDrawerAberto(false)}
-            aria-hidden="true"
+      <ProvedorDialogo>
+        <div className={estilos.app}>
+          <Sidebar
+            nivel={usuario.nivel}
+            colapsada={colapsada}
+            aberta={drawerAberto}
+            aoAlternarColapso={alternarColapso}
+            aoNavegar={() => setDrawerAberto(false)}
           />
-        )}
 
-        <div className={estilos.coluna}>
-          <Header usuario={usuario} aoAbrirMenu={() => setDrawerAberto(true)} aoSair={sair} />
-          <main className={estilos.conteudo}>{children}</main>
+          {drawerAberto && (
+            <div
+              className={estilos.backdrop}
+              onClick={() => setDrawerAberto(false)}
+              aria-hidden="true"
+            />
+          )}
+
+          <div className={estilos.coluna}>
+            <Header
+              usuario={usuario}
+              aoAbrirMenu={() => setDrawerAberto(true)}
+              aoSair={sair}
+            />
+            <main className={estilos.conteudo}>{children}</main>
+          </div>
         </div>
-      </div>
+      </ProvedorDialogo>
     </ProvedorToast>
   );
 }

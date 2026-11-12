@@ -34,8 +34,10 @@
   text-align: left;
 }
 
-.cabecalhoSecao:hover .tituloSecao {
-  color: var(--color-primary);
+@media (hover: hover) {
+  .cabecalhoSecao:hover .tituloSecao {
+    color: var(--color-primary);
+  }
 }
 
 .tituloSecao {

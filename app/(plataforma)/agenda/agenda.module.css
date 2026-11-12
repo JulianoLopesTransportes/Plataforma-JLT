@@ -38,9 +38,11 @@
   display: flex;
 }
 
-.navMes:hover {
-  border-color: var(--color-primary);
-  color: var(--color-primary);
+@media (hover: hover) {
+  .navMes:hover {
+    border-color: var(--color-primary);
+    color: var(--color-primary);
+  }
 }
 
 .setaEsquerda {
@@ -82,11 +84,15 @@
   justify-content: flex-start;
   gap: 4px;
   font-family: var(--font-body);
-  transition: border-color var(--transition-fast), background var(--transition-fast);
+  transition:
+    border-color var(--transition-fast),
+    background var(--transition-fast);
 }
 
-.dia:hover {
-  border-color: var(--color-primary);
+@media (hover: hover) {
+  .dia:hover {
+    border-color: var(--color-primary);
+  }
 }
 
 .diaForaDoMes {
@@ -139,13 +145,27 @@
  * todo tipo novo. O que era falha silenciosa em tempo de execução virou
  * erro de compilação. Aqui ficam só os sete tons.
  */
-.ponto_info { background: var(--color-info); }
-.ponto_success { background: var(--color-success); }
-.ponto_warning { background: var(--color-warning); }
-.ponto_danger { background: var(--color-danger); }
-.ponto_gold { background: var(--color-gold); }
-.ponto_neutro { background: var(--color-gray-600); }
-.ponto_primary { background: var(--color-primary); }
+.ponto_info {
+  background: var(--color-info);
+}
+.ponto_success {
+  background: var(--color-success);
+}
+.ponto_warning {
+  background: var(--color-warning);
+}
+.ponto_danger {
+  background: var(--color-danger);
+}
+.ponto_gold {
+  background: var(--color-gold);
+}
+.ponto_neutro {
+  background: var(--color-gray-600);
+}
+.ponto_primary {
+  background: var(--color-primary);
+}
 
 .maisEventos {
   font-size: 9.5px;
@@ -196,8 +216,10 @@
   transition: border-color var(--transition-fast);
 }
 
-.cartaoCompromisso:hover {
-  border-color: var(--color-primary);
+@media (hover: hover) {
+  .cartaoCompromisso:hover {
+    border-color: var(--color-primary);
+  }
 }
 
 .horario {

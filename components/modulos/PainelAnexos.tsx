@@ -22,7 +22,7 @@ import {
   type CategoriaAnexo,
 } from '@/lib/api/anexos';
 import { formatarTamanho, formatarData } from '@/lib/utils/formato';
-import { useToast } from '@/components/ui';
+import { useToast, useDialogo } from '@/components/ui';
 import Icone from '@/components/layout/Icone';
 import estilos from './painel-anexos.module.css';
 
@@ -42,6 +42,7 @@ export default function PainelAnexos({
   aoMudar: () => Promise<void>;
 }) {
   const { mostrar } = useToast();
+  const { confirmar } = useDialogo();
   const [enviando, setEnviando] = useState(false);
   /* Gaveta escolhida para o PRÓXIMO envio. Fica no componente e não em
      cada arquivo porque quem anexa três contratos de uma vez não quer
@@ -94,7 +95,16 @@ export default function PainelAnexos({
   }
 
   async function excluir(anexo: AnexoSalvo) {
-    if (!confirm(`Excluir "${anexo.nome}"? Esta ação não pode ser desfeita.`)) return;
+    if (
+      !(await confirmar({
+        titulo: 'Excluir anexo?',
+        mensagem: `"${anexo.nome}" sai do arquivo e não pode ser recuperado.`,
+        textoConfirmar: 'Excluir',
+        perigoso: true,
+      }))
+    ) {
+      return;
+    }
 
     try {
       await apiAnexos.excluir(dono, anexo.id, anexo.caminho);

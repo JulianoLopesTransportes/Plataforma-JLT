@@ -44,6 +44,7 @@ import {
   GradeMetricas,
   CardMetrica,
   useToast,
+  useDialogo,
   type Coluna,
   type TomBadge,
 } from '@/components/ui';
@@ -110,6 +111,7 @@ const CLIENTE_VAZIO: Omit<Cliente, 'id' | 'codigo' | 'criadoEm' | 'anexos' | 'hi
 export default function PaginaClientes() {
   const usuario = useUsuario();
   const { mostrar } = useToast();
+  const { confirmar } = useDialogo();
 
   const [clientes, setClientes] = useState<Cliente[]>([]);
   const [carregando, setCarregando] = useState(true);
@@ -326,10 +328,13 @@ export default function PaginaClientes() {
     if (antes.status !== STATUS_QUE_AGENDA) return;
     if (!(await api.agenda.temAgendamento(antes.id))) return;
 
-    const tirar = confirm(
-      `${antes.nome} está saindo de "${STATUS_QUE_AGENDA}".\n\n` +
-        'Tirar o compromisso dele da agenda?',
-    );
+    const tirar = await confirmar({
+      titulo: 'Tirar da agenda?',
+      mensagem:
+        `${antes.nome} está saindo de "${STATUS_QUE_AGENDA}".\n\n` +
+        'O compromisso dele continua marcado. Quer tirá-lo da agenda?',
+      textoConfirmar: 'Tirar da agenda',
+    });
 
     if (tirar) {
       await api.agenda.desagendarCliente(antes.id);
@@ -370,7 +375,19 @@ export default function PaginaClientes() {
   }
 
   async function excluirCliente(cliente: Cliente) {
-    if (!confirm(`Excluir o cliente ${cliente.nome}? Esta ação não pode ser desfeita.`)) return;
+    if (
+      !(await confirmar({
+        titulo: 'Excluir cliente?',
+        mensagem:
+          `${cliente.nome} (${cliente.codigo}) sai do cadastro, junto com os ` +
+          'anexos, o histórico e o compromisso automático dele na agenda.\n\n' +
+          'Não há como desfazer.',
+        textoConfirmar: 'Excluir',
+        perigoso: true,
+      }))
+    ) {
+      return;
+    }
 
     try {
       if (usandoBanco()) {

@@ -7,7 +7,7 @@
 
 .app {
   display: flex;
-  min-height: 100vh;
+  min-height: 100dvh;
 }
 
 /* --------------------------------------------------------------------------
@@ -16,15 +16,32 @@
 .sidebar {
   width: var(--sidebar-width);
   flex-shrink: 0;
-  background: linear-gradient(180deg, var(--color-black) 0%, var(--color-primary-dark) 100%);
+  background: linear-gradient(
+    180deg,
+    var(--color-black) 0%,
+    var(--color-primary-dark) 100%
+  );
   color: var(--color-white);
   display: flex;
   flex-direction: column;
-  padding: var(--space-4) 0;
+  /*
+   * O respiro de baixo é o que salva o último item do menu.
+   *
+   * No iPhone a barra de gestos come os últimos ~34px da tela, e a gaveta
+   * vai até o fim dela. Sem isto, "Usuários" — o último do menu — fica sob
+   * a barra e não aceita toque.
+   */
+  padding: calc(var(--space-4) + env(safe-area-inset-top)) 0
+    calc(var(--space-4) + env(safe-area-inset-bottom));
+  padding-left: env(safe-area-inset-left);
   position: sticky;
   top: 0;
-  height: 100vh;
+  height: 100dvh;
   overflow-y: auto;
+  /* A gaveta rola sozinha: sem isto o iOS continua a rolagem na página
+     de trás quando a lista chega ao fim. */
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
   transition: width var(--transition-base);
   z-index: var(--z-sidebar);
 }
@@ -97,13 +114,17 @@
   font-weight: 500;
   border-left: 3px solid transparent;
   cursor: pointer;
-  transition: background var(--transition-fast), color var(--transition-fast);
+  transition:
+    background var(--transition-fast),
+    color var(--transition-fast);
   white-space: nowrap;
 }
 
-.item:hover {
-  background: var(--color-on-dark-hover);
-  color: var(--color-white);
+@media (hover: hover) {
+  .item:hover {
+    background: var(--color-on-dark-hover);
+    color: var(--color-white);
+  }
 }
 
 .itemAtivo {
@@ -140,8 +161,10 @@
   padding: var(--space-1) 0;
 }
 
-.botaoColapsar:hover {
-  color: var(--color-white);
+@media (hover: hover) {
+  .botaoColapsar:hover {
+    color: var(--color-white);
+  }
 }
 
 .botaoColapsar svg {
@@ -162,15 +185,28 @@
   flex-direction: column;
 }
 
+/*
+ * O cabeçalho cresce para caber o recorte do iPhone.
+ *
+ * Com `viewport-fit=cover` a página passa a ocupar a tela inteira, notch
+ * incluído. Sem o `env()` abaixo, o nome do cliente e o botão Sair ficariam
+ * POR BAIXO do notch em paisagem e da Dynamic Island em retrato.
+ *
+ * Soma em vez de substituir: a altura continua sendo `--header-height`, e o
+ * que entra é apenas o quanto o aparelho pede. No computador `env()` é
+ * zero, então nada muda — e é por isso que não precisa de media query.
+ */
 .header {
-  height: var(--header-height);
+  height: calc(var(--header-height) + env(safe-area-inset-top));
+  padding-top: env(safe-area-inset-top);
+  padding-left: calc(var(--space-4) + env(safe-area-inset-left));
+  padding-right: calc(var(--space-4) + env(safe-area-inset-right));
   background: var(--color-surface);
   border-bottom: 1px solid var(--color-border);
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: var(--space-3);
-  padding: 0 var(--space-4);
   position: sticky;
   top: 0;
   z-index: var(--z-header);
@@ -194,8 +230,10 @@
   min-width: 0;
 }
 
-.breadcrumb a:hover {
-  color: var(--color-primary);
+@media (hover: hover) {
+  .breadcrumb a:hover {
+    color: var(--color-primary);
+  }
 }
 
 .breadcrumbAtual {
@@ -258,14 +296,26 @@
   font-weight: 600;
 }
 
-.botaoSair:hover {
-  border-color: var(--color-primary);
-  color: var(--color-primary);
+@media (hover: hover) {
+  .botaoSair:hover {
+    border-color: var(--color-primary);
+    color: var(--color-primary);
+  }
 }
 
+/*
+ * O conteúdo respeita o recorte lateral e a barra de gestos.
+ *
+ * Em PAISAGEM no iPhone o notch fica de lado, e sem o inset esquerdo a
+ * primeira coluna de uma tabela entra embaixo dele. O inferior evita que a
+ * última linha da lista fique sob a barra de gestos.
+ */
 .conteudo {
   flex: 1;
   padding: var(--space-5);
+  padding-left: calc(var(--space-5) + env(safe-area-inset-left));
+  padding-right: calc(var(--space-5) + env(safe-area-inset-right));
+  padding-bottom: calc(var(--space-5) + env(safe-area-inset-bottom));
   max-width: var(--content-max-width);
   width: 100%;
 }
@@ -274,7 +324,7 @@
    Carregando / bloqueio
    -------------------------------------------------------------------------- */
 .carregandoTela {
-  min-height: 100vh;
+  min-height: 100dvh;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -327,8 +377,12 @@
     display: flex;
   }
 
+  /* Mantém os insets: o atalho `padding:` os apagaria, e é no celular que
+     eles importam. */
   .conteudo {
-    padding: var(--space-4) var(--space-3);
+    padding: var(--space-4) calc(var(--space-3) + env(safe-area-inset-right))
+      calc(var(--space-4) + env(safe-area-inset-bottom))
+      calc(var(--space-3) + env(safe-area-inset-left));
   }
 
   .backdrop {

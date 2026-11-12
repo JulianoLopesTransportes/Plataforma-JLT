@@ -87,8 +87,12 @@
   color: var(--color-gray-600);
 }
 
-.metricaPositiva { color: var(--color-success); }
-.metricaNegativa { color: var(--color-danger); }
+.metricaPositiva {
+  color: var(--color-success);
+}
+.metricaNegativa {
+  color: var(--color-danger);
+}
 
 /* --------------------------------------------------------------------------
    Barra de filtros
@@ -125,8 +129,10 @@
   user-select: none;
 }
 
-.thOrdenavel:hover {
-  background: var(--color-primary);
+@media (hover: hover) {
+  .thOrdenavel:hover {
+    background: var(--color-primary);
+  }
 }
 
 .setaOrdem {
@@ -163,9 +169,11 @@
   color: var(--color-text);
 }
 
-.botaoPagina:hover:not(:disabled) {
-  border-color: var(--color-primary);
-  color: var(--color-primary);
+@media (hover: hover) {
+  .botaoPagina:hover:not(:disabled) {
+    border-color: var(--color-primary);
+    color: var(--color-primary);
+  }
 }
 
 .botaoPagina:disabled {
@@ -179,8 +187,10 @@
   color: var(--color-white);
 }
 
-.paginaAtual:hover {
-  color: var(--color-white);
+@media (hover: hover) {
+  .paginaAtual:hover {
+    color: var(--color-white);
+  }
 }
 
 /* --------------------------------------------------------------------------
@@ -207,7 +217,9 @@
   margin: auto;
 }
 
-.modalLargo { max-width: 940px; }
+.modalLargo {
+  max-width: 940px;
+}
 
 .modalCabecalho {
   display: flex;
@@ -234,7 +246,11 @@
   display: flex;
 }
 
-.modalFechar:hover { color: var(--color-primary); }
+@media (hover: hover) {
+  .modalFechar:hover {
+    color: var(--color-primary);
+  }
+}
 
 .modalCorpo {
   padding: var(--space-4);
@@ -276,11 +292,19 @@
   animation: entrar var(--transition-base);
 }
 
-.toastSucesso { border-left-color: var(--color-success); }
-.toastErro { border-left-color: var(--color-danger); }
-.toastAviso { border-left-color: var(--color-warning); }
+.toastSucesso {
+  border-left-color: var(--color-success);
+}
+.toastErro {
+  border-left-color: var(--color-danger);
+}
+.toastAviso {
+  border-left-color: var(--color-warning);
+}
 
-.toastTexto { flex: 1; }
+.toastTexto {
+  flex: 1;
+}
 
 .toastFechar {
   background: transparent;
@@ -292,8 +316,14 @@
 }
 
 @keyframes entrar {
-  from { opacity: 0; transform: translateY(8px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 /* --------------------------------------------------------------------------
@@ -329,7 +359,11 @@
   white-space: nowrap;
 }
 
-.aba:hover { color: var(--color-primary); }
+@media (hover: hover) {
+  .aba:hover {
+    color: var(--color-primary);
+  }
+}
 
 .abaAtiva {
   color: var(--color-primary);
@@ -429,8 +463,16 @@
     padding: var(--space-2) var(--space-3);
   }
 
+  /*
+   * O rodapé é o que mais sofre com a barra de gestos do iPhone.
+   *
+   * Em folha de tela cheia ele encosta no fim da tela, e é exatamente onde
+   * fica o botão Salvar. Sem o respiro, salvar virava uma disputa com o
+   * gesto de voltar para a tela inicial.
+   */
   .modalRodape {
-    padding: var(--space-2) var(--space-3);
+    padding: var(--space-2) var(--space-3)
+      calc(var(--space-2) + env(safe-area-inset-bottom));
   }
 
   .modalTitulo {
@@ -470,4 +512,13 @@
   .modalCorpo {
     padding: 0;
   }
+}
+
+/* Mensagem do diálogo de confirmação. Quebra de linha preservada para o
+   chamador poder separar o aviso do detalhe. */
+.dialogoMensagem {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.55;
+  white-space: pre-line;
 }

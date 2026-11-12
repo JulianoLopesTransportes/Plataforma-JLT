@@ -310,21 +310,55 @@ export function Modal({
   rodape?: React.ReactNode;
   largo?: boolean;
 }) {
-  // Esc fecha; enquanto aberto, o fundo não rola.
+  /*
+   * Esc fecha; enquanto aberto, o fundo não rola.
+   *
+   * `body { overflow: hidden }` sozinho NÃO tranca o Safari do iPhone: a
+   * página de trás continua rolando e dando o efeito elástico por baixo do
+   * modal, e ao fechar você está noutro ponto da lista.
+   *
+   * O jeito que o iOS respeita é tirar o body do fluxo — `position: fixed`
+   * — e devolver a posição ao fechar. Guardamos o scroll antes, prendemos o
+   * body com `top` negativo (senão ele salta para o topo), e restauramos.
+   */
   useEffect(() => {
     if (!aberto) return;
 
     function aoTeclar(e: KeyboardEvent) {
       if (e.key === 'Escape') aoFechar();
     }
-
     document.addEventListener('keydown', aoTeclar);
-    const overflowAnterior = document.body.style.overflow;
-    document.body.style.overflow = 'hidden';
+
+    const y = window.scrollY;
+    const estilo = document.body.style;
+    const anterior = {
+      position: estilo.position,
+      top: estilo.top,
+      left: estilo.left,
+      right: estilo.right,
+      overflow: estilo.overflow,
+    };
+
+    estilo.position = 'fixed';
+    estilo.top = `-${y}px`;
+    estilo.left = '0';
+    estilo.right = '0';
+    // Continua útil fora do iOS, e barra a barra de rolagem do desktop.
+    estilo.overflow = 'hidden';
 
     return () => {
       document.removeEventListener('keydown', aoTeclar);
-      document.body.style.overflow = overflowAnterior;
+      estilo.position = anterior.position;
+      estilo.top = anterior.top;
+      estilo.left = anterior.left;
+      estilo.right = anterior.right;
+      estilo.overflow = anterior.overflow;
+      /*
+       * `instant` de propósito: com rolagem suave o usuário veria a página
+       * deslizar de volta sozinha ao fechar o modal, como se algo tivesse
+       * escapado.
+       */
+      window.scrollTo({ top: y, behavior: 'instant' });
     };
   }, [aberto, aoFechar]);
 
@@ -462,5 +496,150 @@ export function EstadoVazio({ titulo, descricao }: { titulo: string; descricao: 
         {descricao}
       </div>
     </div>
+  );
+}
+
+/* ==========================================================================
+   Diálogo — confirmar e pedir texto, no lugar de confirm() e prompt()
+   ==========================================================================
+
+   POR QUE SAIR DOS NATIVOS
+
+   `confirm()` e `prompt()` funcionam, mas no telefone eles são o alerta do
+   SISTEMA: fonte do iOS, botões em inglês quando o aparelho está em inglês,
+   e nenhuma relação com a plataforma. Pior que feio, são frágeis — webview
+   de Instagram e Facebook, de onde vem muito clique de link, pode vir com
+   `prompt` DESATIVADO. Renomear uma categoria ficaria impossível, sem
+   mensagem de erro: a função devolve null e o código entende "cancelou".
+
+   Também travam a thread: enquanto o alerta está aberto, nada mais roda.
+
+   A API é prometida de propósito, para o código chamador continuar lendo
+   como antes:
+
+     if (!(await confirmar({ titulo: 'Excluir?' }))) return;
+
+   em vez de espalhar callbacks e estado de modal por quinze telas. */
+
+type PedidoDialogo = {
+  titulo: string;
+  mensagem?: string;
+  /** Texto do botão que confirma. Padrão: "Confirmar". */
+  textoConfirmar?: string;
+  /** Pinta o botão de confirmar como destrutivo. */
+  perigoso?: boolean;
+  /** Presente = pede TEXTO (o que `prompt` fazia). */
+  campo?: { rotulo: string; valorInicial?: string; dica?: string };
+};
+
+type Pendente = {
+  pedido: PedidoDialogo;
+  resolver: (valor: boolean | string | null) => void;
+};
+
+const ContextoDialogo = createContext<{
+  confirmar: (pedido: PedidoDialogo) => Promise<boolean>;
+  pedirTexto: (pedido: PedidoDialogo & { campo: NonNullable<PedidoDialogo['campo']> }) => Promise<
+    string | null
+  >;
+}>({
+  confirmar: async () => false,
+  pedirTexto: async () => null,
+});
+
+export function useDialogo() {
+  return useContext(ContextoDialogo);
+}
+
+export function ProvedorDialogo({ children }: { children: React.ReactNode }) {
+  const [pendente, setPendente] = useState<Pendente | null>(null);
+  const [texto, setTexto] = useState('');
+
+  const abrir = useCallback((pedido: PedidoDialogo) => {
+    setTexto(pedido.campo?.valorInicial ?? '');
+    return new Promise<boolean | string | null>((resolver) => {
+      setPendente({ pedido, resolver });
+    });
+  }, []);
+
+  const confirmar = useCallback(
+    async (pedido: PedidoDialogo) => (await abrir(pedido)) === true,
+    [abrir],
+  );
+
+  const pedirTexto = useCallback(
+    async (pedido: PedidoDialogo & { campo: NonNullable<PedidoDialogo['campo']> }) => {
+      const r = await abrir(pedido);
+      return typeof r === 'string' ? r : null;
+    },
+    [abrir],
+  );
+
+  /* Fechar pelo X, pelo Esc ou pelo fundo conta como CANCELAR — nunca como
+     confirmar. É o mesmo contrato dos nativos, e o seguro: metade destes
+     diálogos está na frente de uma exclusão. */
+  function responder(valor: boolean | string | null) {
+    pendente?.resolver(valor);
+    setPendente(null);
+  }
+
+  const pedido = pendente?.pedido;
+  const pedeTexto = pedido?.campo !== undefined;
+
+  return (
+    <ContextoDialogo.Provider value={{ confirmar, pedirTexto }}>
+      {children}
+
+      <Modal
+        titulo={pedido?.titulo ?? ''}
+        aberto={pendente !== null}
+        aoFechar={() => responder(pedeTexto ? null : false)}
+        rodape={
+          <>
+            <button
+              type="button"
+              className="btn btn-ghost"
+              onClick={() => responder(pedeTexto ? null : false)}
+            >
+              Cancelar
+            </button>
+            <button
+              type="submit"
+              form="form-dialogo"
+              className={`btn ${pedido?.perigoso ? 'btn-danger' : 'btn-primary'}`}
+            >
+              {pedido?.textoConfirmar ?? 'Confirmar'}
+            </button>
+          </>
+        }
+      >
+        <form
+          id="form-dialogo"
+          onSubmit={(e) => {
+            e.preventDefault();
+            if (!pedeTexto) return responder(true);
+            const limpo = texto.trim();
+            // Texto vazio é cancelar, igual ao prompt nativo.
+            responder(limpo ? limpo : null);
+          }}
+        >
+          {pedido?.mensagem && <p className={estilos.dialogoMensagem}>{pedido.mensagem}</p>}
+
+          {pedido?.campo && (
+            <div className="field">
+              <label htmlFor="dialogo-campo">{pedido.campo.rotulo}</label>
+              <input
+                id="dialogo-campo"
+                value={texto}
+                onChange={(e) => setTexto(e.target.value)}
+                // O foco automático poupa um toque no celular.
+                autoFocus
+              />
+              {pedido.campo.dica && <p className="field-hint">{pedido.campo.dica}</p>}
+            </div>
+          )}
+        </form>
+      </Modal>
+    </ContextoDialogo.Provider>
   );
 }

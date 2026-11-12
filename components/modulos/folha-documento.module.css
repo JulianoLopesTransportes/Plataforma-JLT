@@ -190,8 +190,10 @@
   background: transparent;
 }
 
-.tabelaDocumento tr:hover td {
-  background: transparent;
+@media (hover: hover) {
+  .tabelaDocumento tr:hover td {
+    background: transparent;
+  }
 }
 
 .quantidadeCelula {
@@ -292,8 +294,6 @@
     height: 0;
   }
 }
-
-
 
 /* Linhas em branco para a equipe preencher à mão, na ordem de serviço. */
 .linhasEmBranco {

@@ -41,8 +41,10 @@
   transition: border-color var(--transition-fast);
 }
 
-.item:hover {
-  border-color: var(--color-primary);
+@media (hover: hover) {
+  .item:hover {
+    border-color: var(--color-primary);
+  }
 }
 
 .icone {
@@ -71,10 +73,12 @@
   word-break: break-word;
 }
 
-.nome:hover strong {
-  color: var(--color-primary);
-  text-decoration: underline;
-  text-underline-offset: 2px;
+@media (hover: hover) {
+  .nome:hover strong {
+    color: var(--color-primary);
+    text-decoration: underline;
+    text-underline-offset: 2px;
+  }
 }
 
 .remover {
@@ -88,9 +92,11 @@
   flex-shrink: 0;
 }
 
-.remover:hover {
-  color: var(--color-danger);
-  background: var(--color-danger-bg);
+@media (hover: hover) {
+  .remover:hover {
+    color: var(--color-danger);
+    background: var(--color-danger-bg);
+  }
 }
 
 /* ==========================================================================
@@ -169,11 +175,13 @@
   max-width: 150px;
 }
 
-.moverGaveta:hover,
-.moverGaveta:focus {
-  border-color: var(--color-border);
-  background: var(--color-surface);
-  color: var(--color-text);
+@media (hover: hover) {
+  .moverGaveta:hover,
+  .moverGaveta:focus {
+    border-color: var(--color-border);
+    background: var(--color-surface);
+    color: var(--color-text);
+  }
 }
 
 @media (max-width: 640px) {

@@ -11,7 +11,7 @@
 
 /* Placa Mercosul: monoespaçada e destacada, como se lê no documento. */
 .placa {
-  font-family: ui-monospace, 'Cascadia Mono', 'Consolas', monospace;
+  font-family: ui-monospace, "Cascadia Mono", "Consolas", monospace;
   font-weight: 600;
   letter-spacing: 0.06em;
   background: var(--color-bg);

@@ -26,6 +26,7 @@ import {
   AcoesFiltro,
   Badge,
   useToast,
+  useDialogo,
   type TomBadge,
 } from '@/components/ui';
 import Icone from '@/components/layout/Icone';
@@ -153,6 +154,7 @@ const DIAS_SEMANA = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
 export default function PaginaAgenda() {
   const usuario = useUsuario();
   const { mostrar } = useToast();
+  const { confirmar } = useDialogo();
 
   const [compromissos, setCompromissos] = useState<Compromisso[]>([]);
   const [clientes, setClientes] = useState<Cliente[]>([]);
@@ -384,7 +386,16 @@ export default function PaginaAgenda() {
   }
 
   async function excluirCompromisso(c: Compromisso) {
-    if (!confirm(`Excluir "${c.titulo}"?`)) return;
+    if (
+      !(await confirmar({
+        titulo: 'Excluir compromisso?',
+        mensagem: `"${c.titulo}" sai da agenda.`,
+        textoConfirmar: 'Excluir',
+        perigoso: true,
+      }))
+    ) {
+      return;
+    }
     try {
       if (usandoBanco()) {
         await api.agenda.excluir(c.id);

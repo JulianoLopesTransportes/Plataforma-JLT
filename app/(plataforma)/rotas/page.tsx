@@ -34,6 +34,7 @@ import {
   GradeMetricas,
   CardMetrica,
   useToast,
+  useDialogo,
   type TomBadge,
 } from '@/components/ui';
 import Icone from '@/components/layout/Icone';
@@ -84,6 +85,7 @@ export default function PaginaRotas() {
 function ConteudoRotas() {
   const usuario = useUsuario();
   const { mostrar } = useToast();
+  const { confirmar } = useDialogo();
   const parametrosUrl = useSearchParams();
 
   const [rotas, setRotas] = useState<Rota[]>([]);
@@ -171,12 +173,16 @@ function ConteudoRotas() {
     const cargas = rota.mudancas.length;
     const paradas = rota.paradas.length;
 
-    const confirmou = confirm(
-      `Excluir a rota "${rota.nome}"?\n\n` +
+    const confirmou = await confirmar({
+      titulo: 'Excluir rota?',
+      mensagem:
+        `"${rota.nome}" sai da operação.\n\n` +
         `Vão junto ${cargas} ${cargas === 1 ? 'mudança' : 'mudanças'} e ` +
         `${paradas} ${paradas === 1 ? 'cidade' : 'cidades'}.\n\n` +
-        'Esta ação não pode ser desfeita.',
-    );
+        'Não há como desfazer.',
+      textoConfirmar: 'Excluir',
+      perigoso: true,
+    });
     if (!confirmou) return;
 
     try {

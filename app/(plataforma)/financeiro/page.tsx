@@ -28,6 +28,7 @@ import {
   GradeMetricas,
   CardMetrica,
   useToast,
+  useDialogo,
   type Coluna,
 } from '@/components/ui';
 import Grafico from '@/components/ui/Grafico';
@@ -70,6 +71,7 @@ const LANCAMENTO_VAZIO: {
 export default function PaginaFinanceiro() {
   const usuario = useUsuario();
   const { mostrar } = useToast();
+  const { confirmar, pedirTexto } = useDialogo();
 
   const [lancamentos, setLancamentos] = useState<Lancamento[]>([]);
   const [clientes, setClientes] = useState<Cliente[]>([]);
@@ -201,7 +203,18 @@ export default function PaginaFinanceiro() {
   /* --- Ações ------------------------------------------------------------ */
 
   async function excluirLancamento(l: Lancamento) {
-    if (!confirm(`Excluir o lançamento "${l.descricao}"?`)) return;
+    if (
+      !(await confirmar({
+        titulo: 'Excluir lançamento?',
+        mensagem: `${l.tipo === 'ganho' ? 'Ganho' : 'Gasto'} de ${formatarBRL(l.valor)} em ${
+          l.categoria
+        }${l.descricao ? ` — "${l.descricao}"` : ''}.`,
+        textoConfirmar: 'Excluir',
+        perigoso: true,
+      }))
+    ) {
+      return;
+    }
 
     try {
       if (usandoBanco()) {
@@ -326,19 +339,30 @@ export default function PaginaFinanceiro() {
    * um relatório tirado ontem não vai bater com um tirado depois.
    */
   async function renomearCategoria(c: CategoriaLancamento) {
-    const novo = prompt(`Renomear "${c.nome}" para:`, c.nome)?.trim();
-    if (!novo || novo === c.nome) return;
-
     const emUso = lancamentos.filter((l) => l.categoria === c.nome).length;
-    if (
-      emUso > 0 &&
-      !confirm(
-        `${emUso} lançamento(s) estão em "${c.nome}".\n\n` +
-          `Renomear passa todos eles para "${novo}" — inclusive os antigos.\n\nContinuar?`,
-      )
-    ) {
-      return;
-    }
+
+    /*
+     * Era `prompt()`, e `prompt` é o pior dos nativos: em webview de
+     * Instagram e Facebook ele pode vir DESATIVADO, devolvendo null — e o
+     * código acima entendia "cancelou". Renomear ficaria impossível sem
+     * nenhuma mensagem de erro.
+     *
+     * O aviso de quantos lançamentos vão junto entra no próprio diálogo,
+     * em vez de ser uma segunda caixa depois de digitar: a informação que
+     * decide precisa estar na frente de quem decide.
+     */
+    const novo = await pedirTexto({
+      titulo: 'Renomear categoria',
+      mensagem:
+        emUso > 0
+          ? `${emUso} lançamento(s) estão em "${c.nome}".\n\n` +
+            'Renomear passa todos eles para o nome novo — inclusive os antigos.'
+          : `"${c.nome}" não tem lançamento nenhum.`,
+      textoConfirmar: 'Renomear',
+      campo: { rotulo: 'Novo nome', valorInicial: c.nome },
+    });
+
+    if (!novo || novo === c.nome) return;
 
     try {
       await api.financeiro.atualizarCategoria(c.nome, { nome: novo });
@@ -379,7 +403,16 @@ export default function PaginaFinanceiro() {
       );
       return;
     }
-    if (!confirm(`Apagar a categoria "${c.nome}"?`)) return;
+    if (
+      !(await confirmar({
+        titulo: 'Apagar categoria?',
+        mensagem: `"${c.nome}" sai da lista. Nenhum lançamento usa ela.`,
+        textoConfirmar: 'Apagar',
+        perigoso: true,
+      }))
+    ) {
+      return;
+    }
 
     try {
       await api.financeiro.excluirCategoria(c.nome);

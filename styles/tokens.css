@@ -12,20 +12,20 @@
 
 :root {
   /* --- Cores de marca (identidade oficial, extraída da logo) --- */
-  --color-primary: #820901;        /* vermelho institucional */
-  --color-primary-dark: #5a0601;   /* vermelho escuro — hover, sidebar, cabeçalho de tabela */
-  --color-primary-light: #a30d03;  /* vermelho vivo — destaque, alertas */
-  --color-black: #000000;          /* preto institucional */
-  --color-gold: #b8862f;           /* dourado — cor terciária: selos, item ativo, destaques */
-  --color-gold-light: #d9b45f;     /* dourado claro — hover em elementos dourados */
+  --color-primary: #820901; /* vermelho institucional */
+  --color-primary-dark: #5a0601; /* vermelho escuro — hover, sidebar, cabeçalho de tabela */
+  --color-primary-light: #a30d03; /* vermelho vivo — destaque, alertas */
+  --color-black: #000000; /* preto institucional */
+  --color-gold: #b8862f; /* dourado — cor terciária: selos, item ativo, destaques */
+  --color-gold-light: #d9b45f; /* dourado claro — hover em elementos dourados */
   --color-white: #ffffff;
 
   /* --- Neutros / fundo --- */
-  --color-bg: #faf8f6;             /* fundo geral das telas */
-  --color-surface: #ffffff;        /* cards, tabelas, formulários */
+  --color-bg: #faf8f6; /* fundo geral das telas */
+  --color-surface: #ffffff; /* cards, tabelas, formulários */
   --color-border: #e6dfd6;
-  --color-gray-600: #6f665d;       /* texto secundário */
-  --color-text: #241d1a;           /* texto principal */
+  --color-gray-600: #6f665d; /* texto secundário */
+  --color-text: #241d1a; /* texto principal */
 
   /* --- Estados / status --- */
   --color-success: #2f6b3a;
@@ -40,8 +40,10 @@
   /* --- Tipografia --- */
   /* Bebas Neue = títulos, igual "JULIANO LOPES" na logo */
   /* Montserrat = texto corrido, igual "TRANSPORTES" na logo */
-  --font-display: var(--fonte-display, 'Bebas Neue'), 'Arial Narrow', sans-serif;
-  --font-body: var(--fonte-body, 'Montserrat'), 'Segoe UI', system-ui, sans-serif;
+  --font-display:
+    var(--fonte-display, "Bebas Neue"), "Arial Narrow", sans-serif;
+  --font-body:
+    var(--fonte-body, "Montserrat"), "Segoe UI", system-ui, sans-serif;
 
   /* --- Espaçamento (densidade "confortável") --- */
   --space-1: 6px;

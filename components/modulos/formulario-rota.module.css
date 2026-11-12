@@ -68,9 +68,11 @@
   border-radius: var(--radius-sm);
 }
 
-.remover:hover {
-  color: var(--color-danger);
-  background: var(--color-danger-bg);
+@media (hover: hover) {
+  .remover:hover {
+    color: var(--color-danger);
+    background: var(--color-danger-bg);
+  }
 }
 
 /* --- Movimentos: qual carga entra e sai em cada parada --- */
@@ -162,7 +164,6 @@
   border-left-color: var(--color-info);
 }
 
-
 /* ==========================================================================
    Trajeto — origem e destino, derivados das cidades
    ========================================================================== */
@@ -209,9 +210,11 @@
   padding: 3px 7px;
 }
 
-.mover:hover:not(:disabled) {
-  border-color: var(--color-primary);
-  color: var(--color-primary);
+@media (hover: hover) {
+  .mover:hover:not(:disabled) {
+    border-color: var(--color-primary);
+    color: var(--color-primary);
+  }
 }
 
 .mover:disabled {
@@ -277,8 +280,10 @@
   color: var(--color-text);
 }
 
-.nomeEditavel:hover {
-  border-color: var(--color-border);
+@media (hover: hover) {
+  .nomeEditavel:hover {
+    border-color: var(--color-border);
+  }
 }
 
 .nomeEditavel:focus {
@@ -325,9 +330,11 @@
   cursor: pointer;
 }
 
-.adicionarMovimento select:hover:not(:disabled) {
-  border-color: var(--color-primary);
-  color: var(--color-primary);
+@media (hover: hover) {
+  .adicionarMovimento select:hover:not(:disabled) {
+    border-color: var(--color-primary);
+    color: var(--color-primary);
+  }
 }
 
 .adicionarMovimento select:disabled {

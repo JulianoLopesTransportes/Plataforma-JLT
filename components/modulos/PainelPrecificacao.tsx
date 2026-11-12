@@ -17,7 +17,7 @@ import {
   type TipoAdicionalDb,
 } from '@/lib/api/admin';
 import { formatarBRL, paraNumero } from '@/lib/utils/formato';
-import { Modal, useToast } from '@/components/ui';
+import { Modal, useToast, useDialogo } from '@/components/ui';
 import Icone from '@/components/layout/Icone';
 import estilos from './painel-precificacao.module.css';
 
@@ -31,6 +31,7 @@ const ROTULO_TIPO: Record<TipoAdicionalDb, string> = {
 
 export default function PainelPrecificacao() {
   const { mostrar } = useToast();
+  const { confirmar } = useDialogo();
 
   const [aberta, setAberta] = useState<Secao>(null);
   const [faixas, setFaixas] = useState<FaixaVolumeDb[]>([]);
@@ -141,17 +142,35 @@ export default function PainelPrecificacao() {
     }, 'Adicional salvo.');
   }
 
-  function excluirFaixa(f: FaixaVolumeDb) {
+  async function excluirFaixa(f: FaixaVolumeDb) {
     if (faixas.length <= 1) {
       mostrar('É preciso manter ao menos uma faixa de volume.', 'erro');
       return;
     }
-    if (!confirm(`Excluir a faixa de até ${f.ate} m³?`)) return;
+    if (
+      !(await confirmar({
+        titulo: 'Excluir faixa de volume?',
+        mensagem: `A faixa de até ${f.ate} m³ sai da régua de preços.`,
+        textoConfirmar: 'Excluir',
+        perigoso: true,
+      }))
+    ) {
+      return;
+    }
     executar(() => precificacao.excluirFaixa(f.id), 'Faixa excluída.');
   }
 
-  function excluirAdicional(a: AdicionalDb) {
-    if (!confirm(`Excluir o adicional "${a.nome}"?`)) return;
+  async function excluirAdicional(a: AdicionalDb) {
+    if (
+      !(await confirmar({
+        titulo: 'Excluir serviço adicional?',
+        mensagem: `"${a.nome}" deixa de ser oferecido nos orçamentos novos.`,
+        textoConfirmar: 'Excluir',
+        perigoso: true,
+      }))
+    ) {
+      return;
+    }
     executar(() => precificacao.excluirAdicional(a.id), 'Adicional excluído.');
   }
 

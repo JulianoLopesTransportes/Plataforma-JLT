@@ -19,7 +19,7 @@
 .painel {
   position: sticky;
   top: calc(var(--header-height) + var(--space-3));
-  max-height: calc(100vh - var(--header-height) - var(--space-5));
+  max-height: calc(100dvh - var(--header-height) - var(--space-5));
   overflow-y: auto;
 }
 
@@ -42,11 +42,15 @@
   font-weight: 600;
   color: var(--color-text);
   text-align: center;
-  transition: border-color var(--transition-fast), background var(--transition-fast);
+  transition:
+    border-color var(--transition-fast),
+    background var(--transition-fast);
 }
 
-.tipoBotao:hover {
-  border-color: var(--color-primary);
+@media (hover: hover) {
+  .tipoBotao:hover {
+    border-color: var(--color-primary);
+  }
 }
 
 .tipoAtivo {
@@ -102,9 +106,11 @@
   color: var(--color-gray-600);
 }
 
-.abaAmbiente:hover {
-  border-color: var(--color-primary);
-  color: var(--color-primary);
+@media (hover: hover) {
+  .abaAmbiente:hover {
+    border-color: var(--color-primary);
+    color: var(--color-primary);
+  }
 }
 
 .abaAmbienteAtiva {
@@ -160,8 +166,10 @@
   justify-content: center;
 }
 
-.controleQuantidade button:hover:not(:disabled) {
-  border-color: var(--color-primary);
+@media (hover: hover) {
+  .controleQuantidade button:hover:not(:disabled) {
+    border-color: var(--color-primary);
+  }
 }
 
 .controleQuantidade button:disabled {
@@ -176,7 +184,6 @@
   font-weight: 600;
   font-variant-numeric: tabular-nums;
 }
-
 
 /* --- Item digitado à mão, fora do catálogo --- */
 .adicionarItem {
@@ -218,9 +225,11 @@
   margin-left: 4px;
 }
 
-.removerItem:hover {
-  border-color: var(--color-danger);
-  color: var(--color-danger);
+@media (hover: hover) {
+  .removerItem:hover {
+    border-color: var(--color-danger);
+    color: var(--color-danger);
+  }
 }
 
 .listaVazia {

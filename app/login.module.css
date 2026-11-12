@@ -3,14 +3,19 @@
    ========================================================================== */
 
 .tela {
-  min-height: 100vh;
+  min-height: 100dvh;
   display: grid;
   grid-template-columns: 1fr 1fr;
 }
 
 /* Painel esquerdo: identidade visual da empresa. */
 .painelMarca {
-  background: linear-gradient(160deg, var(--color-black) 0%, var(--color-primary-dark) 60%, var(--color-primary) 140%);
+  background: linear-gradient(
+    160deg,
+    var(--color-black) 0%,
+    var(--color-primary-dark) 60%,
+    var(--color-primary) 140%
+  );
   color: var(--color-white);
   display: flex;
   flex-direction: column;
@@ -157,11 +162,12 @@
   text-align: left;
 }
 
-.alternar button:hover {
-  text-decoration: underline;
-  text-underline-offset: 2px;
+@media (hover: hover) {
+  .alternar button:hover {
+    text-decoration: underline;
+    text-underline-offset: 2px;
+  }
 }
-
 
 /* Conferência das regras de senha, no cadastro. */
 .regras {

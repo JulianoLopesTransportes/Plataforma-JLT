@@ -87,8 +87,10 @@
   transition: border-color var(--transition-fast);
 }
 
-.cardRota:hover {
-  border-color: var(--color-primary);
+@media (hover: hover) {
+  .cardRota:hover {
+    border-color: var(--color-primary);
+  }
 }
 
 @media (max-width: 1024px) {

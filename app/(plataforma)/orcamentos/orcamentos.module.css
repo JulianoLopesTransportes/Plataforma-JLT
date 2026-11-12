@@ -33,8 +33,10 @@
   min-height: 38px;
 }
 
-.adicional:hover {
-  background: var(--color-bg);
+@media (hover: hover) {
+  .adicional:hover {
+    background: var(--color-bg);
+  }
 }
 
 .adicionalRotulo {
@@ -201,7 +203,11 @@
 
 /* --- Preço final --- */
 .precoFinal {
-  background: linear-gradient(135deg, var(--color-primary-dark), var(--color-primary));
+  background: linear-gradient(
+    135deg,
+    var(--color-primary-dark),
+    var(--color-primary)
+  );
   color: var(--color-white);
   border-radius: var(--radius-lg);
   padding: var(--space-3) var(--space-4);

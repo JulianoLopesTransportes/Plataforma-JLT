@@ -33,6 +33,7 @@ import {
   GradeMetricas,
   CardMetrica,
   useToast,
+  useDialogo,
   type Coluna,
   type TomBadge,
 } from '@/components/ui';
@@ -86,6 +87,7 @@ const MOTORISTA_VAZIO: Omit<Motorista, 'id' | 'anexos'> = {
 export default function PaginaFrota() {
   const usuario = useUsuario();
   const { mostrar } = useToast();
+  const { confirmar } = useDialogo();
 
   const [aba, setAba] = useState('veiculos');
   const [veiculos, setVeiculos] = useState<Veiculo[]>([]);
@@ -168,7 +170,16 @@ export default function PaginaFrota() {
   }, [motoristas, busca, filtroStatus]);
 
   async function excluirVeiculo(v: Veiculo) {
-    if (!confirm(`Excluir o veículo ${v.placa}?`)) return;
+    if (
+      !(await confirmar({
+        titulo: 'Excluir veículo?',
+        mensagem: `${v.placa} — ${v.marca} ${v.modelo} sai da frota.`,
+        textoConfirmar: 'Excluir',
+        perigoso: true,
+      }))
+    ) {
+      return;
+    }
     try {
       if (usandoBanco()) {
         await api.veiculos.excluir(v.id);
@@ -184,7 +195,16 @@ export default function PaginaFrota() {
   }
 
   async function excluirMotorista(m: Motorista) {
-    if (!confirm(`Excluir o motorista ${m.nome}?`)) return;
+    if (
+      !(await confirmar({
+        titulo: 'Excluir motorista?',
+        mensagem: `${m.nome} sai do cadastro.`,
+        textoConfirmar: 'Excluir',
+        perigoso: true,
+      }))
+    ) {
+      return;
+    }
     try {
       if (usandoBanco()) {
         await api.motoristas.excluir(m.id);

@@ -63,7 +63,7 @@
 }
 
 .historico::before {
-  content: '';
+  content: "";
   position: absolute;
   left: 5px;
   top: 8px;
@@ -135,11 +135,26 @@
   outline-offset: 1px;
 }
 
-.status_info { background: var(--color-info-bg); color: var(--color-info); }
-.status_warning { background: var(--color-warning-bg); color: var(--color-warning); }
-.status_success { background: var(--color-success-bg); color: var(--color-success); }
-.status_danger { background: var(--color-danger-bg); color: var(--color-danger); }
-.status_neutro { background: var(--color-bg); color: var(--color-gray-600); }
+.status_info {
+  background: var(--color-info-bg);
+  color: var(--color-info);
+}
+.status_warning {
+  background: var(--color-warning-bg);
+  color: var(--color-warning);
+}
+.status_success {
+  background: var(--color-success-bg);
+  color: var(--color-success);
+}
+.status_danger {
+  background: var(--color-danger-bg);
+  color: var(--color-danger);
+}
+.status_neutro {
+  background: var(--color-bg);
+  color: var(--color-gray-600);
+}
 /* Acompanha .badge-branco: fundo branco de verdade, e por isso com borda —
    a linha da tabela também é branca. */
 .status_branco {

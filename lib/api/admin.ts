@@ -155,7 +155,12 @@ export type ParametrosGerais = {
 export const precificacao = {
   /**
    * Lê os parâmetros. Exige a capacidade `ver_custos` — o RLS devolve vazio
-   * para o Comercial, que obtém preço por `calcularPreco()`.
+   * para quem não a tem, e esse caminho obtém preço por
+   * `api.orcamentos.precoDoOrcamento()`, que roda no banco.
+   *
+   * O comentário antigo citava `calcularPreco()`, que caiu na migration 47
+   * junto da função `calcular_preco()` do banco: ela ignorava adicional por
+   * unidade e não arredondava.
    */
   async ler(): Promise<{
     faixas: FaixaVolumeDb[];
@@ -263,26 +268,6 @@ export const precificacao = {
     if (error) throw new Error(traduzir(error.code, error.message));
   },
 
-  /**
-   * Preço pelo banco, para quem não pode ver a composição do custo.
-   * Ver a função calcular_preco na migration 04.
-   */
-  async calcularPreco(entrada: {
-    volumeM3: number;
-    distanciaKm: number;
-    adicionais: string[];
-    margem?: number;
-  }): Promise<number | null> {
-    const { data, error } = await supabase().rpc('calcular_preco', {
-      p_volume_m3: entrada.volumeM3,
-      p_distancia_km: entrada.distanciaKm,
-      p_adicionais: entrada.adicionais,
-      p_margem: entrada.margem ?? null,
-    });
-
-    if (error) throw new Error(error.message);
-    return data;
-  },
 };
 
 function traduzir(codigo: string | undefined, mensagem: string): string {

@@ -8,7 +8,7 @@
    Todas as cores vêm de tokens.css. Nenhum hex aqui.
    ========================================================================== */
 
-@import './tokens.css';
+@import "./tokens.css";
 
 /* --------------------------------------------------------------------------
    Reset
@@ -93,12 +93,16 @@ hr.rule {
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  transition: filter var(--transition-fast), opacity var(--transition-fast);
+  transition:
+    filter var(--transition-fast),
+    opacity var(--transition-fast);
   white-space: nowrap;
 }
 
-.btn:hover:not(:disabled) {
-  filter: brightness(1.08);
+@media (hover: hover) {
+  .btn:hover:not(:disabled) {
+    filter: brightness(1.08);
+  }
 }
 
 /* Ação bloqueada por permissão: visivelmente inerte, mas ainda legível. */
@@ -108,13 +112,32 @@ hr.rule {
   filter: none;
 }
 
-.btn-primary { background: var(--color-primary); color: var(--color-white); }
-.btn-gold { background: var(--color-gold); color: var(--color-black); }
-.btn-outline { background: transparent; border-color: var(--color-primary); color: var(--color-primary); }
-.btn-ghost { background: transparent; color: var(--color-gray-600); }
-.btn-danger { background: var(--color-danger); color: var(--color-white); }
+.btn-primary {
+  background: var(--color-primary);
+  color: var(--color-white);
+}
+.btn-gold {
+  background: var(--color-gold);
+  color: var(--color-black);
+}
+.btn-outline {
+  background: transparent;
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+}
+.btn-ghost {
+  background: transparent;
+  color: var(--color-gray-600);
+}
+.btn-danger {
+  background: var(--color-danger);
+  color: var(--color-white);
+}
 
-.btn-sm { padding: 7px 13px; font-size: 13px; }
+.btn-sm {
+  padding: 7px 13px;
+  font-size: 13px;
+}
 
 /* --------------------------------------------------------------------------
    Card
@@ -266,8 +289,10 @@ tr:last-child td {
   border-bottom: none;
 }
 
-tbody tr:hover td {
-  background: var(--color-bg);
+@media (hover: hover) {
+  tbody tr:hover td {
+    background: var(--color-bg);
+  }
 }
 
 /* --------------------------------------------------------------------------
@@ -284,11 +309,26 @@ tbody tr:hover td {
   white-space: nowrap;
 }
 
-.badge-success { background: var(--color-success-bg); color: var(--color-success); }
-.badge-warning { background: var(--color-warning-bg); color: var(--color-warning); }
-.badge-danger { background: var(--color-danger-bg); color: var(--color-danger); }
-.badge-info { background: var(--color-info-bg); color: var(--color-info); }
-.badge-neutro { background: var(--color-bg); color: var(--color-gray-600); }
+.badge-success {
+  background: var(--color-success-bg);
+  color: var(--color-success);
+}
+.badge-warning {
+  background: var(--color-warning-bg);
+  color: var(--color-warning);
+}
+.badge-danger {
+  background: var(--color-danger-bg);
+  color: var(--color-danger);
+}
+.badge-info {
+  background: var(--color-info-bg);
+  color: var(--color-info);
+}
+.badge-neutro {
+  background: var(--color-bg);
+  color: var(--color-gray-600);
+}
 /* Único tom com borda: card e tabela também são brancos, e sem ela a
    etiqueta desaparece dentro da linha. */
 .badge-branco {
@@ -357,7 +397,22 @@ tbody tr:hover td {
    Nada acima de 1024px é tocado: o desktop fica idêntico.
    ========================================================================== */
 
-@media (max-width: 640px) {
+/* --------------------------------------------------------------------------
+   TOQUE — por tipo de ponteiro, não por largura de tela.
+
+   Estas regras estavam dentro de `@media (max-width: 640px)`, e isso era um
+   erro meu: um iPhone DE LADO tem 844px de largura. Medido no site em
+   11/11/2026, com a viewport em 844x390:
+
+     fonte do campo   14,5px  → o Safari amplia a tela a cada toque
+     altura do botão  40px    → abaixo do alvo mínimo
+
+   `pointer: coarse` pergunta pelo DEDO em vez da largura, então vale em
+   retrato, em paisagem e em tablet, e não vale no computador — onde o
+   ponteiro é fino e 44px seria desperdício de espaço.
+   -------------------------------------------------------------------------- */
+
+@media (pointer: coarse) {
   /*
    * 16px nos campos, e isto NÃO é preferência de tamanho.
    *
@@ -393,10 +448,21 @@ tbody tr:hover td {
     min-height: 44px;
   }
 
+  /*
+   * `btn-sm` também vai a 44px no toque.
+   *
+   * Estava em 38px, e é justamente a classe de "Editar" e "Excluir" na
+   * linha da tabela — dois alvos pequenos, colados, com "Excluir" do lado.
+   * O que encolhe no celular é a fonte e o espaçamento interno, não a área
+   * que aceita o dedo.
+   */
   .btn-sm {
-    min-height: 38px;
+    min-height: 44px;
   }
+}
 
+/* Largura ainda manda no que é LAYOUT, e não alvo de toque. */
+@media (max-width: 640px) {
   /* Botão sozinho numa linha ocupa a largura toda: alvo maior e alinhamento
      previsível, em vez de um botão pequeno perdido no meio. */
   .btn-bloco-celular {

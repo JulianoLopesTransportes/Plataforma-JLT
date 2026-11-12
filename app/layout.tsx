@@ -33,6 +33,17 @@ export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,
   themeColor: '#820901',
+  /*
+   * `cover` é o que faz `env(safe-area-inset-*)` devolver número.
+   *
+   * Sem ele o iOS encaixa a página numa caixa que já evita o notch, e o
+   * safe-area vale zero — a proteção no CSS existiria e não faria nada.
+   * Com `cover` a página ocupa a tela inteira e passa a ser responsável
+   * por respeitar o recorte: é a troca certa, porque aí o cabeçalho e a
+   * gaveta podem usar a área sob o notch como fundo e manter o CONTEÚDO
+   * fora dela.
+   */
+  viewportFit: 'cover',
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

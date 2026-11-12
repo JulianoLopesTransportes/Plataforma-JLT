@@ -40,6 +40,7 @@ import {
   GradeMetricas,
   CardMetrica,
   useToast,
+  useDialogo,
 } from '@/components/ui';
 import type { ModuloId } from '@/lib/permissoes';
 import estilos from './usuarios.module.css';
@@ -70,6 +71,7 @@ export default function PaginaUsuarios() {
   const usuarioAtual = useUsuario();
   const { recarregar, recarregarPermissoes } = useSessao();
   const { mostrar } = useToast();
+  const { confirmar } = useDialogo();
 
   const [aba, setAba] = useState('usuarios');
   const [lista, setLista] = useState<UsuarioAdmin[]>([]);
@@ -171,9 +173,14 @@ export default function PaginaUsuarios() {
     }
 
     if (
-      !confirm(
-        `Revogar o acesso de ${u.nome || u.email}?\n\nA pessoa perde o acesso imediatamente. O histórico que ela registrou é preservado.`,
-      )
+      !(await confirmar({
+        titulo: 'Revogar acesso?',
+        mensagem:
+          `${u.nome || u.email} perde o acesso imediatamente.\n\n` +
+          'O histórico que essa pessoa registrou é preservado.',
+        textoConfirmar: 'Revogar',
+        perigoso: true,
+      }))
     ) {
       return;
     }
@@ -266,7 +273,16 @@ export default function PaginaUsuarios() {
       return;
     }
 
-    if (!confirm(`Excluir o nível "${nivel.rotulo}"? A linha dele na matriz vai junto.`)) return;
+    if (
+      !(await confirmar({
+        titulo: 'Excluir nível?',
+        mensagem: `"${nivel.rotulo}" sai da matriz de permissões, com a linha dele.`,
+        textoConfirmar: 'Excluir',
+        perigoso: true,
+      }))
+    ) {
+      return;
+    }
 
     try {
       await apiPermissoes.excluirNivel(nivel.id);

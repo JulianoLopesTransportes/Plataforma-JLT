@@ -891,10 +891,76 @@ const orcamentos = {
     return data === null ? null : Number(data);
   },
 
-  async aprovar(id: string): Promise<void> {
-    if (!usandoBanco()) throw new Error('Aprovação exige o banco de dados configurado.');
-    const { error } = await supabase().from('orcamentos').update({ status: 'aprovado' }).eq('id', id);
+  /*
+   * `aprovar()` foi REMOVIDA aqui.
+   *
+   * Ela existia desde a migration 04 e nunca teve botão em tela nenhuma —
+   * todos os 33 orçamentos do banco estavam em 'rascunho', e o Relatórios
+   * calculava faturamento filtrando `status === 'aprovado'`. O resultado era
+   * faturamento ZERO para sempre, escondendo R$ 310 mil.
+   *
+   * O Juliano decidiu que quem manda é o STATUS DO CLIENTE: "Fechada" é o
+   * ganho, e o orçamento guarda só o número e as versões. Então não há
+   * segundo lugar para manter em dia, e o Relatórios passa a somar o
+   * orçamento vigente dos clientes em Fechada/Finalizada.
+   *
+   * A coluna `status` fica na tabela: é dado gravado, e apagá-lo não traria
+   * ganho nenhum. Ela só deixou de significar algo para o negócio.
+   */
+
+  /**
+   * Revisa um orçamento: grava uma VERSÃO NOVA, sem sobrescrever.
+   *
+   * Passa por função do banco porque são duas escritas que precisam da
+   * mesma transação — baixar o vigente antigo e subir o novo. O índice
+   * parcial `orcamentos_vigente_por_raiz` admite só um vigente por cadeia,
+   * então fora de transação existiria um instante com zero ou dois.
+   *
+   * Devolve o valor ANTERIOR junto do novo, para a tela escrever a linha do
+   * histórico do cliente sem uma segunda consulta — que abriria janela para
+   * o valor mudar no meio e o histórico mentir.
+   */
+  async revisar(
+    id: string,
+    entrada: {
+      volumeM3: number;
+      distanciaKm: number;
+      custoBase: number;
+      margemPercentual: number;
+      fator: number;
+      valorFinal: number;
+      observacoes?: string;
+      adicionais: { adicionalId: string; quantidade: number }[];
+    },
+  ): Promise<{ id: string; versao: number; valorAnterior: number; valorNovo: number }> {
+    if (!usandoBanco()) throw new Error('Revisão exige o banco de dados configurado.');
+
+    const { data, error } = await supabase().rpc('revisar_orcamento', {
+      p_orcamento_id: id,
+      p_entrada: {
+        volume_m3: entrada.volumeM3,
+        distancia_km: entrada.distanciaKm,
+        custo_base: entrada.custoBase,
+        margem_percentual: entrada.margemPercentual,
+        fator: entrada.fator,
+        valor_final: entrada.valorFinal,
+        observacoes: entrada.observacoes ?? '',
+        adicionais: entrada.adicionais.map((a) => ({
+          adicional_id: a.adicionalId,
+          quantidade: a.quantidade,
+        })),
+      },
+    });
+
     if (error) throw new Error(traduzir(error));
+
+    const r = (data ?? {}) as Record<string, unknown>;
+    return {
+      id: String(r.id ?? ''),
+      versao: Number(r.versao ?? 0),
+      valorAnterior: Number(r.valor_anterior ?? 0),
+      valorNovo: Number(r.valor_novo ?? 0),
+    };
   },
 
   /**
@@ -917,10 +983,22 @@ const orcamentos = {
 
     const cliente = supabase();
 
+    /*
+     * Só as versões VIGENTES.
+     *
+     * A ficha do cliente mostra quanto o serviço custa hoje, e listar as
+     * revisões antigas ali faria o mesmo orçamento aparecer três vezes com
+     * valores diferentes — o operador não saberia qual é o de valer.
+     *
+     * As versões antigas não ficam escondidas: cada revisão escreve uma
+     * linha no histórico do cliente com o valor de antes e o de depois, que
+     * é exatamente a trilha que o Juliano pediu.
+     */
     const { data: linhas, error } = await cliente
       .from('orcamentos_visao')
       .select('*')
       .eq('cliente_id', clienteId)
+      .eq('vigente', true)
       .order('data', { ascending: false });
 
     if (error) throw new Error(error.message);
@@ -963,6 +1041,8 @@ const orcamentos = {
     distanciaKm: number;
     custoBase: number;
     margemPercentual: number;
+    /** Ponto da régua 0-10. Guardado para a revisão reabrir no mesmo lugar. */
+    fator: number;
     valorFinal: number;
     observacoes: string;
     adicionais: { adicionalId: string; quantidade: number }[];
@@ -978,6 +1058,7 @@ const orcamentos = {
         distancia_km: entrada.distanciaKm,
         custo_base: entrada.custoBase,
         margem_percentual: entrada.margemPercentual,
+        fator: entrada.fator,
         valor_final: entrada.valorFinal,
         observacoes: entrada.observacoes,
         adicionais: entrada.adicionais.map((a) => ({

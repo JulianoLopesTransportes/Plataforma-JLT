@@ -50,6 +50,8 @@ O schema está **aplicado no projeto remoto**. As migrations abaixo já rodaram:
 | 45 | `45_status_sem_resposta_e_perdida` | Duas saídas no funil: `Sem resposta` e `Perdida` |
 | 46 | `46_categorias_de_lancamento` | Categorias viram tabela editável; a FK renomeia o histórico em cascata |
 | 47 | `47_derruba_calcular_preco_e_indexa_fks` | Tira a função de preço errada; índices nas FKs que a aplicação percorre |
+| 48 | `48_orcamento_revisavel_com_versao` | Cadeia de versões em `orcamentos`; revisar grava versão nova, não sobrescreve |
+| 49 | `49_visao_de_orcamento_mostra_a_versao` | `orcamentos_visao` passa a expor raiz, versão, vigente e fator |
 
 ## Baixar os arquivos de migration para cá
 

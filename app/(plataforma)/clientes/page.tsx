@@ -14,6 +14,7 @@
  */
 
 import { useEffect, useState, useMemo, useCallback } from 'react';
+import { useRouter } from 'next/navigation';
 import { api, usandoBanco } from '@/lib/api';
 import { anexos as apiAnexos, categoriaValida } from '@/lib/api/anexos';
 import { linhasDeItens } from '@/lib/negocio/documentos';
@@ -111,6 +112,7 @@ const CLIENTE_VAZIO: Omit<Cliente, 'id' | 'codigo' | 'criadoEm' | 'anexos' | 'hi
 export default function PaginaClientes() {
   const usuario = useUsuario();
   const { mostrar } = useToast();
+  const router = useRouter();
   const { confirmar } = useDialogo();
 
   const [clientes, setClientes] = useState<Cliente[]>([]);
@@ -995,8 +997,26 @@ export default function PaginaClientes() {
                           <strong className={estilos.valorOrcamento}>
                             {formatarBRL(o.valorFinal)}
                           </strong>
-                          <Badge texto={o.status} tom={o.status === 'aprovado' ? 'success' : 'neutro'} />
+                          {/*
+                            A etiqueta era o status do orçamento, que depois
+                            da migration 48 não significa mais nada para o
+                            negócio: quem manda é o status do CLIENTE. No
+                            lugar dela, a versão — que é informação de
+                            verdade, e avisa que houve revisão.
+                          */}
+                          {o.versao > 1 && <Badge texto={`versão ${o.versao}`} tom="info" />}
                           <span className="texto-secundario">{formatarData(o.data)}</span>
+
+                          {podeMexer && (
+                            <button
+                              type="button"
+                              className="btn btn-ghost btn-sm"
+                              onClick={() => router.push(`/orcamentos?orcamento=${o.id}`)}
+                              title="Abre a calculadora com estes dados para você corrigir"
+                            >
+                              Editar
+                            </button>
+                          )}
                         </div>
 
                         <dl className={estilos.dadosOrcamento}>

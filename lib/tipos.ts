@@ -441,6 +441,25 @@ export type Orcamento = {
   /** Preço final apresentado ao cliente. Comercial vê apenas este. */
   valorFinal: number;
   observacoes: string;
+  /**
+   * A cadeia de versões. Todas as revisões de um mesmo orçamento
+   * compartilham `raizId`; a primeira é raiz de si mesma.
+   *
+   * Revisar não sobrescreve — grava uma versão nova e baixa a anterior. É o
+   * que dá a trilha de valores que o histórico do cliente mostra.
+   */
+  raizId: string;
+  versao: number;
+  /** A versão que vale hoje. O banco garante uma por cadeia. */
+  vigente: boolean;
+  /**
+   * O ponto da régua 0–10 que o operador escolheu.
+   *
+   * Nulo nos orçamentos criados antes da migration 48. A tela cai para
+   * inverter a margem nesse caso, e avisa — porque a inversão depende dos
+   * parâmetros de hoje e pode não dar o mesmo ponto.
+   */
+  fator: number | null;
 };
 
 /* ==========================================================================

@@ -1,6 +1,7 @@
 'use client';
 
-import { useEffect, useState, useMemo } from 'react';
+import { useEffect, useState, useMemo, Suspense } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { api, type ParametrosPrecificacao } from '@/lib/api';
 import { useUsuario } from '@/components/layout/SessaoProvider';
 import { podeFazer } from '@/lib/permissoes';
@@ -16,13 +17,30 @@ import {
   type ResultadoOrcamento,
 } from '@/lib/negocio/precificacao';
 import { TituloPagina, useToast } from '@/components/ui';
-import type { Cliente } from '@/lib/tipos';
+import type { Cliente, Orcamento } from '@/lib/tipos';
 import PainelPrecificacao from '@/components/modulos/PainelPrecificacao';
 import estilos from './orcamentos.module.css';
 
+/*
+ * Suspense em volta porque ConteudoOrcamentos usa useSearchParams — a
+ * tela precisa do ?orcamento=<id> que a ficha do cliente manda ao
+ * clicar em Editar. Sem a fronteira, a prerrenderizacao estatica da
+ * rota quebra. Mesmo molde que o modulo de Rotas ja usava.
+ */
 export default function PaginaOrcamentos() {
+  return (
+    <Suspense
+      fallback={<TituloPagina titulo="Orçamentos" subtitulo="Carregando parâmetros…" />}
+    >
+      <ConteudoOrcamentos />
+    </Suspense>
+  );
+}
+
+function ConteudoOrcamentos() {
   const usuario = useUsuario();
   const { mostrar } = useToast();
+  const parametrosUrl = useSearchParams();
 
   const [parametros, setParametros] = useState<ParametrosPrecificacao | null>(null);
   const [carregando, setCarregando] = useState(true);
@@ -59,6 +77,19 @@ export default function PaginaOrcamentos() {
   const [clienteId, setClienteId] = useState('');
   const [vinculando, setVinculando] = useState(false);
 
+  /*
+   * REVISÃO. Quando a URL traz ?orcamento=<id>, esta tela deixa de ser só
+   * calculadora e passa a ser a edição daquele orçamento.
+   *
+   * O menu Orçamentos continua sem lista, como o Juliano quis: a porta de
+   * entrada é o botão Editar na ficha do cliente, que traz o id por aqui.
+   */
+  const [revisando, setRevisando] = useState<Orcamento | null>(null);
+  const [erroRevisao, setErroRevisao] = useState('');
+  /* Fator reconstruído da margem porque o orçamento é anterior à migration
+     48 e não guardou o ponto da régua. Vale avisar: o ponto pode diferir. */
+  const [fatorInferido, setFatorInferido] = useState(false);
+
   const verCustos = podeFazer(usuario.nivel, 'ver_custos');
   const editarParametros = podeFazer(usuario.nivel, 'editar_parametros_precificacao');
 
@@ -73,6 +104,57 @@ export default function PaginaOrcamentos() {
       setCarregando(false);
     });
   }, []);
+
+  /*
+   * Carrega o orçamento a revisar e preenche a calculadora.
+   *
+   * Depende de `parametros` porque reconstruir o ponto da régua a partir da
+   * margem exige a faixa mínima/máxima. Orçamento criado a partir da
+   * migration 48 traz o `fator` gravado e não precisa dessa conta — é
+   * justamente por isso que a coluna existe.
+   */
+  useEffect(() => {
+    const id = parametrosUrl.get('orcamento');
+    if (!id || !parametros) return;
+
+    let ativo = true;
+
+    api.orcamentos
+      .obter(id)
+      .then((o) => {
+        if (!ativo) return;
+        if (!o) {
+          setErroRevisao('Orçamento não encontrado. Ele pode ter sido excluído.');
+          return;
+        }
+
+        setRevisando(o);
+        setClienteId(o.clienteId);
+        setVolume(String(o.volumeM3 || ''));
+        setDistancia(String(o.distanciaKm || ''));
+
+        if (o.fator !== null) {
+          setFator(o.fator);
+          setFatorInferido(false);
+        } else {
+          setFator(
+            fatorDaMargem(o.margemPercentual, parametros.margemMinima, parametros.margemMaxima),
+          );
+          setFatorInferido(true);
+        }
+
+        const q: Record<string, string> = {};
+        for (const a of o.adicionais) q[a.id] = String(a.quantidade);
+        setQuantidades(q);
+      })
+      .catch((e) =>
+        ativo && setErroRevisao(e instanceof Error ? e.message : 'Falha ao abrir o orçamento.'),
+      );
+
+    return () => {
+      ativo = false;
+    };
+  }, [parametrosUrl, parametros]);
 
   const margem = parametros
     ? margemDoFator(fator, parametros.margemMinima, parametros.margemMaxima)
@@ -100,31 +182,78 @@ export default function PaginaOrcamentos() {
    * O status nasce 'rascunho': vincular é registrar o que foi calculado,
    * não afirmar que o cliente aceitou.
    */
+  /** O que a calculadora produziu, no formato que a API grava. */
+  function entradaDoCalculo() {
+    if (!resultado) return null;
+    return {
+      volumeM3: Number(volume) || 0,
+      distanciaKm: Number(distancia) || 0,
+      custoBase: resultado.custoTotal,
+      margemPercentual: resultado.margemPercentual,
+      fator,
+      valorFinal: resultado.precoRedondo,
+      observacoes: '',
+      adicionais: Object.keys(quantidades).map((adicionalId) => ({
+        adicionalId,
+        quantidade: quantidadeDe(adicionalId),
+      })),
+    };
+  }
+
   async function vincularAoCliente() {
-    if (!resultado || !clienteEscolhido) return;
+    const entrada = entradaDoCalculo();
+    if (!entrada || !clienteEscolhido) return;
 
     setVinculando(true);
     try {
-      await api.orcamentos.criar({
-        clienteId: clienteEscolhido.id,
-        volumeM3: Number(volume) || 0,
-        distanciaKm: Number(distancia) || 0,
-        custoBase: resultado.custoTotal,
-        margemPercentual: resultado.margemPercentual,
-        valorFinal: resultado.precoRedondo,
-        observacoes: '',
-        adicionais: Object.keys(quantidades).map((adicionalId) => ({
-          adicionalId,
-          quantidade: quantidadeDe(adicionalId),
-        })),
-      });
-
+      await api.orcamentos.criar({ clienteId: clienteEscolhido.id, ...entrada });
       mostrar(
         `Orçamento vinculado a ${clienteEscolhido.nome}. Está na ficha dele, em Clientes.`,
         'sucesso',
       );
     } catch (e) {
       mostrar(e instanceof Error ? e.message : 'Falha ao vincular o orçamento.', 'erro');
+    } finally {
+      setVinculando(false);
+    }
+  }
+
+  /**
+   * Grava a revisão: uma VERSÃO NOVA, sem apagar a anterior.
+   *
+   * O histórico do cliente recebe os dois valores, que é a trilha que o
+   * Juliano pediu. Falhar ao escrever o histórico NÃO desfaz a revisão —
+   * o número é o que importa, e perder a linha do histórico é menos grave
+   * que perder a revisão; então avisa e segue.
+   */
+  async function atualizarOrcamento() {
+    const entrada = entradaDoCalculo();
+    if (!entrada || !revisando) return;
+
+    setVinculando(true);
+    try {
+      const r = await api.orcamentos.revisar(revisando.id, entrada);
+
+      try {
+        await api.clientes.registrarHistorico(
+          revisando.clienteId,
+          usuario.nome,
+          `Orçamento revisado de ${formatarBRL(r.valorAnterior)} para ` +
+            `${formatarBRL(r.valorNovo)} (versão ${r.versao}).`,
+        );
+      } catch {
+        mostrar('Orçamento revisado, mas a linha do histórico não foi gravada.', 'aviso');
+      }
+
+      // A tela passa a editar a versão nova: revisar de novo cria a v+1,
+      // em vez de bifurcar a partir da versão antiga sem querer.
+      setRevisando({ ...revisando, id: r.id, versao: r.versao, valorFinal: r.valorNovo });
+      mostrar(
+        `Orçamento atualizado para ${formatarBRL(r.valorNovo)} — versão ${r.versao}.`,
+        'sucesso',
+      );
+    } catch (e) {
+      mostrar(e instanceof Error ? e.message : 'Falha ao atualizar o orçamento.', 'erro');
     } finally {
       setVinculando(false);
     }
@@ -243,13 +372,40 @@ export default function PaginaOrcamentos() {
     <>
       <TituloPagina
         titulo="Orçamentos"
-        subtitulo="Calculadora de precificação da mudança."
+        subtitulo={
+          revisando
+            ? `Revisando o orçamento de ${revisando.clienteNome} — versão ${revisando.versao} vigente.`
+            : 'Calculadora de precificação da mudança.'
+        }
         acoes={
           <button type="button" className="btn btn-ghost" onClick={limpar}>
             Limpar
           </button>
         }
       />
+
+      {erroRevisao && <div className={estilos.avisoRevisao}>{erroRevisao}</div>}
+
+      {revisando && (
+        <div className={estilos.avisoRevisao}>
+          <strong>
+            Você está revisando um orçamento de {revisando.clienteNome}, hoje em{' '}
+            {formatarBRL(revisando.valorFinal)}.
+          </strong>
+          <span>
+            Salvar cria a <strong>versão {revisando.versao + 1}</strong>. A versão atual não é
+            apagada, e o histórico do cliente registra os dois valores.
+            {fatorInferido && (
+              <>
+                {' '}
+                Atenção: este orçamento é antigo e não guardou o ponto da régua — ele foi
+                reconstruído a partir da margem gravada e pode não ser exatamente o que foi
+                escolhido na época.
+              </>
+            )}
+          </span>
+        </div>
+      )}
 
       <div className={estilos.gradeCalculadora}>
         {/* ---------------- Entrada ---------------- */}
@@ -489,26 +645,46 @@ export default function PaginaOrcamentos() {
                 />
               </div>
 
-              {/* Guardar o cálculo na ficha do cliente. */}
+              {/*
+                Mesmo lugar, dois gestos diferentes: revisando um orçamento,
+                o botão ATUALIZA aquele; sem revisão, VINCULA um novo. Dois
+                botões lado a lado convidariam a criar um orçamento duplicado
+                quando a intenção era corrigir o que já existe.
+              */}
               <div className={estilos.vinculo}>
-                <button
-                  type="button"
-                  className="btn btn-primary"
-                  onClick={vincularAoCliente}
-                  disabled={!clienteEscolhido || vinculando}
-                  title={
-                    clienteEscolhido
-                      ? undefined
-                      : 'Escolha um cliente no topo para poder vincular'
-                  }
-                >
-                  {vinculando ? 'Vinculando…' : 'Vincular valor ao cliente'}
-                </button>
+                {revisando ? (
+                  <button
+                    type="button"
+                    className="btn btn-primary"
+                    onClick={atualizarOrcamento}
+                    disabled={vinculando}
+                  >
+                    {vinculando
+                      ? 'Atualizando…'
+                      : `Atualizar orçamento (cria a versão ${revisando.versao + 1})`}
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    className="btn btn-primary"
+                    onClick={vincularAoCliente}
+                    disabled={!clienteEscolhido || vinculando}
+                    title={
+                      clienteEscolhido
+                        ? undefined
+                        : 'Escolha um cliente no topo para poder vincular'
+                    }
+                  >
+                    {vinculando ? 'Vinculando…' : 'Vincular valor ao cliente'}
+                  </button>
+                )}
 
                 <span className={estilos.explicacaoVinculo}>
-                  {clienteEscolhido
-                    ? `Guarda este cálculo na ficha de ${clienteEscolhido.nome}, com tudo que entrou na conta.`
-                    : 'Sem cliente escolhido, o cálculo não é gravado em lugar nenhum.'}
+                  {revisando
+                    ? `Substitui o valor vigente na ficha de ${revisando.clienteNome}, guardando o anterior.`
+                    : clienteEscolhido
+                      ? `Guarda este cálculo na ficha de ${clienteEscolhido.nome}, com tudo que entrou na conta.`
+                      : 'Sem cliente escolhido, o cálculo não é gravado em lugar nenhum.'}
                 </span>
               </div>
             </>

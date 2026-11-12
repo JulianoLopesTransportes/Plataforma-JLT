@@ -242,5 +242,10 @@ export function paraOrcamento(linha: any): Orcamento {
     })),
     valorFinal: num(linha.valor_final),
     observacoes: txt(linha.observacoes),
+    raizId: linha.raiz_id ?? linha.id,
+    versao: num(linha.versao) || 1,
+    // Ausente na leitura antiga (mock) conta como vigente.
+    vigente: linha.vigente !== false,
+    fator: linha.fator === null || linha.fator === undefined ? null : num(linha.fator),
   };
 }

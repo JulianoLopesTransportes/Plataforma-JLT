@@ -26,7 +26,7 @@
  * que o caminhão estoura no meio do caminho.
  */
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { api } from '@/lib/api';
 import { calcularOcupacao, detectarAlertas } from '@/lib/negocio/rotas';
 import { hojeISO, novoId, mascararTelefone, mascararDocumento } from '@/lib/utils/formato';
@@ -90,6 +90,44 @@ function tipoDaCidade(c: CidadeForm): TipoParada {
   return 'coleta';
 }
 
+/**
+ * Desmonta uma rota gravada de volta nos formatos do formulário.
+ *
+ * O banco guarda `mudancas` com id real e `paradas` com movimentos que
+ * apontam para esses ids; o formulário trabalha com ids TEMPORÁRIOS. A
+ * ponte é feita aqui, no sentido inverso ao que `preenche_filhos_da_rota`
+ * faz no banco.
+ *
+ * Usar o id real como tempId é de propósito: ele é único e estável dentro
+ * desta rota, então os movimentos reencontram a carga certa sem mapa
+ * nenhum. Ao salvar, o banco descarta esses ids e grava linhas novas.
+ */
+function desmontarRota(rota: Rota): { cargas: CargaForm[]; cidades: CidadeForm[] } {
+  const cargas: CargaForm[] = rota.mudancas.map((m) => ({
+    tempId: m.id,
+    clienteId: m.clienteId,
+    clienteNome: m.clienteNome,
+    telefone: m.telefone,
+    documento: m.documento,
+    volumeM3: m.volumeM3,
+    enderecoColeta: m.enderecoColeta,
+    enderecoEntrega: m.enderecoEntrega,
+    observacao: m.observacao,
+  }));
+
+  const cidades: CidadeForm[] = rota.paradas.map((p) => ({
+    tempId: p.id,
+    cidade: p.cidade,
+    uf: p.uf,
+    data: p.data,
+    observacao: p.observacao,
+    coletam: p.coletam.map((mv) => ({ cargaTempId: mv.mudancaId, endereco: mv.endereco })),
+    entregam: p.entregam.map((mv) => ({ cargaTempId: mv.mudancaId, endereco: mv.endereco })),
+  }));
+
+  return { cargas, cidades };
+}
+
 export default function FormularioRota({
   aberto,
   aoFechar,
@@ -97,6 +135,7 @@ export default function FormularioRota({
   clientes,
   veiculos,
   motoristas,
+  rota = null,
 }: {
   aberto: boolean;
   aoFechar: () => void;
@@ -104,6 +143,8 @@ export default function FormularioRota({
   clientes: Cliente[];
   veiculos: Veiculo[];
   motoristas: Motorista[];
+  /** Presente = editando esta rota. Ausente = rota nova. */
+  rota?: Rota | null;
 }) {
   const { mostrar } = useToast();
   const { confirmar } = useDialogo();
@@ -116,6 +157,37 @@ export default function FormularioRota({
   const [cargas, setCargas] = useState<CargaForm[]>([]);
   const [cidades, setCidades] = useState<CidadeForm[]>([]);
   const [salvando, setSalvando] = useState(false);
+
+  /*
+   * Carrega a rota a editar quando o formulário ABRE.
+   *
+   * Depende de `aberto` e não só de `rota` porque o modal fica montado: sem
+   * isso, fechar e reabrir mostraria o que o usuário havia digitado na
+   * sessão anterior em vez do que está gravado.
+   */
+  useEffect(() => {
+    if (!aberto) return;
+
+    if (!rota) {
+      setNome('');
+      setDataSaida(hojeISO());
+      setDataRetorno('');
+      setVeiculoId('');
+      setMotoristaId('');
+      setCargas([]);
+      setCidades([]);
+      return;
+    }
+
+    const { cargas: c, cidades: ci } = desmontarRota(rota);
+    setNome(rota.nome);
+    setDataSaida(rota.dataSaida);
+    setDataRetorno(rota.dataPrevistaRetorno);
+    setVeiculoId(rota.veiculoId ?? '');
+    setMotoristaId(rota.motoristaId ?? '');
+    setCargas(c);
+    setCidades(ci);
+  }, [aberto, rota]);
 
   const veiculo = veiculos.find((v) => v.id === veiculoId) ?? null;
 
@@ -148,6 +220,7 @@ export default function FormularioRota({
       dataPrevistaRetorno: dataRetorno,
       mudancas: cargas.map((c) => ({
         id: c.tempId,
+        clienteId: c.clienteId,
         clienteNome: c.clienteNome,
         telefone: c.telefone,
         documento: c.documento,
@@ -416,33 +489,51 @@ export default function FormularioRota({
     }
 
     setSalvando(true);
+
+    const dados = {
+      nome: nome.trim(),
+      origem,
+      destino,
+      dataSaida,
+      dataPrevistaRetorno: dataRetorno,
+      veiculoId: veiculoId || null,
+      motoristaId: motoristaId || null,
+      mudancas: cargas,
+      paradas: cidades.map((c) => ({
+        tipo: tipoDaCidade(c),
+        cidade: c.cidade,
+        uf: c.uf,
+        endereco: '',
+        data: c.data,
+        observacao: c.observacao,
+        coletam: c.coletam.map((m) => ({ tempId: m.cargaTempId, endereco: m.endereco })),
+        entregam: c.entregam.map((m) => ({ tempId: m.cargaTempId, endereco: m.endereco })),
+      })),
+    };
+
     try {
-      await api.rotas.criar({
-        nome: nome.trim(),
-        origem,
-        destino,
-        dataSaida,
-        dataPrevistaRetorno: dataRetorno,
-        veiculoId: veiculoId || null,
-        motoristaId: motoristaId || null,
-        mudancas: cargas,
-        paradas: cidades.map((c) => ({
-          tipo: tipoDaCidade(c),
-          cidade: c.cidade,
-          uf: c.uf,
-          endereco: '',
-          data: c.data,
-          observacao: c.observacao,
-          coletam: c.coletam.map((m) => ({ tempId: m.cargaTempId, endereco: m.endereco })),
-          entregam: c.entregam.map((m) => ({ tempId: m.cargaTempId, endereco: m.endereco })),
-        })),
-      });
+      if (rota) {
+        /*
+         * Editar mantém o STATUS que a rota já tem.
+         *
+         * O formulário não tem campo de status — ele é mudado na própria
+         * lista de rotas. Mandar o status atual de volta é o que impede uma
+         * correção de endereço em rota "em trânsito" devolvê-la a
+         * "planejada" sem ninguém pedir.
+         */
+        await api.rotas.atualizar(rota.id, { ...dados, status: rota.status });
+      } else {
+        await api.rotas.criar(dados);
+      }
 
       await aoSalvar();
       limpar();
-      mostrar(`Rota "${nome}" criada.`, 'sucesso');
+      mostrar(rota ? `Rota "${nome}" atualizada.` : `Rota "${nome}" criada.`, 'sucesso');
     } catch (e) {
-      mostrar(e instanceof Error ? e.message : 'Falha ao criar a rota.', 'erro');
+      mostrar(
+        e instanceof Error ? e.message : `Falha ao ${rota ? 'atualizar' : 'criar'} a rota.`,
+        'erro',
+      );
     } finally {
       setSalvando(false);
     }
@@ -463,7 +554,7 @@ export default function FormularioRota({
 
   return (
     <Modal
-      titulo="Nova rota"
+      titulo={rota ? `Editar "${rota.nome}"` : 'Nova rota'}
       aberto={aberto}
       aoFechar={aoFechar}
       largo
@@ -473,7 +564,13 @@ export default function FormularioRota({
             Cancelar
           </button>
           <button type="submit" form="form-rota" className="btn btn-primary" disabled={salvando}>
-            {salvando ? 'Criando…' : 'Criar rota'}
+            {salvando
+              ? rota
+                ? 'Salvando…'
+                : 'Criando…'
+              : rota
+                ? 'Salvar alterações'
+                : 'Criar rota'}
           </button>
         </>
       }

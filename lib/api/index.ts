@@ -654,6 +654,50 @@ const agenda = {
 
 const SELECT_ROTA = '*, mudancas(*), paradas(*, parada_movimentos(*))';
 
+/**
+ * A rota como a tela a monta, com ids TEMPORÁRIOS nas cargas.
+ *
+ * Tipo nomeado, e não inline na assinatura, porque `criar` e `atualizar`
+ * recebem a mesma coisa. A primeira tentativa foi
+ * `Parameters<typeof rotas.criar>[0]` em `atualizar`, e o compilador recusou
+ * com razão: `rotas` se referenciaria dentro da própria definição.
+ *
+ * O id temporário existe porque os movimentos de cada cidade apontam para
+ * cargas que ainda não foram inseridas e não têm id real. O banco monta o
+ * mapa temp_id → id de verdade dentro da transação.
+ */
+export type EntradaRota = {
+  nome: string;
+  origem: string;
+  destino: string;
+  dataSaida: string;
+  dataPrevistaRetorno: string;
+  veiculoId: string | null;
+  motoristaId: string | null;
+  mudancas: {
+    tempId: string;
+    clienteId: string | null;
+    clienteNome: string;
+    telefone: string;
+    documento: string;
+    volumeM3: number;
+    enderecoColeta: string;
+    enderecoEntrega: string;
+    observacao: string;
+  }[];
+  paradas: {
+    tipo: string;
+    cidade: string;
+    uf: string;
+    endereco: string;
+    data: string;
+    observacao: string;
+    /** Cada movimento leva o id temporário da carga e o seu endereço. */
+    coletam: { tempId: string; endereco: string }[];
+    entregam: { tempId: string; endereco: string }[];
+  }[];
+};
+
 const rotas = {
   async listar(filtros: Filtros = {}): Promise<Rota[]> {
     if (!usandoBanco()) {
@@ -706,37 +750,7 @@ const rotas = {
    * id depois de inseridas, e sem transação uma falha no meio deixaria rota
    * órfã. As cargas viajam com um id temporário que o banco mapeia.
    */
-  async criar(rota: {
-    nome: string;
-    origem: string;
-    destino: string;
-    dataSaida: string;
-    dataPrevistaRetorno: string;
-    veiculoId: string | null;
-    motoristaId: string | null;
-    mudancas: {
-      tempId: string;
-      clienteId: string | null;
-      clienteNome: string;
-      telefone: string;
-      documento: string;
-      volumeM3: number;
-      enderecoColeta: string;
-      enderecoEntrega: string;
-      observacao: string;
-    }[];
-    paradas: {
-      tipo: string;
-      cidade: string;
-      uf: string;
-      endereco: string;
-      data: string;
-      observacao: string;
-      /** Cada movimento leva o id temporário da carga e o seu endereço. */
-      coletam: { tempId: string; endereco: string }[];
-      entregam: { tempId: string; endereco: string }[];
-    }[];
-  }): Promise<string> {
+  async criar(rota: EntradaRota): Promise<string> {
     if (!usandoBanco()) throw new Error('Criar rota exige o banco de dados configurado.');
 
     const { data, error } = await supabase().rpc('criar_rota_completa', {
@@ -775,6 +789,84 @@ const rotas = {
 
     if (error) throw new Error(traduzir(error));
     return data as string;
+  },
+
+  /**
+   * Edita a rota inteira — cidades, cargas e movimentos.
+   *
+   * Não existia: a API tinha criar, excluir e atualizarStatus. Errar uma
+   * cidade numa rota de cinco paradas obrigava a apagar e remontar, e isso
+   * ZERAVA o vínculo dos lançamentos e compromissos que apontavam para ela.
+   *
+   * Rota em andamento edita igual a planejada, decisão do Juliano.
+   *
+   * A função do banco SUBSTITUI os filhos em vez de casar um a um: a tela
+   * trabalha com ids temporários e não tem identidade estável para
+   * comparar, e um diff errado embaralharia a sequência da rota.
+   */
+  async atualizar(
+    id: string,
+    rota: EntradaRota & { status: Rota['status'] },
+  ): Promise<void> {
+    if (!usandoBanco()) throw new Error('Edição exige o banco de dados configurado.');
+
+    const { error } = await supabase().rpc('atualizar_rota_completa', {
+      p_rota_id: id,
+      p_rota: {
+        nome: rota.nome,
+        status: rota.status,
+        veiculo_id: rota.veiculoId ?? '',
+        motorista_id: rota.motoristaId ?? '',
+        origem: rota.origem,
+        destino: rota.destino,
+        data_saida: rota.dataSaida,
+        data_prevista_retorno: rota.dataPrevistaRetorno,
+        mudancas: rota.mudancas.map((m) => ({
+          temp_id: m.tempId,
+          cliente_id: m.clienteId ?? '',
+          cliente_nome: m.clienteNome,
+          telefone: m.telefone,
+          documento: m.documento,
+          volume_m3: m.volumeM3,
+          endereco_coleta: m.enderecoColeta,
+          endereco_entrega: m.enderecoEntrega,
+          observacao: m.observacao,
+        })),
+        paradas: rota.paradas.map((p) => ({
+          tipo: p.tipo,
+          cidade: p.cidade,
+          uf: p.uf,
+          endereco: p.endereco,
+          data: p.data,
+          observacao: p.observacao,
+          coletam: p.coletam.map((m) => ({ temp_id: m.tempId, endereco: m.endereco })),
+          entregam: p.entregam.map((m) => ({ temp_id: m.tempId, endereco: m.endereco })),
+        })),
+      },
+    });
+
+    if (error) throw new Error(traduzir(error));
+  },
+
+  /** O histórico da rota: o que mudou, por quem, quando. */
+  async historico(
+    rotaId: string,
+  ): Promise<{ id: string; descricao: string; autorNome: string; em: string }[]> {
+    if (!usandoBanco()) return [];
+
+    const { data, error } = await supabase()
+      .from('rota_historico')
+      .select('id, descricao, autor_nome, em')
+      .eq('rota_id', rotaId)
+      .order('em', { ascending: false });
+
+    if (error) throw new Error(traduzir(error));
+    return (data ?? []).map((h: Record<string, unknown>) => ({
+      id: h.id as string,
+      descricao: (h.descricao as string) ?? '',
+      autorNome: (h.autor_nome as string) ?? '',
+      em: (h.em as string) ?? '',
+    }));
   },
 
   async excluir(id: string): Promise<void> {

@@ -95,6 +95,8 @@ function ConteudoRotas() {
   const [rotaAbertaId, setRotaAbertaId] = useState<string | null>(null);
   const [clientes, setClientes] = useState<Cliente[]>([]);
   const [formAberto, setFormAberto] = useState(false);
+  /** Presente = o formulário está editando esta rota, não criando uma. */
+  const [rotaEditando, setRotaEditando] = useState<Rota | null>(null);
 
   const podeMexer = podeEditar(usuario.nivel, 'rotas');
   // A capacidade 'excluir' é transversal e hoje só o admin a tem — quem
@@ -210,7 +212,10 @@ function ConteudoRotas() {
             className="btn btn-primary"
             disabled={!podeMexer}
             title={podeMexer ? undefined : 'Seu nível não permite criar rotas'}
-            onClick={() => setFormAberto(true)}
+            onClick={() => {
+              setRotaEditando(null);
+              setFormAberto(true);
+            }}
           >
             Nova rota
           </button>
@@ -382,6 +387,26 @@ function ConteudoRotas() {
                     ))}
                   </select>
                 </label>
+              )}
+              {/*
+                Editar vale também com a rota em andamento — decisão do
+                Juliano, e é quando a mudança de verdade acontece: o
+                caminhão já está na rua. Os vínculos com lançamentos e
+                compromissos sobrevivem à edição, ao contrário de apagar e
+                remontar, que era o único caminho antes.
+              */}
+              {podeMexer && (
+                <button
+                  type="button"
+                  className="btn btn-primary"
+                  onClick={() => {
+                    setRotaEditando(rotaAberta);
+                    setRotaAbertaId(null);
+                    setFormAberto(true);
+                  }}
+                >
+                  Editar rota
+                </button>
               )}
               {podeExcluir && (
                 <button

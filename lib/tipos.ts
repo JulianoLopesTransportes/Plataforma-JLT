@@ -319,6 +319,15 @@ export type StatusRota = 'planejada' | 'carregando' | 'em_transito' | 'concluida
  */
 export type Mudanca = {
   id: string;
+  /**
+   * O cliente cadastrado, quando a carga veio de um.
+   *
+   * Faltava no tipo, e a coluna existe no banco desde sempre. Sem ele,
+   * reabrir a rota para editar e salvar de novo apagaria o vínculo de cada
+   * carga em silêncio — o nome continuaria ali e a ligação com a ficha do
+   * cliente, não.
+   */
+  clienteId: string | null;
   clienteNome: string;
   telefone: string;
   documento: string;

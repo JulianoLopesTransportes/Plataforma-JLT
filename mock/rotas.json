@@ -18,7 +18,8 @@
         "volumeM3": 38,
         "enderecoColeta": "Av. Amazonas, 5600, Gameleira, Belo Horizonte - MG",
         "enderecoEntrega": "Av. Afonso Pena, 1200, Centro, Uberlândia - MG",
-        "observacao": "Carga de mostruário. Manter na vertical."
+        "observacao": "Carga de mostruário. Manter na vertical.",
+        "clienteId": null
       },
       {
         "id": "mud_002",
@@ -28,7 +29,8 @@
         "volumeM3": 14,
         "enderecoColeta": "Rua Curitiba, 900, Centro, Belo Horizonte - MG",
         "enderecoEntrega": "Rua Goiás, 300, Centro, Araxá - MG",
-        "observacao": "Caixas de livros — peso elevado."
+        "observacao": "Caixas de livros — peso elevado.",
+        "clienteId": null
       },
       {
         "id": "mud_003",
@@ -38,7 +40,8 @@
         "volumeM3": 8,
         "enderecoColeta": "Rua Tupinambás, 500, Centro, Belo Horizonte - MG",
         "enderecoEntrega": "Rua Rio Grande do Sul, 88, Centro, Araxá - MG",
-        "observacao": ""
+        "observacao": "",
+        "clienteId": null
       }
     ],
     "paradas": [
@@ -126,7 +129,8 @@
         "volumeM3": 40,
         "enderecoColeta": "Rod. Fernão Dias, km 12, Galpão 4, Vespasiano - MG",
         "enderecoEntrega": "Av. Getúlio Vargas, 2100, Centro, Juiz de Fora - MG",
-        "observacao": "Carga paletizada. Empilhadeira disponível no destino."
+        "observacao": "Carga paletizada. Empilhadeira disponível no destino.",
+        "clienteId": null
       }
     ],
     "paradas": [
@@ -185,7 +189,8 @@
         "volumeM3": 40,
         "enderecoColeta": "Rua Piauí, 1420, Funcionários, Belo Horizonte - MG",
         "enderecoEntrega": "Rua Coronel Pedro Jorge, 90, Centro, Ouro Preto - MG",
-        "observacao": "Rua estreita com ladeira. Confirmar acesso do caminhão."
+        "observacao": "Rua estreita com ladeira. Confirmar acesso do caminhão.",
+        "clienteId": null
       }
     ],
     "paradas": [
@@ -244,7 +249,8 @@
         "volumeM3": 52,
         "enderecoColeta": "Rua Rio de Janeiro, 2200, Lourdes, Belo Horizonte - MG",
         "enderecoEntrega": "Rua Sete de Setembro, 45, Centro, Vitória - ES",
-        "observacao": "Mudança interestadual. Emitir CT-e e conferir seguro."
+        "observacao": "Mudança interestadual. Emitir CT-e e conferir seguro.",
+        "clienteId": null
       }
     ],
     "paradas": [
@@ -303,7 +309,8 @@
         "volumeM3": 18,
         "enderecoColeta": "Rua Grão Mogol, 780, Sion, Belo Horizonte - MG",
         "enderecoEntrega": "Rua Ouro Preto, 155, Barro Preto, Belo Horizonte - MG",
-        "observacao": ""
+        "observacao": "",
+        "clienteId": null
       }
     ],
     "paradas": [

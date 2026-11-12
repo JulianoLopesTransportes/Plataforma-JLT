@@ -97,7 +97,15 @@ export default function PaginaDocumentos() {
   const [servicosMarcados, setServicosMarcados] = useState<string[]>(SERVICOS_INCLUSOS);
   const [outrosServicos, setOutrosServicos] = useState('');
 
-  const [dataExecucao, setDataExecucao] = useState('');
+  /*
+   * Substituiu `dataExecucao`, que era uma data só para coleta e entrega.
+   *
+   * A coleta vem de `dataColeta`, compartilhada com o orçamento. Aqui fica
+   * apenas a entrega prevista, que não tem equivalente em outro documento:
+   * `dataEntrega` mais abaixo é a data em que o comprovante ATESTA que a
+   * entrega ocorreu — fato passado, não plano.
+   */
+  const [dataEntregaPrevista, setDataEntregaPrevista] = useState('');
   const [dataContrato, setDataContrato] = useState(hojeISO());
   const [clausulasAdicionais, setClausulasAdicionais] = useState('');
 
@@ -135,9 +143,16 @@ export default function PaginaDocumentos() {
 
   // Preenche o inventário e a data prevista a partir do cliente escolhido.
   useEffect(() => {
+    /*
+     * Só a COLETA vem do cadastro.
+     *
+     * `clientes.dataPrevista` é a data da mudança — a da coleta. A entrega
+     * prevista fica em branco de propósito: o cadastro não guarda essa
+     * informação, e copiar a data da coleta para ela escreveria no contrato
+     * um prazo de entrega que ninguém combinou.
+     */
     if (clienteSelecionado?.dataPrevista) {
       setDataColeta(clienteSelecionado.dataPrevista);
-      setDataExecucao(clienteSelecionado.dataPrevista);
     }
     if (clienteSelecionado?.volumeM3) {
       setMetragem(String(clienteSelecionado.volumeM3));
@@ -196,7 +211,8 @@ export default function PaginaDocumentos() {
           cliente: dadosCliente,
           valorTotal: valor ? paraNumero(valor) : null,
           seguroIncluso,
-          dataExecucao,
+          dataColeta,
+          dataEntrega: dataEntregaPrevista,
           dataContrato,
           clausulasAdicionais: linhas(clausulasAdicionais),
         });
@@ -244,7 +260,7 @@ export default function PaginaDocumentos() {
     }
   }, [
     tipo, dadosCliente, validadeDias, valor, dataColeta, servicosMarcados, outrosServicos,
-    seguroIncluso, dataExecucao, dataContrato, clausulasAdicionais, dataInventario,
+    seguroIncluso, dataEntregaPrevista, dataContrato, clausulasAdicionais, dataInventario,
     valorDeclarado, metragem, observacao, diaVencimento, enderecoDeposito,
     dataInicio, abrangencia, finalidades, prazoImagem, dataEntrega, recebedor, ressalvas,
   ]);
@@ -471,15 +487,34 @@ export default function PaginaDocumentos() {
           {/* ---------- Contrato ---------- */}
           {tipo === 'contrato' && (
             <>
-              <div className="form-row" style={{ marginTop: 16 }}>
+              <div className="form-row-3" style={{ marginTop: 16 }}>
+                {/*
+                  Reaproveita `dataColeta`, o mesmo estado que o orçamento
+                  usa: "quando a coleta acontece" é a mesma informação nos
+                  dois documentos, e dois campos separados para isso só
+                  criariam chance de divergirem.
+                */}
                 <div className="field">
-                  <label htmlFor="dataExec">Data prevista de execução</label>
+                  <label htmlFor="dataColetaCtr">Data prevista para coleta</label>
                   <input
-                    id="dataExec"
+                    id="dataColetaCtr"
                     type="date"
-                    value={dataExecucao}
-                    onChange={(e) => setDataExecucao(e.target.value)}
+                    value={dataColeta}
+                    onChange={(e) => setDataColeta(e.target.value)}
                   />
+                </div>
+                <div className="field">
+                  <label htmlFor="dataEntregaCtr">Data prevista para entrega</label>
+                  <input
+                    id="dataEntregaCtr"
+                    type="date"
+                    value={dataEntregaPrevista}
+                    onChange={(e) => setDataEntregaPrevista(e.target.value)}
+                  />
+                  <p className="field-hint">
+                    Em branco, o contrato não fixa prazo de entrega — a cláusula 3.1 fala só do
+                    endereço.
+                  </p>
                 </div>
                 <div className="field">
                   <label htmlFor="dataCtr">Data do contrato</label>

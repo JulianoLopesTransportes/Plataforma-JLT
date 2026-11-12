@@ -424,7 +424,26 @@ export type EntradaContrato = {
   cliente: DadosCliente;
   valorTotal: number | null;
   seguroIncluso: boolean;
-  dataExecucao: string;
+  /**
+   * Quando a coleta está prevista. Era `dataExecucao`, uma data só para as
+   * duas pontas do serviço.
+   *
+   * Vazia imprime linha para preencher à mão, como todo dado que falta
+   * neste documento.
+   */
+  dataColeta: string;
+  /**
+   * Quando a entrega está prevista — e aqui VAZIA tem outro efeito.
+   *
+   * A cláusula 3.1 OMITE a frase de prazo de entrega quando não há data,
+   * em vez de imprimir uma linha. Decisão do Juliano em 12/11/2026: a
+   * entrega às vezes é no mesmo dia e às vezes ele ainda não sabe, e nos
+   * dois casos ele prefere não escrever prazo nenhum.
+   *
+   * A consequência foi dita e aceita: nesse caso o contrato não fixa prazo
+   * de entrega.
+   */
+  dataEntrega: string;
   dataContrato: string;
   clausulasAdicionais: string[];
 };
@@ -447,9 +466,26 @@ export function gerarContrato(e: EntradaContrato): BlocoDocumento[] {
     { tipo: 'secao', titulo: 'Cláusula 3 – Obrigações da Contratada' },
     {
       tipo: 'paragrafo',
+      /*
+       * Duas datas, uma por obrigação.
+       *
+       * Antes era uma só, pendurada no fim da frase: "…efetuando a entrega
+       * no endereço de destino: Y, na data prevista: D". Num contrato isso
+       * é discutível — dá para sustentar que o prazo valia apenas para a
+       * entrega, deixando a coleta sem data. Cada prazo agora fica ao lado
+       * da obrigação que ele governa.
+       *
+       * Sem data de entrega a frase do prazo SAI, em vez de imprimir uma
+       * linha. Ver o comentário de `dataEntrega` em EntradaContrato.
+       */
       partes: [
         { b: '3.1.' },
-        ` Realizar a coleta dos bens no endereço de origem: ${ou(c.enderecoColeta)}, efetuando a entrega no endereço de destino: ${ou(c.enderecoEntrega)}, na data prevista: ${dataOuLinha(e.dataExecucao)}.`,
+        ` Realizar a coleta dos bens no endereço de origem: ${ou(c.enderecoColeta)},` +
+          ` na data prevista para coleta: ${dataOuLinha(e.dataColeta)},` +
+          ` efetuando a entrega no endereço de destino: ${ou(c.enderecoEntrega)}` +
+          (e.dataEntrega
+            ? `, na data prevista para entrega: ${dataOuLinha(e.dataEntrega)}.`
+            : '.'),
       ],
     },
     {

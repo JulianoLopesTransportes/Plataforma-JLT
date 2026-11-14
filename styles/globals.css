@@ -496,6 +496,32 @@ tr:last-child td {
        chapada de cor em toda a página. */
   }
 
+  /*
+   * SOLTA A TRAVA DE ROLAGEM DO MODAL NA HORA DE IMPRIMIR.
+   *
+   * O Modal prende o body com `position: fixed; top: -<rolagem>px` para o
+   * iPhone não rolar a página por trás — e faz isso por ESTILO INLINE, em
+   * JavaScript. No papel, body fora do fluxo e deslocado para cima joga o
+   * topo do documento fora da área imprimível: a Ordem de Serviço saía SEM
+   * CABEÇALHO, porque é ela que é impressa de dentro de um modal.
+   *
+   * O contrato e o orçamento nunca quebraram — o módulo Documentos imprime
+   * a página direto, sem modal. Foi essa diferença que apontou a causa.
+   *
+   * `!important` aqui não é força bruta: é o ÚNICO jeito de uma folha de
+   * estilo vencer estilo inline, e eu medi isso no navegador antes de
+   * escrever — com a regra, `position` volta a `static` e `top` a `auto`.
+   *
+   * Regressão que eu mesmo criei em 11/11/2026, ao trocar
+   * `overflow: hidden` (que o iOS ignora) por este travamento.
+   */
+  body {
+    position: static !important;
+    top: auto !important;
+    left: auto !important;
+    right: auto !important;
+  }
+
   /* Ninguém deve gerar rolagem horizontal no papel. */
   body {
     overflow-x: visible;

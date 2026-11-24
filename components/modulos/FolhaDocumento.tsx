@@ -13,10 +13,9 @@
 
 import Image from 'next/image';
 import { EMPRESA, type BlocoDocumento, type Trecho } from '@/lib/negocio/documentos';
+import type { ItemInventario } from '@/lib/tipos';
+import { formatarBRL } from '@/lib/utils/formato';
 import estilos from './folha-documento.module.css';
-
-/** Catálogo de itens, para agrupar o inventário por ambiente. */
-type Catalogo = Record<string, string[]>;
 
 export default function FolhaDocumento({
   titulo,
@@ -25,10 +24,7 @@ export default function FolhaDocumento({
   blocos,
   clienteNome,
   clienteDocumento,
-  itens = {},
-  itensManuais = [],
-  catalogo = {},
-  ambienteManual = 'Outros itens',
+  inventario = [],
 }: {
   titulo: string;
   subtitulo?: string;
@@ -36,10 +32,17 @@ export default function FolhaDocumento({
   blocos: BlocoDocumento[];
   clienteNome: string;
   clienteDocumento: string;
-  itens?: Record<string, number>;
-  itensManuais?: string[];
-  catalogo?: Catalogo;
-  ambienteManual?: string;
+  /**
+   * Os itens do inventário, JÁ com o ambiente em cada linha.
+   *
+   * Era `Record<nomeDoItem, quantidade>`, com o ambiente deduzido do
+   * catálogo — e isso tinha um defeito calado: cinco nomes aparecem em
+   * mais de um ambiente, e "Caixa grande" está em quatro. O documento
+   * imprimia a MESMA quantidade sob cada um deles, de modo que quem
+   * declarava 4 caixas assinava um papel listando 16. Com o ambiente na
+   * linha, cada item sai uma vez só, onde o cliente o colocou.
+   */
+  inventario?: ItemInventario[];
 }) {
   return (
     <article className={estilos.folha}>
@@ -49,10 +52,7 @@ export default function FolhaDocumento({
         <Bloco
           key={i}
           bloco={bloco}
-          itens={itens}
-          itensManuais={itensManuais}
-          catalogo={catalogo}
-          ambienteManual={ambienteManual}
+          inventario={inventario}
           clienteNome={clienteNome}
           clienteDocumento={clienteDocumento}
         />
@@ -120,18 +120,12 @@ function Cabecalho({
 
 function Bloco({
   bloco,
-  itens,
-  itensManuais,
-  catalogo,
-  ambienteManual,
+  inventario,
   clienteNome,
   clienteDocumento,
 }: {
   bloco: BlocoDocumento;
-  itens: Record<string, number>;
-  itensManuais: string[];
-  catalogo: Catalogo;
-  ambienteManual: string;
+  inventario: ItemInventario[];
   clienteNome: string;
   clienteDocumento: string;
 }) {
@@ -167,14 +161,7 @@ function Bloco({
       );
 
     case 'tabelaItens':
-      return (
-        <TabelaItens
-          itens={itens}
-          itensManuais={itensManuais}
-          catalogo={catalogo}
-          ambienteManual={ambienteManual}
-        />
-      );
+      return <TabelaItens inventario={inventario} />;
 
     case 'assinaturas':
       return (
@@ -214,20 +201,10 @@ function renderTrecho(trecho: Trecho, i: number) {
    Inventário
    ========================================================================== */
 
-function TabelaItens({
-  itens,
-  itensManuais,
-  catalogo,
-  ambienteManual,
-}: {
-  itens: Record<string, number>;
-  itensManuais: string[];
-  catalogo: Catalogo;
-  ambienteManual: string;
-}) {
-  const total = Object.values(itens).reduce((s, q) => s + q, 0);
+function TabelaItens({ inventario }: { inventario: ItemInventario[] }) {
+  const linhas = inventario.filter((i) => i.quantidade > 0);
 
-  if (total === 0) {
+  if (linhas.length === 0) {
     return (
       <p className={estilos.aviso}>
         Nenhum item selecionado — marque as quantidades no painel ao lado.
@@ -235,36 +212,56 @@ function TabelaItens({
     );
   }
 
-  const grupos: [string, string[]][] = [
-    ...Object.entries(catalogo),
-    [ambienteManual, itensManuais],
-  ];
+  const volumes = linhas.reduce((s, i) => s + i.quantidade, 0);
+  const valor = linhas.reduce((s, i) => s + i.quantidade * i.valorUnitario, 0);
+
+  /*
+   * A coluna de dinheiro só aparece quando há dinheiro declarado.
+   *
+   * A cláusula 7.1 calcula a indenização sobre o valor INDIVIDUAL do bem,
+   * então o valor por item é o que faz ela ser aplicável. Mas o
+   * inventário tirado em branco, para preencher a caneta na casa do
+   * cliente, não deve carregar uma coluna de "R$ 0,00" em toda linha.
+   */
+  const comValor = linhas.some((i) => i.valorUnitario > 0);
+
+  // Agrupa preservando a ordem de chegada — quem monta a lista decide.
+  const grupos = new Map<string, ItemInventario[]>();
+  for (const i of linhas) {
+    const chave = i.ambiente || 'Sem ambiente';
+    grupos.set(chave, [...(grupos.get(chave) ?? []), i]);
+  }
 
   return (
     <>
-      {grupos.map(([ambiente, listaItens]) => {
-        const doAmbiente = listaItens.filter((i) => itens[i]);
-        if (doAmbiente.length === 0) return null;
-
-        return (
-          <div key={ambiente} className={estilos.blocoAmbiente}>
-            <h3 className={estilos.nomeAmbiente}>{ambiente}</h3>
-            <table className={estilos.tabelaDocumento}>
-              <tbody>
-                {doAmbiente.map((item) => (
-                  <tr key={item}>
-                    <td>{item}</td>
-                    <td className={estilos.quantidadeCelula}>{itens[item]}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        );
-      })}
+      {[...grupos].map(([ambiente, itensDoAmbiente]) => (
+        <div key={ambiente} className={estilos.blocoAmbiente}>
+          <h3 className={estilos.nomeAmbiente}>{ambiente}</h3>
+          <table className={estilos.tabelaDocumento}>
+            <tbody>
+              {itensDoAmbiente.map((i) => (
+                <tr key={`${ambiente}-${i.item}`}>
+                  <td>{i.item}</td>
+                  <td className={estilos.quantidadeCelula}>{i.quantidade}</td>
+                  {comValor && (
+                    <td className={estilos.valorCelula}>
+                      {i.valorUnitario > 0 ? formatarBRL(i.quantidade * i.valorUnitario) : '—'}
+                    </td>
+                  )}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      ))}
 
       <p className={estilos.totalInventario}>
-        Total de volumes declarados: <strong>{total}</strong>
+        Total de volumes declarados: <strong>{volumes}</strong>
+        {comValor && (
+          <>
+            {' · '}Valor total declarado: <strong>{formatarBRL(valor)}</strong>
+          </>
+        )}
       </p>
     </>
   );

@@ -11,11 +11,12 @@
  * folha, porque a moldura da plataforma some no @media print.
  */
 
-import { useEffect, useState, useMemo } from 'react';
+import { useEffect, useState, useMemo, Suspense } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { api } from '@/lib/api';
 import { useUsuario } from '@/components/layout/SessaoProvider';
 import { podeEditar } from '@/lib/permissoes';
-import { formatarBRL, hojeISO, paraNumero } from '@/lib/utils/formato';
+import { formatarBRL, formatarNumero, hojeISO, paraNumero } from '@/lib/utils/formato';
 import {
   TIPOS_DOCUMENTO,
   TITULO_DOCUMENTO,
@@ -37,7 +38,7 @@ import {
 } from '@/lib/negocio/documentos';
 import { TituloPagina, CampoFiltro, useToast } from '@/components/ui';
 import FolhaDocumento from '@/components/modulos/FolhaDocumento';
-import type { Cliente } from '@/lib/tipos';
+import type { Cliente, ItemInventario } from '@/lib/tipos';
 import catalogoItens from '@/mock/catalogo-itens.json';
 import estilos from './documentos.module.css';
 
@@ -67,14 +68,45 @@ const CATALOGO = catalogoItens as Record<string, string[]>;
 /** Ambiente onde entram os itens digitados à mão, fora do catálogo. */
 const AMBIENTE_MANUAL = 'Outros itens';
 
+/**
+ * A chave de uma linha do inventário: ambiente + item.
+ *
+ * Era só o nome do item, e cinco nomes do catálogo aparecem em mais de um
+ * ambiente — "Caixa grande" está em quatro. Com a chave antiga, marcar 4
+ * caixas na cozinha fazia as mesmas 4 aparecerem na sala, no quarto e na
+ * sala de jantar, e o documento listava 16. A chave composta é a mesma do
+ * `unique (cliente_id, ambiente, item)` da migration 53 e a mesma da
+ * página que o cliente preenche.
+ */
+const SEP = '\u0001';
+const chaveDe = (ambiente: string, item: string) => `${ambiente}${SEP}${item}`;
+
+/** Uma linha do painel. O valor fica como TEXTO, do jeito que foi digitado. */
+type LinhaInventario = { quantidade: number; valor: string };
+
 /** Quebra um textarea em linhas úteis — usado nos campos livres. */
 function linhas(texto: string): string[] {
   return texto.split('\n').map((l) => l.trim()).filter(Boolean);
 }
 
+/*
+ * Suspense em volta porque o conteúdo usa useSearchParams — a tela
+ * precisa do ?cliente=<id>&tipo=inventario que a ficha manda ao clicar em
+ * "Gerar documento". Sem a fronteira, a prerrenderização estática da rota
+ * quebra. Mesmo molde de Orçamentos e Rotas.
+ */
 export default function PaginaDocumentos() {
+  return (
+    <Suspense fallback={<TituloPagina titulo="Documentos" subtitulo="Carregando…" />}>
+      <ConteudoDocumentos />
+    </Suspense>
+  );
+}
+
+function ConteudoDocumentos() {
   const usuario = useUsuario();
   const { mostrar } = useToast();
+  const parametrosUrl = useSearchParams();
 
   const [clientes, setClientes] = useState<Cliente[]>([]);
   const [tipo, setTipo] = useState<TipoDocumento>('orcamento');
@@ -142,16 +174,33 @@ export default function PaginaDocumentos() {
   const [ressalvas, setRessalvas] = useState('');
 
   // --- Inventário de itens ---
-  const [itensInventario, setItensInventario] = useState<Record<string, number>>({});
+  const [itensInventario, setItensInventario] = useState<Record<string, LinhaInventario>>({});
   const [ambienteAberto, setAmbienteAberto] = useState<string>(Object.keys(CATALOGO)[0]);
   // Itens que não existem no catálogo, digitados na hora.
   const [itensManuais, setItensManuais] = useState<string[]>([]);
   const [novoItem, setNovoItem] = useState('');
+  // O que o cliente preencheu pelo link, quando houver.
+  const [doLink, setDoLink] = useState<ItemInventario[]>([]);
 
   const podeMexer = podeEditar(usuario.nivel, 'documentos');
 
   useEffect(() => {
     api.clientes.listar().then(setClientes);
+  }, []);
+
+  /*
+   * Chegou da ficha do cliente com o inventário pronto.
+   *
+   * Roda uma vez, pelos parâmetros da URL — o atendente pode trocar de
+   * cliente ou de tipo depois sem a tela puxá-lo de volta.
+   */
+  useEffect(() => {
+    const id = parametrosUrl.get('cliente');
+    const doUrl = parametrosUrl.get('tipo');
+
+    if (id) setClienteId(id);
+    if (doUrl && doUrl in TITULO_DOCUMENTO) setTipo(doUrl as TipoDocumento);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const clienteSelecionado = clientes.find((c) => c.id === clienteId) ?? null;
@@ -172,6 +221,30 @@ export default function PaginaDocumentos() {
     if (clienteSelecionado?.volumeM3) {
       setMetragem(String(clienteSelecionado.volumeM3));
     }
+  }, [clienteSelecionado]);
+
+  /*
+   * O que o cliente preencheu pelo link.
+   *
+   * Carregado só para OFERECER — não entra no painel sozinho. Quem já
+   * marcou meia dúzia de itens à mão não deve ver o trabalho sumir ao
+   * trocar de cliente.
+   */
+  useEffect(() => {
+    if (!clienteSelecionado) {
+      setDoLink([]);
+      return;
+    }
+
+    let ativo = true;
+    api.inventario
+      .doCliente(clienteSelecionado.id)
+      .then((d) => ativo && setDoLink(d.itens))
+      .catch(() => ativo && setDoLink([]));
+
+    return () => {
+      ativo = false;
+    };
   }, [clienteSelecionado]);
 
   const avulso = clienteId === AVULSO;
@@ -202,8 +275,43 @@ export default function PaginaDocumentos() {
       : null;
 
   const totalItens = useMemo(
-    () => Object.values(itensInventario).reduce((s, q) => s + q, 0),
+    () => Object.values(itensInventario).reduce((s, l) => s + l.quantidade, 0),
     [itensInventario],
+  );
+
+  /**
+   * O inventário no formato que o documento desenha — e que é o mesmo do
+   * banco: uma linha por (ambiente, item), com quantidade e valor.
+   */
+  const inventarioParaDocumento = useMemo<ItemInventario[]>(() => {
+    const saida: ItemInventario[] = [];
+    for (const [k, linha] of Object.entries(itensInventario)) {
+      if (linha.quantidade <= 0) continue;
+      const corte = k.indexOf(SEP);
+      saida.push({
+        ambiente: k.slice(0, corte),
+        item: k.slice(corte + 1),
+        quantidade: linha.quantidade,
+        valorUnitario: paraNumero(linha.valor),
+      });
+    }
+
+    /*
+     * Ordena pela ordem do CATÁLOGO, não alfabética: é a ordem em que a
+     * pessoa marcou na tela e em que vai conferir o caminhão. "Outros
+     * itens" vai para o fim.
+     */
+    const ordem = [...Object.keys(CATALOGO), AMBIENTE_MANUAL];
+    return saida.sort(
+      (a, b) =>
+        ordem.indexOf(a.ambiente) - ordem.indexOf(b.ambiente) ||
+        a.item.localeCompare(b.item, 'pt-BR'),
+    );
+  }, [itensInventario]);
+
+  const valorDoInventario = useMemo(
+    () => inventarioParaDocumento.reduce((s, i) => s + i.quantidade * i.valorUnitario, 0),
+    [inventarioParaDocumento],
   );
 
   /* --- Blocos do documento -------------------------------------------- */
@@ -304,7 +412,10 @@ export default function PaginaDocumentos() {
 
     setItensManuais((lista) => [...lista, nome]);
     // Entra já com uma unidade: quem digitou quer pelo menos uma.
-    setItensInventario((atual) => ({ ...atual, [nome]: 1 }));
+    setItensInventario((atual) => ({
+      ...atual,
+      [chaveDe(AMBIENTE_MANUAL, nome)]: { quantidade: 1, valor: '' },
+    }));
     setNovoItem('');
     setAmbienteAberto(AMBIENTE_MANUAL);
   }
@@ -313,19 +424,58 @@ export default function PaginaDocumentos() {
     setItensManuais((lista) => lista.filter((i) => i !== nome));
     setItensInventario((atual) => {
       const copia = { ...atual };
-      delete copia[nome];
+      delete copia[chaveDe(AMBIENTE_MANUAL, nome)];
       return copia;
     });
   }
 
-  function mudarQuantidade(item: string, delta: number) {
+  function mudarQuantidade(ambiente: string, item: string, delta: number) {
+    const k = chaveDe(ambiente, item);
     setItensInventario((atual) => {
-      const nova = (atual[item] ?? 0) + delta;
+      const linha = atual[k] ?? { quantidade: 0, valor: '' };
+      const nova = linha.quantidade + delta;
       const copia = { ...atual };
-      if (nova <= 0) delete copia[item];
-      else copia[item] = nova;
+      // Zerar APAGA a linha, inclusive o valor digitado: deixá-lo para
+      // trás faria um item com quantidade zero levar dinheiro ao total.
+      if (nova <= 0) delete copia[k];
+      else copia[k] = { ...linha, quantidade: nova };
       return copia;
     });
+  }
+
+  function mudarValorDoItem(ambiente: string, item: string, valor: string) {
+    const k = chaveDe(ambiente, item);
+    setItensInventario((atual) => ({
+      ...atual,
+      [k]: { quantidade: atual[k]?.quantidade ?? 1, valor },
+    }));
+  }
+
+  /**
+   * Traz para o painel o que o cliente preencheu pelo link.
+   *
+   * Substitui o que estiver na tela em vez de somar: o que o cliente
+   * declarou é a versão dele do inventário, e misturar as duas listas
+   * daria um papel que não é nem uma coisa nem outra.
+   */
+  function trazerDoLink() {
+    const novo: Record<string, LinhaInventario> = {};
+    const manuais: string[] = [];
+
+    for (const i of doLink) {
+      const noCatalogo = (CATALOGO[i.ambiente] ?? []).includes(i.item);
+      const ambiente = noCatalogo ? i.ambiente : AMBIENTE_MANUAL;
+      if (!noCatalogo) manuais.push(i.item);
+
+      novo[chaveDe(ambiente, i.item)] = {
+        quantidade: i.quantidade,
+        valor: i.valorUnitario ? formatarNumero(i.valorUnitario, 2) : '',
+      };
+    }
+
+    setItensInventario(novo);
+    setItensManuais(manuais);
+    mostrar(`${doLink.length} itens trazidos do que o cliente preencheu.`);
   }
 
   function imprimir() {
@@ -750,7 +900,22 @@ export default function PaginaDocumentos() {
               <h3 className={estilos.subtitulo}>
                 Itens por ambiente
                 {totalItens > 0 && <span className={estilos.contador}>{totalItens}</span>}
+                {valorDoInventario > 0 && (
+                  <span className={estilos.valorInventario}>
+                    {formatarBRL(valorDoInventario)}
+                  </span>
+                )}
               </h3>
+
+              {doLink.length > 0 && (
+                <button
+                  type="button"
+                  className="btn btn-outline btn-sm"
+                  onClick={trazerDoLink}
+                >
+                  Trazer os {doLink.length} itens que o cliente preencheu
+                </button>
+              )}
 
               <div className={estilos.abasAmbiente}>
                 {[...Object.keys(CATALOGO), AMBIENTE_MANUAL].map((ambiente) => (
@@ -797,40 +962,63 @@ export default function PaginaDocumentos() {
                 {(ambienteAberto === AMBIENTE_MANUAL
                   ? itensManuais
                   : (CATALOGO[ambienteAberto] ?? [])
-                ).map((item) => (
-                  <div key={item} className={estilos.linhaItem}>
-                    <span className={estilos.nomeItem}>{item}</span>
-                    <div className={estilos.controleQuantidade}>
-                      <button
-                        type="button"
-                        onClick={() => mudarQuantidade(item, -1)}
-                        disabled={!itensInventario[item]}
-                        aria-label={`Remover um ${item}`}
-                      >
-                        −
-                      </button>
-                      <span>{itensInventario[item] ?? 0}</span>
-                      <button
-                        type="button"
-                        onClick={() => mudarQuantidade(item, 1)}
-                        aria-label={`Adicionar um ${item}`}
-                      >
-                        +
-                      </button>
+                ).map((item) => {
+                  const linha = itensInventario[chaveDe(ambienteAberto, item)];
+                  const quantidade = linha?.quantidade ?? 0;
 
-                      {ambienteAberto === AMBIENTE_MANUAL && (
+                  return (
+                    <div key={item} className={estilos.linhaItem}>
+                      <span className={estilos.nomeItem}>{item}</span>
+
+                      {/* O campo de valor só aparece depois de haver o que
+                          valorar — 153 campos vazios na tela seriam ruído. */}
+                      {quantidade > 0 && (
+                        <div className={estilos.valorDoItem}>
+                          <span>R$</span>
+                          <input
+                            inputMode="decimal"
+                            value={linha?.valor ?? ''}
+                            onChange={(e) =>
+                              mudarValorDoItem(ambienteAberto, item, e.target.value)
+                            }
+                            placeholder="0,00"
+                            aria-label={`Valor da unidade de ${item}`}
+                          />
+                        </div>
+                      )}
+
+                      <div className={estilos.controleQuantidade}>
                         <button
                           type="button"
-                          className={estilos.removerItem}
-                          onClick={() => removerItemManual(item)}
-                          aria-label={`Remover ${item} da lista`}
+                          onClick={() => mudarQuantidade(ambienteAberto, item, -1)}
+                          disabled={quantidade <= 0}
+                          aria-label={`Remover um ${item}`}
                         >
-                          ×
+                          −
                         </button>
-                      )}
+                        <span>{quantidade}</span>
+                        <button
+                          type="button"
+                          onClick={() => mudarQuantidade(ambienteAberto, item, 1)}
+                          aria-label={`Adicionar um ${item}`}
+                        >
+                          +
+                        </button>
+
+                        {ambienteAberto === AMBIENTE_MANUAL && (
+                          <button
+                            type="button"
+                            className={estilos.removerItem}
+                            onClick={() => removerItemManual(item)}
+                            aria-label={`Remover ${item} da lista`}
+                          >
+                            ×
+                          </button>
+                        )}
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
 
                 {ambienteAberto === AMBIENTE_MANUAL && itensManuais.length === 0 && (
                   <p className={estilos.listaVazia}>
@@ -861,10 +1049,7 @@ export default function PaginaDocumentos() {
               blocos={blocos}
               clienteNome={dadosCliente.nome}
               clienteDocumento={dadosCliente.documento}
-              itens={itensInventario}
-              itensManuais={itensManuais}
-              catalogo={CATALOGO}
-              ambienteManual={AMBIENTE_MANUAL}
+              inventario={inventarioParaDocumento}
             />
           )}
         </div>

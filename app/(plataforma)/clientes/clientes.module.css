@@ -397,6 +397,11 @@
   font-variant-numeric: tabular-nums;
 }
 
+/* "Gerar documento" encosta na direita, longe dos números. */
+.totalInventario button {
+  margin-left: auto;
+}
+
 .ambienteInventario h4 {
   font-family: var(--font-display);
   font-size: 0.9rem;

@@ -303,3 +303,56 @@
     width: 100%;
   }
 }
+
+/* --------------------------------------------------------------------------
+   Valor por item do inventário
+   -------------------------------------------------------------------------- */
+
+/* O total em dinheiro, ao lado do contador de volumes no subtítulo. */
+.valorInventario {
+  margin-left: auto;
+  font-family: var(--font-body);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--color-gray-600);
+  font-variant-numeric: tabular-nums;
+}
+
+/*
+ * Fica entre o nome e o contador, e encolhe antes deles: o nome do móvel
+ * e os botões de mais e menos é que precisam continuar legíveis.
+ */
+.valorDoItem {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  flex: 0 1 auto;
+  margin-left: auto;
+  border: 1.5px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-white);
+  padding: 0 6px;
+}
+
+.valorDoItem span {
+  font-size: 11px;
+  color: var(--color-gray-600);
+}
+
+.valorDoItem input {
+  width: 84px;
+  border: none;
+  outline: none;
+  background: transparent;
+  font-family: var(--font-body);
+  font-size: 13px;
+  padding: 5px 0;
+  color: var(--color-text);
+  text-align: right;
+}
+
+@media (pointer: coarse) {
+  .valorDoItem input {
+    padding: 9px 0;
+  }
+}

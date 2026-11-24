@@ -1141,6 +1141,9 @@ export default function PaginaClientes() {
                     aoLiberar={() => liberarInventario(detalhe)}
                     aoCopiar={copiarLink}
                     endereco={enderecoDoLink}
+                    aoGerarDocumento={() =>
+                      router.push(`/documentos?cliente=${detalhe.id}&tipo=inventario`)
+                    }
                   />
                 )}
               </>
@@ -1474,6 +1477,7 @@ function InventarioDoClientePainel({
   aoLiberar,
   aoCopiar,
   endereco,
+  aoGerarDocumento,
 }: {
   dados: InventarioDoCliente | null;
   podeMexer: boolean;
@@ -1481,6 +1485,7 @@ function InventarioDoClientePainel({
   aoLiberar: () => void;
   aoCopiar: (token: string) => void;
   endereco: (token: string) => string;
+  aoGerarDocumento: () => void;
 }) {
   const itens = dados?.itens ?? [];
 
@@ -1574,6 +1579,15 @@ function InventarioDoClientePainel({
               {pecas} {pecas === 1 ? 'peça' : 'peças'}
             </strong>
             <span>{formatarBRL(total)}</span>
+            {/* Leva para Documentos já com este cliente e o tipo certo; lá
+                um botão traz estes itens para a folha e imprime. */}
+            <button
+              type="button"
+              className="btn btn-outline btn-sm"
+              onClick={aoGerarDocumento}
+            >
+              Gerar documento
+            </button>
           </div>
 
           {[...porAmbiente].map(([ambiente, lista]) => (

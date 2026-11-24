@@ -203,6 +203,13 @@
   font-variant-numeric: tabular-nums;
 }
 
+/* Só existe quando o inventário tem valor declarado — ver TabelaItens. */
+.valorCelula {
+  text-align: right;
+  width: 120px;
+  font-variant-numeric: tabular-nums;
+}
+
 .totalInventario {
   margin: var(--space-2) 0;
   padding-top: var(--space-1);

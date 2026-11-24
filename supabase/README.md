@@ -52,6 +52,10 @@ O schema está **aplicado no projeto remoto**. As migrations abaixo já rodaram:
 | 47 | `47_derruba_calcular_preco_e_indexa_fks` | Tira a função de preço errada; índices nas FKs que a aplicação percorre |
 | 48 | `48_orcamento_revisavel_com_versao` | Cadeia de versões em `orcamentos`; revisar grava versão nova, não sobrescreve |
 | 49 | `49_visao_de_orcamento_mostra_a_versao` | `orcamentos_visao` passa a expor raiz, versão, vigente e fator |
+| 50 | `50_eventos_de_status_do_cliente` | Trilha de transições de etapa por gatilho; `retroativo` marca a carga inicial |
+| 51 | `51_rota_editavel_com_historico` | `atualizar_rota_completa()`, `rota_historico` e o preenchimento compartilhado |
+| 52 | `52_corrige_a_51_que_duplicava_a_rota` | A 51 duplicava cidades para quem não é admin; a função vira SECURITY DEFINER |
+| 53 | `53_inventario_preenchido_pelo_cliente` | A primeira porta sem login: link por token, três funções públicas, nenhuma tabela liberada para `anon` |
 
 ## Baixar os arquivos de migration para cá
 
@@ -180,6 +184,38 @@ hoje — `perfis_leitura` é `using (true)`. São DEFINER para que o insert em
 `clientes` e a trava de repasse não dependam do RLS de outra tabela: se
 `perfis_leitura` for apertada um dia, a trava não pode passar a liberar a
 troca em silêncio por não conseguir ler o `ativo` do dono.
+
+### As três funções que `anon` executa são a porta do inventário
+
+O linter aponta `inventario_abrir`, `inventario_salvar` e
+`inventario_finalizar` como `SECURITY DEFINER` chamáveis **sem login**.
+Isso é o desenho inteiro da migration 53, não descuido — **não "conserte"
+isto**, ou o link que o cliente recebe para de funcionar.
+
+A segurança não está em esconder as funções: está em que o visitante
+anônimo **não tem policy em tabela nenhuma**. Ele só alcança o que estas
+três devolvem, e cada uma valida o token e tranca tudo no cliente daquele
+token.
+
+Três coisas sustentam isso, e vale saber antes de mexer:
+
+1. **Token de 256 bits** (dois uuid colados). É o que torna o link
+   imadivinhável — a função é pública por natureza.
+2. **`inventario_abrir` devolve só nome e itens.** Nada de CPF, telefone,
+   e-mail ou endereço. Dá para ser assim porque o PDF é gerado do lado da
+   equipe, na ficha. Um token vazado expõe o nome de um cliente e a lista
+   de móveis dele, não o cadastro.
+3. **`inventario_cliente_do_token` é revogada de todos.** É a validação
+   compartilhada; só as três funções acima a chamam, por dentro.
+
+A prova está em `supabase/testes/53_inventario_seguranca.sql` — 19 casos,
+roda em transação com `rollback`, e a última linha diz sim ou não. Rode-a
+depois de qualquer mudança que toque nesta porta.
+
+Um detalhe que o teste ensinou: tabela com RLS e sem policy para `anon`
+**não levanta exceção**, devolve zero linhas. A primeira versão daquele
+teste exigia exceção e teria acusado falha num sistema fechado. O critério
+certo é **"o que condena é linha vindo"**.
 
 ### Revogar EXECUTE quebra gatilho
 

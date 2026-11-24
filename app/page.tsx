@@ -195,7 +195,6 @@ function Formulario() {
                   autoComplete="username"
                   required
                 />
-                <p className="field-hint">{REGRA_USUARIO}</p>
               </div>
             </>
           )}

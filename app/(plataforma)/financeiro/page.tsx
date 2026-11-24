@@ -798,11 +798,18 @@ export default function PaginaFinanceiro() {
                   </option>
                 ))}
               </select>
-              <p className="field-hint">
-                {categoriasDoTipo.length === 0
-                  ? `Nenhuma categoria vale para ${formulario.tipo}. Crie uma em "Categorias".`
-                  : 'Para criar ou renomear, use o botão "Categorias" no topo da tela.'}
-              </p>
+              {/*
+                Só o aviso de lista VAZIA sobrevive. A outra metade era
+                ensinar onde fica o botão Categorias — dica de uso, e saiu
+                junto com as outras.
+                Seletor vazio sem explicação parece defeito, e aqui a saída
+                não é óbvia: a categoria se cria noutro lugar da tela.
+              */}
+              {categoriasDoTipo.length === 0 && (
+                <p className={estilos.avisoSemCategoria}>
+                  Nenhuma categoria vale para {formulario.tipo}. Crie uma em &ldquo;Categorias&rdquo;.
+                </p>
+              )}
             </div>
 
             <div className="field">
@@ -982,11 +989,7 @@ export default function PaginaFinanceiro() {
           </tbody>
         </table>
 
-        <p className="field-hint" style={{ marginTop: 12 }}>
-          Renomear alcança o histórico: os lançamentos antigos passam a
-          mostrar o nome novo. Categoria com lançamento não pode ser apagada —
-          desative-a para tirá-la do seletor sem perder o histórico.
-        </p>
+
       </Modal>
     </>
   );

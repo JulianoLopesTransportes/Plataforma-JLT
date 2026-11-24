@@ -426,10 +426,7 @@ function ConteudoOrcamentos() {
                 </option>
               ))}
             </select>
-            <p className="field-hint">
-              Escolher um cliente permite guardar o cálculo na ficha dele. Sem
-              cliente, a calculadora funciona igual e nada é gravado.
-            </p>
+
           </div>
 
           <div className="form-row">
@@ -577,11 +574,7 @@ function ConteudoOrcamentos() {
                 <strong className={estilos.precoValor}>{formatarBRL(precoSemCusto)}</strong>
               </div>
 
-              <p className={estilos.notaSemCusto}>
-                O cálculo roda no servidor e devolve apenas o valor final. A
-                composição do preço é dado interno e não fica disponível no seu
-                nível de acesso.
-              </p>
+
             </>
           ) : resultado ? (
             <>
@@ -679,13 +672,7 @@ function ConteudoOrcamentos() {
                   </button>
                 )}
 
-                <span className={estilos.explicacaoVinculo}>
-                  {revisando
-                    ? `Substitui o valor vigente na ficha de ${revisando.clienteNome}, guardando o anterior.`
-                    : clienteEscolhido
-                      ? `Guarda este cálculo na ficha de ${clienteEscolhido.nome}, com tudo que entrou na conta.`
-                      : 'Sem cliente escolhido, o cálculo não é gravado em lugar nenhum.'}
-                </span>
+
               </div>
             </>
           ) : null}

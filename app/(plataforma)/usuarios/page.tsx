@@ -615,10 +615,7 @@ export default function PaginaUsuarios() {
                   </option>
                 ))}
               </select>
-              <p className="field-hint">
-                O nível novo nasce com a matriz e as capacidades deste, e você
-                ajusta a matriz depois.
-              </p>
+
             </div>
 
             <p className={estilos.avisoAdmin}>
@@ -664,12 +661,6 @@ export default function PaginaUsuarios() {
               required
               disabled={editando !== null}
             />
-            {editando && (
-              <p className="field-hint">
-                O e-mail não muda: ele é a identidade da conta. Revogue e autorize outro, se for o
-                caso.
-              </p>
-            )}
           </div>
 
           <div className="form-row">
@@ -707,9 +698,6 @@ export default function PaginaUsuarios() {
                 </option>
               ))}
             </select>
-            {DESCRICAO_NIVEL[formulario.nivel] && (
-              <p className="field-hint">{DESCRICAO_NIVEL[formulario.nivel]}</p>
-            )}
           </div>
 
           {formulario.nivel === 'admin' && (

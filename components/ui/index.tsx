@@ -635,7 +635,6 @@ export function ProvedorDialogo({ children }: { children: React.ReactNode }) {
                 // O foco automático poupa um toque no celular.
                 autoFocus
               />
-              {pedido.campo.dica && <p className="field-hint">{pedido.campo.dica}</p>}
             </div>
           )}
         </form>

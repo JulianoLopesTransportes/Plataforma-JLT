@@ -988,17 +988,9 @@ export default function PaginaAgenda() {
                         <li key={i}>{item}</li>
                       ))}
                     </ul>
-                    <small className="field-hint">
-                      Vem do cadastro de {clienteDoFormulario.nome} e sai impresso
-                      na Ordem de Serviço. Para mudar, edite o cliente.
-                    </small>
+
                   </>
-                ) : (
-                  <small className="field-hint">
-                    {clienteDoFormulario.nome} ainda não tem itens no cadastro.
-                    Em Clientes → Itens dá para digitar ou importar um .txt.
-                  </small>
-                )}
+                ) : null}
               </div>
             )}
 

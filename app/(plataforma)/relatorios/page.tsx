@@ -852,8 +852,15 @@ export default function PaginaRelatorios() {
               </table>
             </div>
 
+            {/*
+              Estas duas NÃO são texto de ajuda, e por isso ficam.
+              Explicam por que um número está ausente ou é aproximado — sem
+              elas o relatório mostra um valor que mente por omissão. Classe
+              própria para não serem confundidas com as dicas de campo que
+              saíram da plataforma.
+            */}
             {comercial.cicloMediano === null && (
-              <p className="field-hint" style={{ marginTop: 12 }}>
+              <p className={estilos.notaDado}>
                 O tempo de fechamento começa a contar agora. Os clientes cadastrados antes de
                 11/11/2026 têm só a etapa de hoje e a data de cadastro gravadas — quando cada um
                 mudou de etapa não existe em lugar nenhum, e eu não vou estimar isso.
@@ -861,7 +868,7 @@ export default function PaginaRelatorios() {
             )}
 
             {comercial.comDuplicados > 0 && (
-              <p className="field-hint" style={{ marginTop: 8 }}>
+              <p className={estilos.notaDado}>
                 {comercial.comDuplicados} cliente(s) têm mais de um orçamento vigente, de quando
                 não havia como revisar e cada correção criava um novo. O valor acima usa o mais
                 recente de cada um. Para limpar, abra a ficha e apague os repetidos — agora o

@@ -237,11 +237,22 @@ hr.rule {
   cursor: not-allowed;
 }
 
-.field-hint {
-  font-size: 12px;
-  color: var(--color-gray-600);
-  margin-top: 4px;
-}
+/*
+ * `.field-hint` SAIU em 24/11/2026, e a ausência é intencional.
+ *
+ * Era a linha de explicação embaixo de campo e de botão. Eram 27 delas, e
+ * o Juliano pediu a plataforma sem isso: cada linha dessas empurra o campo
+ * seguinte para baixo, e no telefone a conta é rolagem.
+ *
+ * O que fazer no lugar, quando faltar informação:
+ *   - regra de formato → `placeholder` do próprio campo;
+ *   - motivo de um campo travado → `title`, que não ocupa altura;
+ *   - consequência de uma escolha → deixar a prévia do documento mostrar;
+ *   - erro de validação → a mensagem de erro, que aparece na hora certa.
+ *
+ * Nota sobre qualidade de DADO num relatório não é dica de uso e tem
+ * classe própria — ver `.notaDado` em relatorios.module.css.
+ */
 
 .field-check {
   display: flex;

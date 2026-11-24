@@ -82,3 +82,18 @@
   border-bottom: none;
   border-top: 2px solid var(--color-border);
 }
+
+/*
+ * Nota sobre a QUALIDADE do dado, não dica de uso.
+ *
+ * A plataforma deixou de ter textos de ajuda embaixo de campo e de botão,
+ * a pedido do Juliano — rolagem no telefone. Estas sobrevivem porque não
+ * ensinam a usar nada: dizem por que um número está ausente ou é
+ * aproximado. Sem elas o relatório mentiria por omissão.
+ */
+.notaDado {
+  margin: 12px 0 0;
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--color-gray-600);
+}

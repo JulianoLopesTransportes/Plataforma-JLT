@@ -218,9 +218,7 @@ export default function PainelPrecificacao() {
                 value={margemMin}
                 onChange={(e) => setMargemMin(e.target.value)}
               />
-              <p className="field-hint">
-                Aceita valor negativo — corresponde ao fator oportunidade 10.
-              </p>
+
             </div>
             <div className="field">
               <label htmlFor="margemMax">Margem máxima (%)</label>
@@ -230,7 +228,7 @@ export default function PainelPrecificacao() {
                 value={margemMax}
                 onChange={(e) => setMargemMax(e.target.value)}
               />
-              <p className="field-hint">Corresponde ao fator 0. Abaixo de 100%.</p>
+
             </div>
           </div>
 
@@ -400,7 +398,7 @@ export default function PainelPrecificacao() {
                 onChange={(e) => setFaixaEditando({ ...faixaEditando, ate: Number(e.target.value) })}
                 required
               />
-              <p className="field-hint">A faixa de maior teto vale como &ldquo;acima de&rdquo;.</p>
+
             </div>
 
             <div className="field">
@@ -510,10 +508,7 @@ export default function PainelPrecificacao() {
                 placeholder="caixa, diária, ajudante, km…"
                 required
               />
-              <p className="field-hint">
-                No orçamento aparece como &ldquo;{adicionalEditando?.nome || 'Serviço'} (3{' '}
-                {adicionalEditando?.unidade || 'unidade'}s)&rdquo;.
-              </p>
+
             </div>
           )}
         </form>

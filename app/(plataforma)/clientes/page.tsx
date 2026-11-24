@@ -1209,11 +1209,7 @@ export default function PaginaClientes() {
                   : 'Opcional — ex.: qual anúncio, qual parceiro'
               }
             />
-            <p className="field-hint">
-              {formulario.origem === 'Indicação' || formulario.origem === 'Repasse'
-                ? `Quem trouxe este cliente por ${formulario.origem.toLowerCase()}.`
-                : 'Some na ficha ao lado da origem. Pode ficar em branco.'}
-            </p>
+
           </div>
 
           <div className="form-row">
@@ -1232,9 +1228,6 @@ export default function PaginaClientes() {
                   })
                 }
               />
-              {formulario.volumeM3 !== null && (
-                <p className="field-hint">Porte: {descreverVolume(formulario.volumeM3)}</p>
-              )}
             </div>
 
             <div className="field">
@@ -1255,6 +1248,19 @@ export default function PaginaClientes() {
               id="responsavel"
               value={formulario.responsavelId ?? ''}
               disabled={responsavelTravado}
+              /*
+               * O MOTIVO da trava vira tooltip, não linha de texto.
+               *
+               * Campo desabilitado sem explicação alguma parece defeito. Mas
+               * o Juliano pediu a plataforma sem textos de ajuda embaixo dos
+               * campos, por causa da rolagem no telefone — então a razão sai
+               * da tela e fica no `title`, que não ocupa altura nenhuma.
+               */
+              title={
+                responsavelTravado
+                  ? 'Só o administrador pode alterar o responsável por um cliente.'
+                  : undefined
+              }
               onChange={(e) =>
                 setFormulario({ ...formulario, responsavelId: e.target.value || null })
               }
@@ -1273,13 +1279,7 @@ export default function PaginaClientes() {
                   </option>
                 ))}
             </select>
-            <p className="field-hint">
-              {!responsavelTravado
-                ? 'Quem mantém o contato e conduz o processo com este cliente.'
-                : clienteEmEdicao
-                  ? 'Só o administrador pode alterar o responsável por um cliente.'
-                  : 'O cliente entra no seu nome. Se for de outro atendente, o administrador reatribui depois.'}
-            </p>
+
           </div>
 
           <div className="field" style={{ marginBottom: 20 }}>
@@ -1341,10 +1341,17 @@ export default function PaginaClientes() {
               placeholder={'Um item por linha:\nSofá de 3 lugares\nGeladeira duplex\n12 caixas de livros'}
             />
 
-            <small className={estilos.ajudaItens}>
-              Um item por linha. Sai impresso na Ordem de Serviço.
-              {arquivoItens && ` O arquivo ${arquivoItens.name} será anexado ao salvar.`}
-            </small>
+            {/*
+              A ajuda saiu — o placeholder do campo já mostra "Um item por
+              linha". Fica só o aviso do arquivo escolhido, que não é dica
+              de uso: é retorno de uma ação que o usuário acabou de fazer, e
+              sem ele não há sinal nenhum de que o .txt vai subir.
+            */}
+            {arquivoItens && (
+              <small className={estilos.ajudaItens}>
+                {arquivoItens.name} será anexado ao salvar.
+              </small>
+            )}
           </div>
         </form>
       </Modal>

@@ -758,7 +758,7 @@ export default function PaginaFrota() {
                   placeholder="ABC1D23"
                   required
                 />
-                <p className="field-hint">Mercosul ou padrão antigo.</p>
+
               </div>
 
               <div className="field">
@@ -808,7 +808,7 @@ export default function PaginaFrota() {
                     setFormVeiculo({ ...formVeiculo, capacidadeM3: Number(e.target.value) })
                   }
                 />
-                <p className="field-hint">Usada no cálculo de ocupação das rotas.</p>
+
               </div>
 
               <div className="field">

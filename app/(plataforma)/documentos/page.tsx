@@ -387,9 +387,7 @@ export default function PaginaDocumentos() {
             ))}
           </div>
 
-          <p className="field-hint" style={{ marginBottom: 20 }}>
-            {TIPOS_DOCUMENTO.find((t) => t.id === tipo)?.descricao}
-          </p>
+
 
           <CampoFiltro rotulo="Cliente">
             <select value={clienteId} onChange={(e) => setClienteId(e.target.value)}>
@@ -412,11 +410,7 @@ export default function PaginaDocumentos() {
                 onChange={(e) => setNomeAvulso(e.target.value)}
                 placeholder="Maria da Silva Rezende"
               />
-              <p className="field-hint">
-                CPF/CNPJ, telefone e endereços saem como linhas em branco, para
-                preencher à mão no papel. Nada é gravado: documento avulso não
-                cria cliente.
-              </p>
+
             </div>
           )}
 
@@ -432,12 +426,6 @@ export default function PaginaDocumentos() {
                 onChange={(e) => setValor(e.target.value)}
                 placeholder="0,00"
               />
-              {valor && (
-                <p className="field-hint">
-                  Sinal de {formatarBRL(Math.max(paraNumero(valor) * 0.1, 500))} (10%, mínimo R$
-                  500)
-                </p>
-              )}
             </div>
           )}
 
@@ -490,11 +478,7 @@ export default function PaginaDocumentos() {
                     <option value="exclusiva">Exclusiva</option>
                     <option value="compartilhada">Compartilhada</option>
                   </select>
-                  <p className="field-hint">
-                    {tipoMudanca === 'exclusiva'
-                      ? 'Veículo dedicado a esta mudança.'
-                      : 'A carga viaja junto com outras mudanças.'}
-                  </p>
+
                 </div>
                 <div className="field">
                   <label htmlFor="metrOrc">Metragem aproximada (m³)</label>
@@ -504,10 +488,7 @@ export default function PaginaDocumentos() {
                     value={metragem}
                     onChange={(e) => setMetragem(e.target.value)}
                   />
-                  <p className="field-hint">
-                    O orçamento avisa, em letra pequena, que acima de 10% de diferença o valor
-                    pode ser recalculado.
-                  </p>
+
                 </div>
                 <div className="field">
                   <label htmlFor="dataEntregaOrc">Data prevista para entrega</label>
@@ -571,10 +552,7 @@ export default function PaginaDocumentos() {
                     value={dataEntregaPrevista}
                     onChange={(e) => setDataEntregaPrevista(e.target.value)}
                   />
-                  <p className="field-hint">
-                    Em branco, o contrato não fixa prazo de entrega — a cláusula 3.1 fala só do
-                    endereço.
-                  </p>
+
                 </div>
                 <div className="field">
                   <label htmlFor="saldoQuando">Saldo final</label>
@@ -586,11 +564,7 @@ export default function PaginaDocumentos() {
                     <option value="antes">Antes do descarregamento</option>
                     <option value="depois">Depois do descarregamento e conferência</option>
                   </select>
-                  <p className="field-hint">
-                    {saldoAposDescarregamento
-                      ? 'A cláusula 6.2 dirá que o cliente confere os bens e então paga.'
-                      : 'A cláusula 6.2 dirá que o pagamento vem antes, sem conferência prévia.'}
-                  </p>
+
                 </div>
                 <div className="field">
                   <label htmlFor="dataCtr">Data do contrato</label>

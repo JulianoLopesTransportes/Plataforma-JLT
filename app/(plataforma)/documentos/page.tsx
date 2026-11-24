@@ -19,6 +19,7 @@ import { formatarBRL, hojeISO, paraNumero } from '@/lib/utils/formato';
 import {
   TIPOS_DOCUMENTO,
   TITULO_DOCUMENTO,
+  type TipoMudanca,
   NOME_ARQUIVO,
   ENDERECO_DEPOSITO,
   SERVICOS_INCLUSOS,
@@ -106,6 +107,20 @@ export default function PaginaDocumentos() {
    * entrega ocorreu — fato passado, não plano.
    */
   const [dataEntregaPrevista, setDataEntregaPrevista] = useState('');
+  /**
+   * Exclusiva ou compartilhada. Exclusiva é o padrão porque é o serviço
+   * mais vendido — e porque errar para exclusiva orça mais caro, não mais
+   * barato: o engano aparece na conversa em vez de virar prejuízo.
+   */
+  const [tipoMudanca, setTipoMudanca] = useState<TipoMudanca>('exclusiva');
+  /**
+   * Saldo final depois do descarregamento e da conferência?
+   *
+   * `false` é o padrão — mantém o que o contrato dizia antes desta opção
+   * existir, então contrato gerado sem ninguém mexer sai igual ao de
+   * sempre.
+   */
+  const [saldoAposDescarregamento, setSaldoAposDescarregamento] = useState(false);
   const [dataContrato, setDataContrato] = useState(hojeISO());
   const [clausulasAdicionais, setClausulasAdicionais] = useState('');
 
@@ -202,6 +217,9 @@ export default function PaginaDocumentos() {
           validadeDias: Number(validadeDias) || 15,
           valorTotal: valor ? paraNumero(valor) : null,
           dataColeta,
+          dataEntrega: dataEntregaPrevista,
+          tipoMudanca,
+          metragem,
           servicosMarcados,
           outrosServicos: linhas(outrosServicos),
         });
@@ -213,6 +231,7 @@ export default function PaginaDocumentos() {
           seguroIncluso,
           dataColeta,
           dataEntrega: dataEntregaPrevista,
+          saldoAposDescarregamento,
           dataContrato,
           clausulasAdicionais: linhas(clausulasAdicionais),
         });
@@ -261,7 +280,7 @@ export default function PaginaDocumentos() {
   }, [
     tipo, dadosCliente, validadeDias, valor, dataColeta, servicosMarcados, outrosServicos,
     seguroIncluso, dataEntregaPrevista, dataContrato, clausulasAdicionais, dataInventario,
-    valorDeclarado, metragem, observacao, diaVencimento, enderecoDeposito,
+    valorDeclarado, metragem, tipoMudanca, saldoAposDescarregamento, observacao, diaVencimento, enderecoDeposito,
     dataInicio, abrangencia, finalidades, prazoImagem, dataEntrega, recebedor, ressalvas,
   ]);
 
@@ -450,12 +469,53 @@ export default function PaginaDocumentos() {
                   />
                 </div>
                 <div className="field">
-                  <label htmlFor="dataColeta">Data prevista de coleta</label>
+                  <label htmlFor="dataColeta">Data prevista para coleta</label>
                   <input
                     id="dataColeta"
                     type="date"
                     value={dataColeta}
                     onChange={(e) => setDataColeta(e.target.value)}
+                  />
+                </div>
+              </div>
+
+              <div className="form-row-3">
+                <div className="field">
+                  <label htmlFor="tipoMudanca">Tipo de mudança</label>
+                  <select
+                    id="tipoMudanca"
+                    value={tipoMudanca}
+                    onChange={(e) => setTipoMudanca(e.target.value as TipoMudanca)}
+                  >
+                    <option value="exclusiva">Exclusiva</option>
+                    <option value="compartilhada">Compartilhada</option>
+                  </select>
+                  <p className="field-hint">
+                    {tipoMudanca === 'exclusiva'
+                      ? 'Veículo dedicado a esta mudança.'
+                      : 'A carga viaja junto com outras mudanças.'}
+                  </p>
+                </div>
+                <div className="field">
+                  <label htmlFor="metrOrc">Metragem aproximada (m³)</label>
+                  <input
+                    id="metrOrc"
+                    inputMode="decimal"
+                    value={metragem}
+                    onChange={(e) => setMetragem(e.target.value)}
+                  />
+                  <p className="field-hint">
+                    O orçamento avisa, em letra pequena, que acima de 10% de diferença o valor
+                    pode ser recalculado.
+                  </p>
+                </div>
+                <div className="field">
+                  <label htmlFor="dataEntregaOrc">Data prevista para entrega</label>
+                  <input
+                    id="dataEntregaOrc"
+                    type="date"
+                    value={dataEntregaPrevista}
+                    onChange={(e) => setDataEntregaPrevista(e.target.value)}
                   />
                 </div>
               </div>
@@ -514,6 +574,22 @@ export default function PaginaDocumentos() {
                   <p className="field-hint">
                     Em branco, o contrato não fixa prazo de entrega — a cláusula 3.1 fala só do
                     endereço.
+                  </p>
+                </div>
+                <div className="field">
+                  <label htmlFor="saldoQuando">Saldo final</label>
+                  <select
+                    id="saldoQuando"
+                    value={saldoAposDescarregamento ? 'depois' : 'antes'}
+                    onChange={(e) => setSaldoAposDescarregamento(e.target.value === 'depois')}
+                  >
+                    <option value="antes">Antes do descarregamento</option>
+                    <option value="depois">Depois do descarregamento e conferência</option>
+                  </select>
+                  <p className="field-hint">
+                    {saldoAposDescarregamento
+                      ? 'A cláusula 6.2 dirá que o cliente confere os bens e então paga.'
+                      : 'A cláusula 6.2 dirá que o pagamento vem antes, sem conferência prévia.'}
                   </p>
                 </div>
                 <div className="field">

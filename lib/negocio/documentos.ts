@@ -314,11 +314,36 @@ export const SERVICOS_INCLUSOS = [
    1. ORÇAMENTO
    ========================================================================== */
 
+/**
+ * Como o caminhão vai.
+ *
+ * Exclusiva: veículo dedicado a esta mudança. Compartilhada: a carga viaja
+ * com outras. Muda preço e prazo, então o cliente tem de ler isso na
+ * proposta — não é detalhe interno.
+ */
+export type TipoMudanca = 'exclusiva' | 'compartilhada';
+
+export const TIPOS_MUDANCA: Record<TipoMudanca, string> = {
+  exclusiva: 'Exclusiva — veículo dedicado a esta mudança',
+  compartilhada: 'Compartilhada — carga transportada junto com outras mudanças',
+};
+
 export type EntradaOrcamento = {
   cliente: DadosCliente;
   validadeDias: number;
   valorTotal: number | null;
   dataColeta: string;
+  /**
+   * Entrega PREVISTA, nunca prometida.
+   *
+   * Vazia imprime linha para preencher — diferente do contrato, onde a
+   * frase do prazo sai por inteiro. Aqui é proposta: deixar o campo à vista
+   * convida a combinar a data, e o rótulo diz "prevista".
+   */
+  dataEntrega: string;
+  tipoMudanca: TipoMudanca;
+  /** Volume aproximado em m³, como texto — pode vir vazio. */
+  metragem: string;
   servicosMarcados: string[];
   outrosServicos: string[];
 };
@@ -350,9 +375,43 @@ export function gerarOrcamento(e: EntradaOrcamento): BlocoDocumento[] {
       tipo: 'paragrafo',
       partes: [{ b: 'Endereço de entrega:' }, ` ${ou(e.cliente.enderecoEntrega)}`],
     },
+    /*
+     * Tipo e metragem vêm ANTES das datas, e isso é intencional: eles
+     * definem o que está sendo orçado, e as datas são quando. Quem lê uma
+     * proposta decide primeiro pelo "o quê".
+     */
+    {
+      tipo: 'paragrafo',
+      partes: [{ b: 'Tipo de mudança:' }, ` ${TIPOS_MUDANCA[e.tipoMudanca]}`],
+    },
+    {
+      tipo: 'paragrafo',
+      partes: [
+        { b: 'Metragem aproximada:' },
+        ` ${e.metragem.trim() ? `${e.metragem.trim()} m³` : LINHA}`,
+      ],
+    },
     {
       tipo: 'paragrafo',
       partes: [{ b: 'Data prevista para coleta:' }, ` ${dataOuLinha(e.dataColeta)}`],
+    },
+    {
+      tipo: 'paragrafo',
+      partes: [{ b: 'Data prevista para entrega:' }, ` ${dataOuLinha(e.dataEntrega)}`],
+    },
+    /*
+     * A ressalva dos 10%, em letra pequena.
+     *
+     * Fica logo abaixo da metragem porque é ela que qualifica — ressalva
+     * jogada no fim do documento não é lida por ninguém, e esta é a que
+     * sustenta um recálculo de preço depois.
+     */
+    {
+      tipo: 'nota',
+      texto:
+        'A metragem indicada é aproximada e serve de base para o valor apresentado. ' +
+        'Caso o volume real exceda em mais de 10% a metragem estimada, poderá ser ' +
+        'realizado novo cálculo do serviço. As datas acima são previstas.',
     },
 
     { tipo: 'secao', titulo: 'Serviços inclusos' },
@@ -444,13 +503,22 @@ export type EntradaContrato = {
    * de entrega.
    */
   dataEntrega: string;
+  /**
+   * Quando o saldo final é pago: depois do descarregamento e da
+   * conferência (true) ou antes dele (false).
+   *
+   * Era texto fixo "antes do descarregamento". Virou escolha a pedido do
+   * Juliano, e vale SÓ no contrato: o orçamento mantém "antes" como
+   * proposta padrão, decisão dele.
+   */
+  saldoAposDescarregamento: boolean;
   dataContrato: string;
   clausulasAdicionais: string[];
 };
 
 export function gerarContrato(e: EntradaContrato): BlocoDocumento[] {
   const c = e.cliente;
-  const { sinal, primeira } = calcularParcelas(e.valorTotal);
+  const { sinal, primeira, segunda } = calcularParcelas(e.valorTotal);
 
   const blocos: BlocoDocumento[] = [
     ...blocoPartes(c, 'contrato'),
@@ -516,6 +584,32 @@ export function gerarContrato(e: EntradaContrato): BlocoDocumento[] {
         ' A responsabilidade da CONTRATADA inicia-se no recebimento dos bens e encerra-se com a entrega ao destinatário no endereço informado.',
       ],
     },
+    /*
+     * 3.6 — o limite da montagem, pedido pelo Juliano em 24/11/2026.
+     *
+     * Entra como item NOVO no fim da cláusula 3, sem renumerar os
+     * anteriores: contratos já assinados citam "cláusula 3.4" e afins, e
+     * mexer na numeração faria o texto novo divergir do que está em papel
+     * na mão do cliente.
+     *
+     * Autoqualificada ("Caso o CONTRATANTE tenha contratado"), para não
+     * precisar de campo novo na tela e para ser verdadeira nos dois casos.
+     *
+     * O limite é a parte que importa: desmontar e remontar o que o
+     * transporte exige é serviço; pendurar armário na parede é obra.
+     */
+    {
+      tipo: 'paragrafo',
+      partes: [
+        { b: '3.6.' },
+        ' Caso o CONTRATANTE tenha contratado o serviço de montagem e desmontagem, a' +
+          ' CONTRATADA desmontará os móveis necessários ao transporte e os remontará no' +
+          ' endereço de destino. A remontagem NÃO inclui a instalação ou fixação de móveis e' +
+          ' equipamentos que exijam furação de paredes, fixação em alvenaria, instalação' +
+          ' hidráulica ou elétrica, ou serviços equivalentes, os quais não integram o objeto' +
+          ' deste contrato.',
+      ],
+    },
 
     { tipo: 'secao', titulo: 'Cláusula 4 – Obrigações do Contratante' },
     {
@@ -575,7 +669,20 @@ export function gerarContrato(e: EntradaContrato): BlocoDocumento[] {
         ' O pagamento será realizado da seguinte forma:',
         `\na) Sinal: ${valorOuLinha(sinal)} (10%, mínimo de R$ 500,00) na assinatura do contrato;`,
         `\nb) Carregamento: ${valorOuLinha(primeira)} (50% do saldo restante) no início da coleta;`,
-        '\nc) Saldo final: antes do descarregamento.',
+        /*
+         * O momento do saldo passa a ser ESCOLHA, não texto fixo.
+         *
+         * Era sempre "antes do descarregamento". O Juliano pediu poder
+         * dizer antes OU depois, e a conferência entrou junto porque é o
+         * que define o "depois" na prática: o cliente confere e então paga.
+         *
+         * Dizer qual dos dois é o ponto inteiro da cláusula — é a diferença
+         * entre o cliente pagar com a mudança no caminhão ou já na casa
+         * dele, e é onde nasce discussão quando o contrato se cala.
+         */
+        e.saldoAposDescarregamento
+          ? `\nc) Saldo final: ${valorOuLinha(segunda)} após o descarregamento e a conferência dos bens pelo CONTRATANTE.`
+          : `\nc) Saldo final: ${valorOuLinha(segunda)} antes do descarregamento, dispensada a conferência prévia dos bens.`,
       ],
     },
     {

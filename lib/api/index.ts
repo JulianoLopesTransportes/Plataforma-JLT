@@ -53,6 +53,7 @@ import type {
   EventoStatus,
   ItemInventario,
   InventarioPublico,
+  InventarioDoCliente,
 } from '../tipos';
 
 import clientesJson from '@/mock/clientes.json';
@@ -1435,6 +1436,62 @@ const inventario = {
     const { data, error } = await supabase().rpc('inventario_finalizar', { p_token: token });
     if (error) throw new Error(error.message);
     return ((data as Record<string, unknown>)?.finalizado_em as string) ?? null;
+  },
+
+  /**
+   * O lado da EQUIPE: o link e o que o cliente já preencheu.
+   *
+   * Esta é a única do grupo que lê TABELA em vez de chamar função. Pode:
+   * quem chega aqui está logado, e as policies da migration 53 exigem
+   * `pode_ver('clientes')` nas duas tabelas. O visitante anônimo não tem
+   * policy nenhuma ali — por isso o lado do cliente precisa das funções.
+   */
+  async doCliente(clienteId: string): Promise<InventarioDoCliente> {
+    const vazio: InventarioDoCliente = {
+      token: null,
+      expiraEm: null,
+      finalizadoEm: null,
+      atualizadoEm: null,
+      itens: [],
+    };
+
+    if (!usandoBanco()) return vazio;
+
+    const cliente = supabase();
+
+    const [resLink, resItens] = await Promise.all([
+      cliente
+        .from('inventario_links')
+        .select('token, expira_em, finalizado_em, atualizado_em')
+        .eq('cliente_id', clienteId)
+        // `maybeSingle` e não `single`: cliente sem link é o caso NORMAL,
+        // não um erro — é assim que ele começa.
+        .maybeSingle(),
+      cliente
+        .from('inventario_itens')
+        .select('ambiente, item, quantidade, valor_unitario')
+        .eq('cliente_id', clienteId)
+        .order('ambiente')
+        .order('item'),
+    ]);
+
+    if (resLink.error) throw new Error(traduzir(resLink.error));
+    if (resItens.error) throw new Error(traduzir(resItens.error));
+
+    const link = resLink.data as Record<string, unknown> | null;
+
+    return {
+      token: (link?.token as string) ?? null,
+      expiraEm: (link?.expira_em as string) ?? null,
+      finalizadoEm: (link?.finalizado_em as string) ?? null,
+      atualizadoEm: (link?.atualizado_em as string) ?? null,
+      itens: ((resItens.data ?? []) as Record<string, unknown>[]).map((i) => ({
+        ambiente: (i.ambiente as string) ?? '',
+        item: (i.item as string) ?? '',
+        quantidade: Number(i.quantidade ?? 1),
+        valorUnitario: Number(i.valor_unitario ?? 0),
+      })),
+    };
   },
 
   /**

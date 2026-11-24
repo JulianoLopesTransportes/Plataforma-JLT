@@ -57,6 +57,7 @@ import {
   type StatusCliente,
   type Orcamento,
   type MembroEquipe,
+  type InventarioDoCliente,
 } from '@/lib/tipos';
 import { formatarBRL } from '@/lib/utils/formato';
 import PainelAnexos from '@/components/modulos/PainelAnexos';
@@ -167,6 +168,10 @@ export default function PaginaClientes() {
   const [orcamentos, setOrcamentos] = useState<Orcamento[]>([]);
   const [carregandoOrcamentos, setCarregandoOrcamentos] = useState(false);
 
+  const [inventario, setInventario] = useState<InventarioDoCliente | null>(null);
+  const [carregandoInventario, setCarregandoInventario] = useState(false);
+  const [liberando, setLiberando] = useState(false);
+
   const recarregar = useCallback(async () => {
     try {
       setClientes(await api.clientes.listar());
@@ -223,6 +228,67 @@ export default function PaginaClientes() {
       ativo = false;
     };
   }, [detalhe, abaDetalhe, podeVerOrcamentos]);
+
+  // Mesma razão da busca acima: o inventário quase nunca é olhado, e
+  // puxá-lo junto da lista seria uma consulta por cliente à toa.
+  useEffect(() => {
+    if (!detalhe || abaDetalhe !== 'inventario') return;
+
+    let ativo = true;
+    setCarregandoInventario(true);
+
+    api.inventario
+      .doCliente(detalhe.id)
+      .then((d) => ativo && setInventario(d))
+      .catch(() => ativo && setInventario(null))
+      .finally(() => ativo && setCarregandoInventario(false));
+
+    return () => {
+      ativo = false;
+    };
+  }, [detalhe, abaDetalhe]);
+
+  /* --- Inventário por link ---------------------------------------------- */
+
+  /** O endereço que vai para o WhatsApp do cliente. */
+  function enderecoDoLink(token: string): string {
+    return `${window.location.origin}/inventario/${token}`;
+  }
+
+  /**
+   * Gera o link na primeira vez e ESTENDE o prazo nas seguintes — o mesmo
+   * gesto, porque é a mesma intenção: "deixa ele preencher".
+   *
+   * O token não muda ao estender, de propósito: o link do cliente já está
+   * no WhatsApp dele, e trocá-lo obrigaria a mandar outro.
+   */
+  async function liberarInventario(cliente: Cliente) {
+    setLiberando(true);
+    try {
+      const { novo } = await api.inventario.liberar(cliente.id, 7);
+      setInventario(await api.inventario.doCliente(cliente.id));
+      mostrar(novo ? 'Link gerado. Vale por sete dias.' : 'Prazo estendido por mais sete dias.');
+    } catch (e) {
+      mostrar(e instanceof Error ? e.message : 'Não foi possível liberar o inventário.', 'erro');
+    } finally {
+      setLiberando(false);
+    }
+  }
+
+  async function copiarLink(token: string) {
+    const endereco = enderecoDoLink(token);
+    try {
+      await navigator.clipboard.writeText(endereco);
+      mostrar('Link copiado.');
+    } catch {
+      /*
+       * A área de transferência é negada em http sem TLS e em alguns
+       * navegadores de telefone. Mostrar o endereço é melhor do que um
+       * "não deu": dá para selecionar e copiar à mão.
+       */
+      mostrar(endereco, 'erro');
+    }
+  }
 
   /* --- Responsável ------------------------------------------------------ */
 
@@ -887,6 +953,7 @@ export default function PaginaClientes() {
                 { chave: 'dados', rotulo: 'Dados' },
                 { chave: 'anexos', rotulo: `Anexos (${detalhe.anexos.length})` },
                 ...(podeVerOrcamentos ? [{ chave: 'orcamentos', rotulo: 'Orçamentos' }] : []),
+                { chave: 'inventario', rotulo: 'Inventário' },
                 { chave: 'historico', rotulo: `Histórico (${detalhe.historico.length})` },
               ]}
               ativa={abaDetalhe}
@@ -1058,6 +1125,23 @@ export default function PaginaClientes() {
                       </li>
                     ))}
                   </ul>
+                )}
+              </>
+            )}
+
+            {abaDetalhe === 'inventario' && (
+              <>
+                {carregandoInventario ? (
+                  <div className="estado-vazio">Carregando inventário…</div>
+                ) : (
+                  <InventarioDoClientePainel
+                    dados={inventario}
+                    podeMexer={podeMexer}
+                    liberando={liberando}
+                    aoLiberar={() => liberarInventario(detalhe)}
+                    aoCopiar={copiarLink}
+                    endereco={enderecoDoLink}
+                  />
                 )}
               </>
             )}
@@ -1374,4 +1458,151 @@ function Dado({
       <dd>{children}</dd>
     </div>
   );
+}
+
+/**
+ * O INVENTÁRIO VISTO PELA EQUIPE.
+ *
+ * Dois assuntos na mesma aba, e de propósito: o link que o cliente recebe
+ * e o que ele já preencheu. Separá-los obrigaria o atendente a pular de
+ * aba para responder "ele preencheu? então o link ainda vale?".
+ */
+function InventarioDoClientePainel({
+  dados,
+  podeMexer,
+  liberando,
+  aoLiberar,
+  aoCopiar,
+  endereco,
+}: {
+  dados: InventarioDoCliente | null;
+  podeMexer: boolean;
+  liberando: boolean;
+  aoLiberar: () => void;
+  aoCopiar: (token: string) => void;
+  endereco: (token: string) => string;
+}) {
+  const itens = dados?.itens ?? [];
+
+  const total = itens.reduce((s, i) => s + i.quantidade * i.valorUnitario, 0);
+  const pecas = itens.reduce((s, i) => s + i.quantidade, 0);
+
+  // Agrupa por ambiente para a lista sair na mesma ordem em que o cliente
+  // preencheu a tela dele — e para o atendente achar o móvel que procura.
+  const porAmbiente = new Map<string, typeof itens>();
+  for (const i of itens) {
+    const chave = i.ambiente || 'Sem ambiente';
+    porAmbiente.set(chave, [...(porAmbiente.get(chave) ?? []), i]);
+  }
+
+  const expirado = dados?.expiraEm ? new Date(dados.expiraEm) < new Date() : false;
+
+  /*
+   * Mexeu DEPOIS de dizer que terminou.
+   *
+   * É o aviso que importa para quem já imprimiu: o papel na mão não é
+   * mais o que está no banco. Por isso a migration 53 guarda as duas
+   * horas em vez de zerar o "finalizado" a cada edição.
+   */
+  const mexeuDepois =
+    dados?.finalizadoEm && dados?.atualizadoEm
+      ? new Date(dados.atualizadoEm) > new Date(dados.finalizadoEm)
+      : false;
+
+  return (
+    <div className={estilos.inventario}>
+      <div className={estilos.linkInventario}>
+        {dados?.token ? (
+          <>
+            <input readOnly value={endereco(dados.token)} onFocus={(e) => e.target.select()} />
+            <button
+              type="button"
+              className="btn btn-outline btn-sm"
+              onClick={() => aoCopiar(dados.token as string)}
+            >
+              Copiar
+            </button>
+            {podeMexer && (
+              <button
+                type="button"
+                className="btn btn-primary btn-sm"
+                onClick={aoLiberar}
+                disabled={liberando}
+              >
+                {liberando ? 'Liberando…' : 'Liberar de novo'}
+              </button>
+            )}
+          </>
+        ) : (
+          podeMexer && (
+            <button
+              type="button"
+              className="btn btn-primary btn-sm"
+              onClick={aoLiberar}
+              disabled={liberando}
+            >
+              {liberando ? 'Gerando…' : 'Gerar link do inventário'}
+            </button>
+          )
+        )}
+      </div>
+
+      {dados?.token && (
+        <div className={estilos.estadoInventario}>
+          <Badge
+            texto={expirado ? 'Link expirado' : `Vale até ${dataHoraBR(dados.expiraEm)}`}
+            tom={expirado ? 'danger' : 'success'}
+          />
+          {dados.finalizadoEm && (
+            <Badge texto={`Finalizado em ${dataHoraBR(dados.finalizadoEm)}`} tom="info" />
+          )}
+          {mexeuDepois && <Badge texto="Alterado depois de finalizar" tom="warning" />}
+        </div>
+      )}
+
+      {itens.length === 0 ? (
+        <div className="estado-vazio">
+          <strong>Nada preenchido ainda</strong>
+          {dados?.token
+            ? 'Mande o link para o cliente. O que ele preencher aparece aqui.'
+            : 'Gere o link para o cliente preencher os itens e os valores.'}
+        </div>
+      ) : (
+        <>
+          <div className={estilos.totalInventario}>
+            <strong>
+              {pecas} {pecas === 1 ? 'peça' : 'peças'}
+            </strong>
+            <span>{formatarBRL(total)}</span>
+          </div>
+
+          {[...porAmbiente].map(([ambiente, lista]) => (
+            <div key={ambiente} className={estilos.ambienteInventario}>
+              <h4>{ambiente}</h4>
+              <ul>
+                {lista.map((i) => (
+                  <li key={`${ambiente}-${i.item}`}>
+                    <span className={estilos.itemInventario}>
+                      {i.quantidade > 1 && <em>{i.quantidade}×</em>} {i.item}
+                    </span>
+                    <span className={estilos.valorInventario}>
+                      {formatarBRL(i.quantidade * i.valorUnitario)}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ))}
+        </>
+      )}
+    </div>
+  );
+}
+
+/** Data com hora para carimbo de prazo — timestamptz, não o ISO de data. */
+function dataHoraBR(iso: string | null): string {
+  if (!iso) return '—';
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return '—';
+  return d.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' });
 }

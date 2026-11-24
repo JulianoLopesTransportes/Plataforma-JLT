@@ -552,3 +552,22 @@ export type InventarioPublico = {
   finalizadoEm: string | null;
   itens: ItemInventario[];
 };
+
+/**
+ * O que a EQUIPE vê na ficha — o outro lado do mesmo inventário.
+ *
+ * Tem o token, porque é daqui que sai o link para mandar ao cliente, e tem
+ * `atualizadoEm` ao lado de `finalizadoEm`: lidos juntos, dizem se o
+ * cliente mexeu DEPOIS de ter dito que terminou — ou seja, se o PDF que o
+ * atendente imprimiu já está velho.
+ *
+ * `token` nulo significa que nunca foi gerado link para este cliente.
+ */
+export type InventarioDoCliente = {
+  token: string | null;
+  /** ISO com hora. Nulo junto com o token. */
+  expiraEm: string | null;
+  finalizadoEm: string | null;
+  atualizadoEm: string | null;
+  itens: ItemInventario[];
+};

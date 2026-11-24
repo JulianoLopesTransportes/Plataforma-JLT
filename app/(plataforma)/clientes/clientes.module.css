@@ -339,3 +339,107 @@
   border-color: color-mix(in srgb, var(--color-primary) 35%, transparent);
   color: var(--color-primary);
 }
+
+/* --------------------------------------------------------------------------
+   Inventário na ficha — o link e o que o cliente preencheu
+   -------------------------------------------------------------------------- */
+.inventario {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.linkInventario {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+  align-items: center;
+}
+
+/*
+ * O campo encolhe até 220px e só então quebra a linha: no telefone o
+ * endereço com 64 caracteres de token empurraria os botões para fora.
+ */
+.linkInventario input {
+  flex: 1 1 220px;
+  min-width: 0;
+  font-family: var(--font-body);
+  font-size: 0.82rem;
+  padding: 8px 10px;
+  border: 1.5px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-bg);
+  color: var(--color-gray-600);
+}
+
+.estadoInventario {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+}
+
+.totalInventario {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-2);
+  padding: var(--space-2);
+  background: var(--color-bg);
+  border-radius: var(--radius-md);
+}
+
+.totalInventario strong {
+  font-family: var(--font-display);
+  font-size: 1.1rem;
+}
+
+.totalInventario span {
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.ambienteInventario h4 {
+  font-family: var(--font-display);
+  font-size: 0.9rem;
+  letter-spacing: 0.4px;
+  color: var(--color-gray-600);
+  margin: var(--space-2) 0 var(--space-1);
+}
+
+.ambienteInventario ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+}
+
+.ambienteInventario li {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-2);
+  padding: 8px var(--space-2);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.ambienteInventario li:last-child {
+  border-bottom: none;
+}
+
+.itemInventario {
+  flex: 1;
+  min-width: 0;
+  font-size: 0.9rem;
+}
+
+.itemInventario em {
+  font-style: normal;
+  font-weight: 700;
+  color: var(--color-primary);
+}
+
+.valorInventario {
+  font-size: 0.85rem;
+  font-variant-numeric: tabular-nums;
+  color: var(--color-gray-600);
+}

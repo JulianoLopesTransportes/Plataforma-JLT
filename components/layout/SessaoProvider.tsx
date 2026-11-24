@@ -22,6 +22,7 @@
 import { createContext, useContext, useEffect, useState, useCallback } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { perfilAtual, sair as encerrarSessao, type Usuario } from '@/lib/auth';
+import { ehRotaPublica } from '@/lib/rotas-publicas';
 import { supabase } from '@/lib/supabase/cliente';
 import { moduloDaRota, podeVer, hidratarPermissoes, rotuloDoNivel } from '@/lib/permissoes';
 import { lerPermissoes } from '@/lib/api/admin';
@@ -152,6 +153,16 @@ export function SessaoProvider({ children }: { children: React.ReactNode }) {
   // Guarda de sessão e de módulo.
   useEffect(() => {
     if (carregando) return;
+
+    /*
+     * Rota pública não tem guarda.
+     *
+     * Sem isto, o link de inventário que o cliente recebe era barrado DUAS
+     * vezes: o middleware redirecionava no servidor e este efeito
+     * redirecionava de novo no navegador. A lista é a mesma dos dois lados
+     * — lib/rotas-publicas.ts — justamente para não divergirem.
+     */
+    if (ehRotaPublica(pathname)) return;
 
     // Normalmente o middleware já barrou antes de chegar aqui. Este ramo
     // cobre o caso em que ele está inerte por falta de configuração do

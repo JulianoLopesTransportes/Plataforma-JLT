@@ -524,3 +524,31 @@ export type EventoStatus = {
   autorNome: string;
   retroativo: boolean;
 };
+
+/* ==========================================================================
+   Inventário preenchido pelo cliente
+   ========================================================================== */
+
+export type ItemInventario = {
+  ambiente: string;
+  item: string;
+  quantidade: number;
+  valorUnitario: number;
+};
+
+/**
+ * O que a página PÚBLICA do inventário recebe.
+ *
+ * Só isto — nome e itens. Nada de CPF, telefone, e-mail ou endereço: o PDF
+ * é gerado do lado da equipe, na ficha, onde esses dados já estão. Um token
+ * vazado expõe o nome de um cliente e a lista de móveis dele, não o
+ * cadastro. Ver a migration 53.
+ */
+export type InventarioPublico = {
+  clienteNome: string;
+  /** ISO com hora. */
+  expiraEm: string;
+  /** Quando o cliente disse "terminei". Não fecha o link. */
+  finalizadoEm: string | null;
+  itens: ItemInventario[];
+};

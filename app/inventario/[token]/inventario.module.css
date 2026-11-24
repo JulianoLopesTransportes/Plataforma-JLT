@@ -1,0 +1,363 @@
+/* ==========================================================================
+   INVENTÁRIO PÚBLICO — a tela que o cliente abre no telefone.
+
+   Desenhada para o telefone primeiro, e só depois alargada: é por WhatsApp
+   que o link chega. O rodapé é fixo e respeita `env(safe-area-inset-bottom)`
+   porque no iPhone a barra do Safari come o fim da página — sem isso o botão
+   "Finalizei" fica embaixo dela.
+   ========================================================================== */
+
+.tela {
+  min-height: 100dvh;
+  max-width: 720px;
+  margin: 0 auto;
+  padding: var(--space-3) var(--space-3) 150px;
+}
+
+.aviso {
+  margin-top: var(--space-5);
+  text-align: center;
+  color: var(--color-gray-600);
+}
+
+/* ------------------------------------------------------------- Cabeçalho */
+
+.cabecalho {
+  text-align: center;
+  margin-bottom: var(--space-3);
+}
+
+.marca {
+  width: 180px;
+  margin: 0 auto var(--space-2);
+}
+
+.cabecalho h1 {
+  font-family: var(--font-display);
+  font-size: 1.6rem;
+  letter-spacing: 0.5px;
+  margin: 0;
+}
+
+.cliente {
+  font-weight: 600;
+  margin: var(--space-1) 0 0;
+}
+
+.prazo {
+  color: var(--color-gray-600);
+  font-size: 0.82rem;
+  margin: 2px 0 0;
+}
+
+.bloqueio {
+  margin-top: var(--space-4);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-card);
+  padding: var(--space-4);
+  text-align: center;
+}
+
+.bloqueio h1 {
+  font-family: var(--font-display);
+  font-size: 1.4rem;
+  margin: 0 0 var(--space-2);
+}
+
+.bloqueio p {
+  margin: 0;
+  color: var(--color-gray-600);
+}
+
+.finalizado {
+  background: var(--color-success-bg);
+  color: var(--color-success);
+  border-radius: var(--radius-md);
+  padding: var(--space-2);
+  font-size: 0.85rem;
+  margin: 0 0 var(--space-3);
+}
+
+/* ------------------------------------------------------------------ Abas */
+
+/*
+ * Rolam na horizontal em vez de quebrar linha: seis ambientes empilhados
+ * empurrariam a lista para fora da primeira tela do telefone.
+ */
+.abas {
+  display: flex;
+  gap: var(--space-1);
+  overflow-x: auto;
+  padding-bottom: var(--space-1);
+  margin-bottom: var(--space-2);
+  scrollbar-width: none;
+}
+
+.abas::-webkit-scrollbar {
+  display: none;
+}
+
+.aba {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--font-body);
+  font-size: 0.82rem;
+  font-weight: 500;
+  padding: 10px 14px;
+  border: 1.5px solid var(--color-border);
+  border-radius: 999px;
+  background: var(--color-surface);
+  color: var(--color-text);
+  cursor: pointer;
+}
+
+.abaAtiva {
+  background: var(--color-primary);
+  border-color: var(--color-primary);
+  color: var(--color-white);
+}
+
+.selo {
+  background: var(--color-gold);
+  color: var(--color-black);
+  border-radius: 999px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  min-width: 18px;
+  padding: 0 5px;
+  text-align: center;
+}
+
+/* ------------------------------------------------------- Item digitado */
+
+.acrescentar {
+  display: flex;
+  gap: var(--space-1);
+  margin-bottom: var(--space-2);
+}
+
+.acrescentar input {
+  flex: 1;
+  min-width: 0;
+  font-family: var(--font-body);
+  font-size: 1rem;
+  padding: 10px 12px;
+  border: 1.5px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-white);
+  color: var(--color-text);
+}
+
+/* ------------------------------------------------------------- A lista */
+
+.lista {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-card);
+  overflow: hidden;
+}
+
+.linha {
+  padding: var(--space-2);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.linha:last-child {
+  border-bottom: none;
+}
+
+.linhaAtiva {
+  background: var(--color-active-bg);
+}
+
+.topo {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.nome {
+  flex: 1;
+  min-width: 0;
+  font-size: 0.95rem;
+}
+
+.contador {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.contador button {
+  width: 36px;
+  height: 36px;
+  font-size: 1.15rem;
+  line-height: 1;
+  border: 1.5px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-white);
+  color: var(--color-text);
+  cursor: pointer;
+}
+
+.contador button:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.contador > span {
+  min-width: 26px;
+  text-align: center;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.excluir {
+  color: var(--color-danger) !important;
+  margin-left: 4px;
+}
+
+/* --------------------------------------------------------- Valor do item */
+
+.baixo {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin-top: var(--space-1);
+}
+
+.baixo label {
+  font-size: 0.78rem;
+  color: var(--color-gray-600);
+}
+
+.moeda {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  border: 1.5px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-white);
+  padding: 0 8px;
+}
+
+.moeda span {
+  font-size: 0.8rem;
+  color: var(--color-gray-600);
+}
+
+.moeda input {
+  width: 96px;
+  border: none;
+  outline: none;
+  background: transparent;
+  font-family: var(--font-body);
+  font-size: 1rem;
+  padding: 8px 0;
+  color: var(--color-text);
+  text-align: right;
+}
+
+.subtotal {
+  margin-left: auto;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--color-gray-600);
+  font-variant-numeric: tabular-nums;
+}
+
+.vazio {
+  padding: var(--space-3);
+  text-align: center;
+  color: var(--color-gray-600);
+  font-size: 0.88rem;
+}
+
+/* ------------------------------------------------------------- Rodapé */
+
+.rodape {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 10;
+  background: var(--color-surface);
+  border-top: 1px solid var(--color-border);
+  box-shadow: 0 -4px 14px rgba(28, 22, 20, 0.08);
+  padding: var(--space-2) var(--space-3);
+  padding-bottom: calc(var(--space-2) + env(safe-area-inset-bottom));
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.resumo {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-2);
+  max-width: 720px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+.resumo strong {
+  font-family: var(--font-display);
+  font-size: 1.1rem;
+}
+
+.resumo > span {
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.resumo small {
+  margin-left: auto;
+  font-size: 0.75rem;
+  color: var(--color-gray-600);
+  text-align: right;
+}
+
+.erro {
+  color: var(--color-danger) !important;
+}
+
+.botoes {
+  display: flex;
+  gap: var(--space-2);
+  max-width: 720px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+.botoes :global(.btn) {
+  flex: 1;
+}
+
+/* --------------------------------------------------------------- Toque */
+
+/*
+ * Dedo, não mouse — e a pergunta é o APONTADOR, não a largura da tela.
+ * Tablet em modo paisagem tem 1024px de largura e dedo do mesmo tamanho.
+ */
+@media (pointer: coarse) {
+  .contador button {
+    width: 44px;
+    height: 44px;
+  }
+
+  .aba {
+    padding: 12px 16px;
+  }
+
+  .moeda input {
+    padding: 11px 0;
+  }
+}

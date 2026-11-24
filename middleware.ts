@@ -14,8 +14,7 @@
 import { createServerClient } from '@supabase/ssr';
 import { NextResponse, type NextRequest } from 'next/server';
 
-/** Rotas que não exigem sessão. */
-const PUBLICAS = ['/', '/entrar', '/definir-senha'];
+import { ehRotaPublica } from '@/lib/rotas-publicas';
 
 export async function middleware(requisicao: NextRequest) {
   let resposta = NextResponse.next({ request: requisicao });
@@ -63,7 +62,7 @@ export async function middleware(requisicao: NextRequest) {
   } = await cliente.auth.getUser();
 
   const caminho = requisicao.nextUrl.pathname;
-  const ehPublica = PUBLICAS.includes(caminho);
+  const ehPublica = ehRotaPublica(caminho);
 
   // Sem sessão em rota protegida: manda para o login, guardando o destino.
   if (!user && !ehPublica) {

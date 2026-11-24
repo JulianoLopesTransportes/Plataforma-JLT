@@ -51,6 +51,8 @@ import type {
   MembroEquipe,
   CategoriaLancamento,
   EventoStatus,
+  ItemInventario,
+  InventarioPublico,
 } from '../tipos';
 
 import clientesJson from '@/mock/clientes.json';
@@ -1370,12 +1372,108 @@ const equipe = {
 };
 
 /* ==========================================================================
+   Inventário — a porta pública
+   ==========================================================================
+
+   As três primeiras funções são chamadas SEM LOGIN, pela página que o
+   cliente abre. Elas conversam apenas com as funções `inventario_*` do
+   banco, que validam o token e trancam tudo no cliente dele.
+
+   Nenhuma delas toca numa tabela: o visitante anônimo não tem policy em
+   tabela nenhuma, e é isso — não a cautela deste arquivo — que fecha a
+   porta. Ver a migration 53 e o teste em supabase/testes. */
+
+const inventario = {
+  async abrir(token: string): Promise<InventarioPublico> {
+    if (!usandoBanco()) throw new Error('Inventário exige o banco de dados configurado.');
+
+    const { data, error } = await supabase().rpc('inventario_abrir', { p_token: token });
+
+    /*
+     * A mensagem do banco sobe inteira, de propósito.
+     *
+     * "Este link expirou. Peça para liberar de novo" é exatamente o que o
+     * cliente precisa ler, e trocá-la por um texto genérico aqui faria ele
+     * ligar para o escritório sem saber o que aconteceu.
+     */
+    if (error) throw new Error(error.message);
+
+    const r = (data ?? {}) as Record<string, unknown>;
+    return {
+      clienteNome: (r.cliente_nome as string) ?? '',
+      expiraEm: (r.expira_em as string) ?? '',
+      finalizadoEm: (r.finalizado_em as string) ?? null,
+      itens: (((r.itens as unknown[]) ?? []) as Record<string, unknown>[]).map((i) => ({
+        ambiente: (i.ambiente as string) ?? '',
+        item: (i.item as string) ?? '',
+        quantidade: Number(i.quantidade ?? 1),
+        valorUnitario: Number(i.valor_unitario ?? 0),
+      })),
+    };
+  },
+
+  async salvar(token: string, itens: ItemInventario[]): Promise<number> {
+    if (!usandoBanco()) throw new Error('Inventário exige o banco de dados configurado.');
+
+    const { data, error } = await supabase().rpc('inventario_salvar', {
+      p_token: token,
+      p_itens: itens.map((i) => ({
+        ambiente: i.ambiente,
+        item: i.item,
+        quantidade: i.quantidade,
+        valor_unitario: i.valorUnitario,
+      })),
+    });
+
+    if (error) throw new Error(error.message);
+    return Number((data as Record<string, unknown>)?.itens ?? 0);
+  },
+
+  async finalizar(token: string): Promise<string | null> {
+    if (!usandoBanco()) throw new Error('Inventário exige o banco de dados configurado.');
+
+    const { data, error } = await supabase().rpc('inventario_finalizar', { p_token: token });
+    if (error) throw new Error(error.message);
+    return ((data as Record<string, unknown>)?.finalizado_em as string) ?? null;
+  },
+
+  /**
+   * Gera o link, ou ESTENDE o prazo do que já existe.
+   *
+   * Esta é a única do grupo que exige login. Liberar de novo mantém o mesmo
+   * token: o link do cliente já está no WhatsApp dele, e trocá-lo
+   * obrigaria a mandar outro.
+   */
+  async liberar(
+    clienteId: string,
+    dias = 7,
+  ): Promise<{ token: string; expiraEm: string; novo: boolean }> {
+    if (!usandoBanco()) throw new Error('Inventário exige o banco de dados configurado.');
+
+    const { data, error } = await supabase().rpc('inventario_liberar', {
+      p_cliente_id: clienteId,
+      p_dias: dias,
+    });
+
+    if (error) throw new Error(traduzir(error));
+
+    const r = (data ?? {}) as Record<string, unknown>;
+    return {
+      token: (r.token as string) ?? '',
+      expiraEm: (r.expira_em as string) ?? '',
+      novo: r.novo === true,
+    };
+  },
+};
+
+/* ==========================================================================
    Export
    ========================================================================== */
 
 export const api = {
   clientes,
   equipe,
+  inventario,
   veiculos,
   motoristas,
   financeiro,
